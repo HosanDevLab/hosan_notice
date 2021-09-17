@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "661237482006",
+    "project_id": "hosan-notice",
+    "storage_bucket": "hosan-notice.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:661237482006:android:2e55ddd602ca9ee86fab37",
+        "android_client_info": {
+          "package_name": "com.arpaap.hosan_notice"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "661237482006-50huuvkhnsb646bo61cg3n8f4qn8hnoo.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBapUU4VVQmJbnDGhJXKl7GhBlFdrMCje8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "661237482006-50huuvkhnsb646bo61cg3n8f4qn8hnoo.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

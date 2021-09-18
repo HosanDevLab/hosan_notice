@@ -35,19 +35,17 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('호산고 알리미'),
+        title: Text('메인'),
         centerTitle: true,
       ),
-      body: Center(
+      body: Container(
+        padding: EdgeInsets.all(20),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => LoginPage()));
-              },
-              child: Text('Second Page'),
+            Row(
+              children: [
+                Text('현재 할당된 과제', style: Theme.of(context).textTheme.headline5)
+              ],
             )
           ],
         ),
@@ -116,13 +114,35 @@ class HomePage extends StatelessWidget {
               dense: true,
               leading: Icon(Icons.logout, color: Colors.red),
               onTap: () async {
-                await FirebaseAuth.instance.signOut();
-                await GoogleSignIn().signOut();
-                Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => LoginPage(),
-                        fullscreenDialog: true));
+                showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text('로그아웃'),
+                        content: Text('로그아웃할까요?'),
+                        actions: <Widget>[
+                          TextButton(
+                            child: Text('계속하기'),
+                            onPressed: () async {
+                              Navigator.pop(context);
+                              await FirebaseAuth.instance.signOut();
+                              await GoogleSignIn().signOut();
+                              Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => LoginPage(),
+                                      fullscreenDialog: true));
+                            },
+                          ),
+                          TextButton(
+                            child: Text('취소'),
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                          ),
+                        ],
+                      );
+                    });
               },
             ),
             Divider(height: 0),
@@ -136,9 +156,9 @@ class HomePage extends StatelessWidget {
             ),
             Divider(height: 0),
             ListTile(
-              title: Text('개발자 - 호산고 제3기 로봇공학반'),
+              title: Text('개발자 및 정보'),
               dense: true,
-              leading: Icon(Icons.people),
+              leading: Icon(Icons.info),
               onTap: () async {
                 PackageInfo packageInfo = await PackageInfo.fromPlatform();
                 showAboutDialog(
@@ -154,7 +174,9 @@ class HomePage extends StatelessWidget {
                         child: RichText(
                             text: TextSpan(children: [
                           TextSpan(
-                            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold),
                             text: '앱/서버 개발: ',
                           ),
                           TextSpan(
@@ -169,10 +191,12 @@ class HomePage extends StatelessWidget {
                                 launch('21181@hosan.hs.kr');
                               },
                           ),
-                              TextSpan(
-                                style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                                text: '\n하드웨어 개발/설계: ',
-                              ),
+                          TextSpan(
+                            style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold),
+                            text: '\n하드웨어 개발/설계: ',
+                          ),
                           TextSpan(
                             style: TextStyle(color: Colors.black),
                             text: '강해, 이승민',

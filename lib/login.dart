@@ -9,6 +9,15 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPage extends State<LoginPage> {
+  bool isLoggingIn = false;
+  bool isDisposed = false;
+
+  @override
+  void dispose() {
+    super.dispose();
+    isDisposed = true;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -41,49 +50,68 @@ class _LoginPage extends State<LoginPage> {
             children: <Widget>[
               ElevatedButton.icon(
                 onPressed: () async {
-                  await FirebaseAuth.instance.signOut();
-                  await GoogleSignIn().signOut();
-
-                  final GoogleSignInAccount? googleSignInAccount =
-                      await GoogleSignIn().signIn();
-                  final GoogleSignInAuthentication googleSignInAuthentication =
-                      await googleSignInAccount!.authentication;
-
-                  final AuthCredential credential =
-                      GoogleAuthProvider.credential(
-                    accessToken: googleSignInAuthentication.accessToken,
-                    idToken: googleSignInAuthentication.idToken,
-                  );
-
-                  final signInData = await FirebaseAuth.instance
-                      .signInWithCredential(credential);
-
-                  if (signInData.user!.email!.split('@').last !=
-                      'hosan.hs.kr') {
-                    showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: new Text("호산고 계정이 아닙니다."),
-                            content: new Text("호산고등학교에서 발급한 Google 계정\n(숫자@hosan.hs.kr)으로 로그인하세요!\n\n계정을 잊어버리셨다면 선생님께 문의해주세요."),
-                            actions: <Widget>[
-                              new TextButton(
-                                child: new Text("닫기"),
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                              ),
-                            ],
-                          );
-                        });
-                    return;
+                  if (isLoggingIn) return;
+                  if (!isDisposed) {
+                    setState(() {
+                      isLoggingIn = true;
+                    });
                   }
 
-                  Navigator.pushReplacement(context,
-                      MaterialPageRoute(builder: (context) => HomePage()));
+                  try {
+                    await FirebaseAuth.instance.signOut();
+                    await GoogleSignIn().signOut();
+
+                    final GoogleSignInAccount? googleSignInAccount =
+                        await GoogleSignIn().signIn();
+                    final GoogleSignInAuthentication
+                        googleSignInAuthentication =
+                        await googleSignInAccount!.authentication;
+
+                    final AuthCredential credential =
+                        GoogleAuthProvider.credential(
+                      accessToken: googleSignInAuthentication.accessToken,
+                      idToken: googleSignInAuthentication.idToken,
+                    );
+
+                    final signInData = await FirebaseAuth.instance
+                        .signInWithCredential(credential);
+
+                    if (signInData.user!.email!.split('@').last !=
+                        'hosan.hs.kr') {
+                      showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text("호산고 계정이 아닙니다."),
+                              content: Text(
+                                  "호산고등학교에서 발급한 Google 계정\n(숫자@hosan.hs.kr)으로 로그인하세요!\n\n계정을 잊어버리셨다면 선생님께 문의해주세요."),
+                              actions: <Widget>[
+                                TextButton(
+                                  child: Text("닫기"),
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                              ],
+                            );
+                          });
+                      return;
+                    }
+
+                    await Navigator.pushReplacement(context,
+                        MaterialPageRoute(builder: (context) => HomePage()));
+                  } catch (e) {
+                    throw e;
+                  } finally {
+                    if (!isDisposed) {
+                      setState(() {
+                        isLoggingIn = false;
+                      });
+                    }
+                  }
                 },
                 icon: Icon(Icons.login, size: 18),
-                label: Text("호산고등학교 구글 계정으로 로그인"),
+                label: Text(isLoggingIn ? "로그인 중..." : "호산고등학교 구글 계정으로 로그인"),
               ),
             ],
           ),

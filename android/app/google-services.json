@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "661237482006-fksl6lndtb32nthl0gmr8duj5cittbnc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.arpaap.hosan_notice",
+            "certificate_hash": "c4730a17d4072b9ccaf451a851893ff0f40131eb"
+          }
+        },
+        {
           "client_id": "661237482006-50huuvkhnsb646bo61cg3n8f4qn8hnoo.apps.googleusercontent.com",
           "client_type": 3
         }

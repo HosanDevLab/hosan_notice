@@ -1,14 +1,17 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hosan_notice/main.dart';
+import 'package:hosan_notice/register.dart';
 
 class LoginPage extends StatefulWidget {
   @override
-  _LoginPage createState() => _LoginPage();
+  _LoginPageState createState() => _LoginPageState();
 }
 
-class _LoginPage extends State<LoginPage> {
+class _LoginPageState extends State<LoginPage> {
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
   bool isLoggingIn = false;
   bool isDisposed = false;
 
@@ -47,79 +50,95 @@ class _LoginPage extends State<LoginPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              ElevatedButton.icon(
-                onPressed: () async {
-                  if (isLoggingIn) return;
-                  if (!isDisposed) {
-                    setState(() {
-                      isLoggingIn = true;
-                    });
-                  }
-
-                  try {
-                    await FirebaseAuth.instance.signOut();
-                    await GoogleSignIn().signOut();
-
-                    final GoogleSignInAccount? googleSignInAccount =
-                        await GoogleSignIn().signIn();
-                    final GoogleSignInAuthentication
-                        googleSignInAuthentication =
-                        await googleSignInAccount!.authentication;
-
-                    final AuthCredential credential =
-                        GoogleAuthProvider.credential(
-                      accessToken: googleSignInAuthentication.accessToken,
-                      idToken: googleSignInAuthentication.idToken,
-                    );
-
-                    final signInData = await FirebaseAuth.instance
-                        .signInWithCredential(credential);
-
-                    if (signInData.user!.email!.split('@').last !=
-                        'hosan.hs.kr') {
-                      showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: Text("호산고 계정이 아닙니다."),
-                              content: Text(
-                                  "호산고등학교에서 발급한 Google 계정 (숫자@hosan.hs.kr)으로 로그인하세요!\n\n계정을 잊어버리셨다면 선생님께 문의해주세요."),
-                              actions: <Widget>[
-                                TextButton(
-                                  child: Text("닫기"),
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                ),
-                              ],
-                            );
-                          });
-                      return;
-                    }
-
-                    await Navigator.pushReplacement(context,
-                        MaterialPageRoute(builder: (context) => HomePage()));
-                  } catch (e) {
-                    throw e;
-                  } finally {
+              SizedBox(
+                height: 42,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    if (isLoggingIn) return;
                     if (!isDisposed) {
                       setState(() {
-                        isLoggingIn = false;
+                        isLoggingIn = true;
                       });
                     }
-                  }
-                },
-                icon: Icon(Icons.login, size: 18),
-                label: Text(isLoggingIn ? "로그인 중..." : "호산고등학교 구글 계정으로 로그인"),
-              ),
+
+                    try {
+                      await FirebaseAuth.instance.signOut();
+                      await GoogleSignIn().signOut();
+
+                      final GoogleSignInAccount? googleSignInAccount =
+                          await GoogleSignIn().signIn();
+                      final GoogleSignInAuthentication
+                          googleSignInAuthentication =
+                          await googleSignInAccount!.authentication;
+
+                      final AuthCredential credential =
+                          GoogleAuthProvider.credential(
+                        accessToken: googleSignInAuthentication.accessToken,
+                        idToken: googleSignInAuthentication.idToken,
+                      );
+
+                      final signInData = await FirebaseAuth.instance
+                          .signInWithCredential(credential);
+
+                      if (signInData.user!.email!.split('@').last !=
+                          'hosan.hs.kr') {
+                        showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: Text("호산고 계정이 아닙니다."),
+                                content: Text(
+                                    "호산고등학교에서 발급한 Google 계정 (숫자@hosan.hs.kr)으로 로그인하세요!\n\n계정을 잊어버리셨다면 선생님께 문의해주세요."),
+                                actions: <Widget>[
+                                  TextButton(
+                                    child: Text("닫기"),
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                ],
+                              );
+                            });
+                        return;
+                      }
+
+                      CollectionReference students =
+                          firestore.collection('students');
+
+                      DocumentSnapshot me =
+                          await students.doc(signInData.user!.uid).get();
+
+                      if (me.exists) {
+                        await Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => HomePage()));
+                      } else {
+                        await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => Register()));
+                      }
+                    } catch (e) {
+                      throw e;
+                    } finally {
+                      if (!isDisposed) {
+                        setState(() {
+                          isLoggingIn = false;
+                        });
+                      }
+                    }
+                  },
+                  icon: Icon(Icons.login, size: 18),
+                  label: Text(isLoggingIn ? "로그인 중..." : "호산고등학교 구글 계정으로 로그인"),
+                ),
+              )
             ],
           ),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextButton(onPressed: () {}, child: Text('교직원 로그인'))
-            ],
+            children: [TextButton(onPressed: () {}, child: Text('교직원 로그인'))],
           ),
           Expanded(
             child: Container(),

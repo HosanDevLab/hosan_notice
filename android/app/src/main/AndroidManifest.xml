@@ -1,6 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.arpaap.hosan_notice">
-   <application
+    <uses-permission android:name="android.permission.INTERNET" />
+    <application
         android:label="호산고 알리미"
         android:icon="@mipmap/ic_launcher">
         <activity

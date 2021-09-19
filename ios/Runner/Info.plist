@@ -48,5 +48,7 @@
           <string>https</string>
           <string>http</string>
         </array>
+        <key>io.flutter.embedded_views_preview</key>
+        <string>YES</string>
 	</dict>
 </plist>

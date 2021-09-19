@@ -41,10 +41,9 @@ class _LoginPage extends State<LoginPage> {
               ),
             ],
           ),
+          SizedBox(height: 5),
           Text('학업 알림 및 휴지 현황 시스템'),
-          SizedBox(
-            height: 20,
-          ),
+          SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
@@ -84,7 +83,7 @@ class _LoginPage extends State<LoginPage> {
                             return AlertDialog(
                               title: Text("호산고 계정이 아닙니다."),
                               content: Text(
-                                  "호산고등학교에서 발급한 Google 계정\n(숫자@hosan.hs.kr)으로 로그인하세요!\n\n계정을 잊어버리셨다면 선생님께 문의해주세요."),
+                                  "호산고등학교에서 발급한 Google 계정 (숫자@hosan.hs.kr)으로 로그인하세요!\n\n계정을 잊어버리셨다면 선생님께 문의해주세요."),
                               actions: <Widget>[
                                 TextButton(
                                   child: Text("닫기"),
@@ -118,6 +117,9 @@ class _LoginPage extends State<LoginPage> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton(onPressed: () {}, child: Text('교직원 로그인'))
+            ],
           ),
           Expanded(
             child: Container(),

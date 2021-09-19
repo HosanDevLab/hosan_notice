@@ -38,16 +38,129 @@ class HomePage extends StatelessWidget {
         title: Text('메인'),
         centerTitle: true,
       ),
-      body: Container(
-        padding: EdgeInsets.all(20),
-        child: Column(
-          children: <Widget>[
-            Row(
-              children: [
-                Text('현재 할당된 과제', style: Theme.of(context).textTheme.headline5)
-              ],
-            )
-          ],
+      body: SingleChildScrollView(
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+          child: Column(
+            children: <Widget>[
+              Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('현재 할당된 과제',
+                          style: Theme.of(context).textTheme.headline6),
+                      TextButton(onPressed: () {}, child: Text('더보기')),
+                    ],
+                  ),
+                  SizedBox(height: 5),
+                  Card(
+                      margin: EdgeInsets.symmetric(vertical: 4),
+                      color: Colors.white,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ListTile(
+                            title: Text('과학 5분 스피치'),
+                            subtitle: Text('과학 주석재 | 100일 남음'),
+                            onTap: () {},
+                          ),
+                        ],
+                      )),
+                  Card(
+                      margin: EdgeInsets.symmetric(vertical: 4),
+                      color: Colors.white,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ListTile(
+                            title: Text('로봇 3차시 실습 과제'),
+                            subtitle: RichText(
+                                text: TextSpan(children: [
+                              TextSpan(
+                                style: TextStyle(color: Colors.grey[600]),
+                                text: '로봇 정지원 | ',
+                              ),
+                              TextSpan(
+                                style: TextStyle(color: Colors.red),
+                                text: '20분 남음!',
+                              ),
+                            ])),
+                            onTap: () {},
+                          ),
+                        ],
+                      )),
+                ],
+              ),
+              SizedBox(height: 5),
+              Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('최근 학급 공지',
+                          style: Theme.of(context).textTheme.headline6),
+                      TextButton(onPressed: () {}, child: Text('더보기')),
+                    ],
+                  ),
+                  SizedBox(height: 5),
+                  Card(
+                      margin: EdgeInsets.symmetric(vertical: 4),
+                      color: Colors.white,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ListTile(
+                            title: Text('분리수거좀 제대로 해라'),
+                            subtitle: Text('황부연 작성 | 2일 전'),
+                            onTap: () {},
+                          ),
+                        ],
+                      )),
+                  Card(
+                      margin: EdgeInsets.symmetric(vertical: 4),
+                      color: Colors.white,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ListTile(
+                            title: Text('2학기 시간표'),
+                            subtitle: Text('[담임] 영어 이종국 | 한 달 전'),
+                            onTap: () {},
+                          ),
+                        ],
+                      )),
+                ],
+              ),
+              SizedBox(height: 5),
+              Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('오늘의 급식',
+                          style: Theme.of(context).textTheme.headline6),
+                      TextButton(onPressed: () {}, child: Text('더보기')),
+                    ],
+                  ),
+                  SizedBox(height: 5),
+                  Card(
+                      margin: EdgeInsets.symmetric(vertical: 4),
+                      color: Colors.white,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ListTile(
+                            title: Text('2021년 9월 19일'),
+                            subtitle: Text('ㅁㄴㅇㄹ\nㅁㄴㅇㄹ\nㅁㄴㅇㄹ\nㅁㄴㅇㄹ\n'),
+                            onTap: () {},
+                          ),
+                        ],
+                      )),
+                ],
+              )
+            ],
+          ),
         ),
       ),
       drawer: Drawer(
@@ -68,6 +181,7 @@ class HomePage extends StatelessWidget {
             Divider(height: 0),
             ListTile(
               title: Text('메인'),
+              dense: true,
               leading: Icon(Icons.home),
               onTap: () {
                 Navigator.pop(context);
@@ -76,6 +190,7 @@ class HomePage extends StatelessWidget {
             Divider(height: 0),
             ListTile(
               title: Text('과제 및 수행평가'),
+              dense: true,
               leading: Icon(Icons.assignment),
               onTap: () {
                 Navigator.pop(context);
@@ -84,6 +199,7 @@ class HomePage extends StatelessWidget {
             Divider(height: 0),
             ListTile(
               title: Text('내 학반'),
+              dense: true,
               leading: Icon(Icons.school),
               onTap: () {
                 Navigator.pop(context);
@@ -92,6 +208,7 @@ class HomePage extends StatelessWidget {
             Divider(height: 0),
             ListTile(
               title: Text('급식 메뉴'),
+              dense: true,
               leading: Icon(Icons.dining),
               onTap: () {
                 Navigator.pop(context);
@@ -100,14 +217,22 @@ class HomePage extends StatelessWidget {
             Divider(height: 0),
             ListTile(
               title: Text('화장실 휴지 현황'),
+              dense: true,
               leading: Icon(Icons.data_usage),
               onTap: () {
                 Navigator.pop(context);
               },
             ),
-            Expanded(
-              child: Align(alignment: Alignment.bottomCenter),
+            Divider(height: 0),
+            ListTile(
+              title: Text('교직원 배치도'),
+              dense: true,
+              leading: Icon(Icons.people),
+              onTap: () {
+                Navigator.pop(context);
+              },
             ),
+            Expanded(child: Container()),
             Divider(height: 0),
             ListTile(
               title: Text('로그아웃', style: TextStyle(color: Colors.red)),

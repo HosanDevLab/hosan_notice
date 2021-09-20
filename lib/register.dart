@@ -24,6 +24,7 @@ class _RegisterState extends State<Register> {
   late int grade;
   late int classNum;
   late int numberInClass;
+  late String name;
 
   @override
   void dispose() {
@@ -48,60 +49,95 @@ class _RegisterState extends State<Register> {
                 Text('학생 정보를 입력합니다',
                     style: Theme.of(context).textTheme.subtitle1),
                 SizedBox(height: 18),
-                DropdownButtonFormField(
-                  validator: (value) => value == null ? "학년을 선택하세요." : null,
-                  decoration: InputDecoration(
-                      hintText: '학년',
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.deepPurple),
+
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: DropdownButtonFormField(
+                        validator: (value) => value == null ? "학년을 선택하세요." : null,
+                        decoration: InputDecoration(
+                            hintText: '학년',
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.deepPurple),
+                            ),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(5.0)),
+                            contentPadding:
+                            EdgeInsets.symmetric(vertical: 16, horizontal: 12)),
+                        onChanged: (value) {},
+                        onSaved: (value) {
+                          grade = value as int;
+                        },
+                        items: List.generate(3, (index) => index + 1)
+                            .map((e) =>
+                            DropdownMenuItem(child: Text('$e학년'), value: e))
+                            .toList(),
                       ),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(5.0)),
-                      contentPadding:
-                          EdgeInsets.symmetric(vertical: 16, horizontal: 12)),
-                  onChanged: (value) {},
-                  onSaved: (value) {
-                    grade = value as int;
-                  },
-                  items: List.generate(3, (index) => index + 1)
-                      .map((e) =>
-                          DropdownMenuItem(child: Text('$e학년'), value: e))
-                      .toList(),
-                ),
-                SizedBox(height: 16),
-                DropdownButtonFormField(
-                  validator: (value) => value == null ? "반을 선택하세요." : null,
-                  decoration: InputDecoration(
-                      hintText: '반',
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.deepPurple),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      flex: 1,
+                      child: DropdownButtonFormField(
+                        validator: (value) =>
+                            value == null ? "반을 선택하세요." : null,
+                        decoration: InputDecoration(
+                            hintText: '반',
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.deepPurple),
+                            ),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(5.0)),
+                            contentPadding: EdgeInsets.symmetric(
+                                vertical: 16, horizontal: 12)),
+                        onChanged: (value) {},
+                        onSaved: (value) {
+                          classNum = value as int;
+                        },
+                        items: List.generate(10, (index) => index + 1)
+                            .map((e) =>
+                                DropdownMenuItem(child: Text('$e반'), value: e))
+                            .toList(),
                       ),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(5.0)),
-                      contentPadding:
-                          EdgeInsets.symmetric(vertical: 16, horizontal: 12)),
-                  onChanged: (value) {},
-                  onSaved: (value) {
-                    classNum = value as int;
-                  },
-                  items: List.generate(10, (index) => index + 1)
-                      .map(
-                          (e) => DropdownMenuItem(child: Text('$e반'), value: e))
-                      .toList(),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      flex: 1,
+                      child: TextFormField(
+                        validator: (text) =>
+                            text!.isEmpty ? "번호를 입력하세요." : null,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: <TextInputFormatter>[
+                          FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+                        ],
+                        onChanged: (text) {},
+                        onSaved: (text) {
+                          numberInClass = int.parse(text!);
+                        },
+                        decoration: InputDecoration(
+                            labelText: '번호',
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.deepPurple),
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(5.0),
+                            ),
+                            contentPadding: EdgeInsets.symmetric(
+                                vertical: 18, horizontal: 12)),
+                      ),
+                    )
+                  ],
                 ),
                 SizedBox(height: 16),
                 TextFormField(
-                  validator: (text) => text!.isEmpty ? "번호를 입력하세요." : null,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: <TextInputFormatter>[
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
-                  ],
+                  validator: (text) => text!.isEmpty ? "이름를 입력하세요." : null,
+                  keyboardType: TextInputType.text,
                   onChanged: (text) {},
                   onSaved: (text) {
-                    numberInClass = int.parse(text!);
+                    name = text!;
                   },
                   decoration: InputDecoration(
-                      labelText: '번호',
+                      labelText: '이름',
                       focusedBorder: OutlineInputBorder(
                         borderSide: BorderSide(color: Colors.deepPurple),
                       ),
@@ -164,6 +200,7 @@ class _RegisterState extends State<Register> {
                                 .collection('students')
                                 .doc(user!.uid)
                                 .set({
+                              'name': name,
                               'grade': grade,
                               'classNum': classNum,
                               'numberInClass': numberInClass,

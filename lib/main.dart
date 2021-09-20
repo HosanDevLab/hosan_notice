@@ -27,12 +27,13 @@ class App extends StatelessWidget {
       ),
       home: FutureBuilder(
         future: () async {
+          if (user == null) return null;
           CollectionReference students =
               FirebaseFirestore.instance.collection('students');
-          return await students.doc(user!.uid).get();
+          return await students.doc(user.uid).get();
         }(),
         builder: (BuildContext context, AsyncSnapshot snapshot) {
-          if (!snapshot.hasData) {
+          if (user != null && !snapshot.hasData) {
             return Scaffold(
                 body: Center(
                     child: Column(

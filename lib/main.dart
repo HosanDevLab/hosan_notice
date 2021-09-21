@@ -63,20 +63,31 @@ class _HomePageState extends State<HomePage> {
   final firestore = FirebaseFirestore.instance;
   final refreshKey = GlobalKey<RefreshIndicatorState>();
 
-  late Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _assignments;
+  late Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _assignments,
+      _subjects;
 
   Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
       fetchAssignments() async {
     QuerySnapshot<Map<String, dynamic>> data =
-        await firestore.collection('assignments').get();
+        await firestore.collection('assignments').orderBy('deadline').get();
+    final ls = data.docs.toList();
+    return ls;
+  }
+
+  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
+      fetchSubjects() async {
+    QuerySnapshot<Map<String, dynamic>> data =
+        await firestore.collection('subjects').orderBy('order').get();
     final ls = data.docs.toList();
     return ls;
   }
 
   @override
-  void initState() {
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _assignments = fetchAssignments();
-    super.initState();
+    _subjects = fetchSubjects();
+    precacheImage(AssetImage('assets/hosan.png'), context);
   }
 
   @override
@@ -108,13 +119,19 @@ class _HomePageState extends State<HomePage> {
                       ),
                       SizedBox(height: 5),
                       FutureBuilder(
-                        future: _assignments,
+                        future: Future.wait([_assignments, _subjects]),
                         builder:
                             (BuildContext context, AsyncSnapshot snapshot) {
                           if (!snapshot.hasData)
                             return CircularProgressIndicator();
                           return Column(
-                            children: snapshot.data.map<Widget>((e) {
+                            children: (snapshot.data[0] as List)
+                                .where((e) =>
+                                    (e.data()['deadline'].toDate() as DateTime)
+                                        .difference(DateTime.now())
+                                        .inSeconds >
+                                    0)
+                                .map<Widget>((e) {
                               final data = e.data();
                               final timeDiff =
                                   (data['deadline'].toDate() as DateTime)
@@ -128,6 +145,13 @@ class _HomePageState extends State<HomePage> {
                                 timeDiffStr = '${timeDiff.inMinutes}분 남음';
                               else
                                 timeDiffStr = '${timeDiff.inSeconds}초 남음';
+
+                              final subjectStr = data['subject']
+                                      is DocumentReference
+                                  ? (snapshot.data[1] as List).firstWhere(
+                                      (e) => e.id == data['subject'].id)['name']
+                                  : data['subject'];
+
                               return Card(
                                   margin: EdgeInsets.symmetric(vertical: 4),
                                   color: Colors.white,
@@ -142,8 +166,8 @@ class _HomePageState extends State<HomePage> {
                                                   color: Colors.grey[600]),
                                               children: [
                                                 TextSpan(
-                                                    text:
-                                                        '${data['subject']} ${data['teacher']} | '),
+                                                    text: '$subjectStr '
+                                                        '${data['teacher']} | '),
                                                 TextSpan(
                                                     text: '$timeDiffStr',
                                                     style: timeDiff.inDays < 0

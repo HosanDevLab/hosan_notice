@@ -20,6 +20,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
   final refreshKey = GlobalKey<RefreshIndicatorState>();
 
   late Future<DocumentSnapshot<Map<String, dynamic>>> _assignment;
+  late Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _subjects;
   bool? assignmentLoadDone;
 
   Future<DocumentSnapshot<Map<String, dynamic>>> fetchAssignment() async {
@@ -31,16 +32,25 @@ class _AssignmentPageState extends State<AssignmentPage> {
     return data;
   }
 
+  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
+      fetchSubjects() async {
+    QuerySnapshot<Map<String, dynamic>> data =
+        await firestore.collection('subjects').orderBy('order').get();
+    final ls = data.docs.toList();
+    return ls;
+  }
+
   @override
   void initState() {
     _assignment = fetchAssignment();
+    _subjects = fetchSubjects();
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-        future: _assignment,
+        future: Future.wait([_assignment, _subjects]),
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           if (!snapshot.hasData) {
             return Scaffold(
@@ -59,7 +69,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                     ])));
           }
 
-          final data = snapshot.data.data();
+          final data = snapshot.data[0].data();
 
           final timeDiff = (data['deadline'].toDate() as DateTime)
               .difference(DateTime.now());
@@ -72,10 +82,6 @@ class _AssignmentPageState extends State<AssignmentPage> {
             timeDiffStr = '${timeDiff.inMinutes}분 남음';
           else
             timeDiffStr = '${timeDiff.inSeconds}초 남음';
-
-          double height = MediaQuery.of(context).size.height;
-          EdgeInsets padding = MediaQuery.of(context).padding;
-          double netHeight = height - kToolbarHeight;
 
           return Scaffold(
               appBar: AppBar(
@@ -94,10 +100,11 @@ class _AssignmentPageState extends State<AssignmentPage> {
                 toolbarHeight: 70,
               ),
               body: RefreshIndicator(
-                  child: SingleChildScrollView(
-                    physics: BouncingScrollPhysics(
-                        parent: AlwaysScrollableScrollPhysics()),
-                    child: Container(
+                  child: Container(
+                    height: double.infinity,
+                    child: SingleChildScrollView(
+                      physics: BouncingScrollPhysics(
+                          parent: AlwaysScrollableScrollPhysics()),
                       child: Column(children: [
                         Row(
                           children: [
@@ -106,18 +113,36 @@ class _AssignmentPageState extends State<AssignmentPage> {
                               child: Card(
                                   margin: EdgeInsets.fromLTRB(20, 20, 6, 0),
                                   child: ListTile(
+                                    horizontalTitleGap: 2,
                                     leading: Icon(Icons.subject, size: 28),
-                                    title: Text('${data['subject']}'),
+                                    title: Text(
+                                        data['subject'] is DocumentReference
+                                            ? (snapshot.data[1] as List)
+                                                .firstWhere((e) =>
+                                                    e.id ==
+                                                    data['subject'].id)['name']
+                                            : data['subject'],
+                                        overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(fontSize: 16),
+                                    ),
                                     onTap: () {},
                                   )),
                             ),
                             Expanded(
-                              flex: 5,
+                              flex: 3,
                               child: Card(
                                   margin: EdgeInsets.fromLTRB(6, 20, 20, 0),
                                   child: ListTile(
+                                    horizontalTitleGap: 2,
                                     leading: Icon(Icons.person, size: 28),
-                                    title: Text('${data['teacher']} 선생님'),
+                                    title: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(data['teacher'],
+                                            overflow: TextOverflow.ellipsis),
+                                        Text('선생님', style: TextStyle(fontSize: 12)),
+                                      ],
+                                    ),
                                     onTap: () {},
                                   )),
                             )
@@ -143,7 +168,6 @@ class _AssignmentPageState extends State<AssignmentPage> {
                               )),
                         ),
                       ]),
-                      height: netHeight,
                     ),
                   ),
                   onRefresh: () async {

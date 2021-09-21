@@ -117,7 +117,7 @@ class _LoginPageState extends State<LoginPage> {
                         await Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => Register()));
+                                builder: (context) => RegisterPage()));
                       }
                     } catch (e) {
                       throw e;

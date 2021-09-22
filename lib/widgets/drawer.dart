@@ -4,12 +4,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:hosan_notice/assignments.dart';
+import 'package:hosan_notice/pages/assignments.dart';
 import 'package:hosan_notice/main.dart';
+import 'package:hosan_notice/pages/calendar.dart';
 import 'package:package_info/package_info.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'login.dart';
+import '../pages/login.dart';
 
 class MainDrawer extends StatefulWidget {
   final BuildContext parentContext;
@@ -26,8 +27,8 @@ class _MainDrawerState extends State<MainDrawer> {
 
   @override
   void didChangeDependencies() {
-    precacheImage(NetworkImage(user.photoURL ?? ''), context);
     super.didChangeDependencies();
+    precacheImage(NetworkImage(user.photoURL ?? ''), context);
   }
 
   @override
@@ -39,36 +40,17 @@ class _MainDrawerState extends State<MainDrawer> {
       children: [
         Expanded(
             flex: 1,
-            child: FutureBuilder(
-              future: () async {
-                DocumentSnapshot student =
-                    await firestore.collection('students').doc(user.uid).get();
-                return student.data();
-              }(),
-              builder: (BuildContext context, AsyncSnapshot snapshot) {
-                final data = snapshot.data;
-
-                return UserAccountsDrawerHeader(
-                  currentAccountPicture: CircleAvatar(
-                    radius: 30,
-                    backgroundImage: NetworkImage(user.photoURL ?? ''),
-                    backgroundColor: Colors.transparent,
-                  ),
-                  accountEmail: Text(user.email ?? ''),
-                  accountName: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(user.displayName ?? ''),
-                      Text(snapshot.hasData
-                          ? '${data['grade']}학년 ${data['classNum']}반 ${data['numberInClass']}번 ${data['name']}'
-                          : '불러오는 중...')
-                    ],
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.deepPurple[400],
-                  ),
-                );
-              },
+            child: UserAccountsDrawerHeader(
+              currentAccountPicture: CircleAvatar(
+                radius: 30,
+                backgroundImage: NetworkImage(user.photoURL ?? ''),
+                backgroundColor: Colors.transparent,
+              ),
+              accountEmail: Text((user.email ?? '') + '\n'),
+              accountName: Text(user.displayName ?? ''),
+              decoration: BoxDecoration(
+                color: Colors.deepPurple[400],
+              ),
             )),
         Expanded(
           flex: 2,
@@ -112,6 +94,19 @@ class _MainDrawerState extends State<MainDrawer> {
               ),
               Divider(height: 0),
               ListTile(
+                title: Text('한눈에 보는 일정표'),
+                dense: true,
+                leading: Icon(Icons.event_note),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushReplacement(
+                      widget.parentContext,
+                      MaterialPageRoute(
+                          builder: (context) => CalendarPage()));
+                },
+              ),
+              Divider(height: 0),
+              ListTile(
                 title: Text('급식 메뉴'),
                 dense: true,
                 leading: Icon(Icons.dining),
@@ -147,8 +142,8 @@ class _MainDrawerState extends State<MainDrawer> {
                       context: context,
                       builder: (BuildContext context) {
                         return AlertDialog(
-                          title: Text('로그아웃'),
-                          content: Text('로그아웃할까요?'),
+                          title: Text('로그아웃할까요?'),
+                          content: Text('나 보기가 역겨워 가실 때에는 말없이 고이 보내 드리우리다.'),
                           actions: <Widget>[
                             TextButton(
                               child: Text('계속하기'),

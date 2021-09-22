@@ -3,9 +3,11 @@ import 'package:double_back_to_close/double_back_to_close.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:hosan_notice/assignment.dart';
-import 'package:hosan_notice/drawer.dart';
-import 'package:hosan_notice/login.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:hosan_notice/pages/assignment.dart';
+import 'package:hosan_notice/pages/assignments.dart';
+import 'package:hosan_notice/widgets/drawer.dart';
+import 'package:hosan_notice/pages/login.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,6 +51,14 @@ class App extends StatelessWidget {
               : LoginPage();
         },
       ),
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
+      supportedLocales: [
+        const Locale('ko', 'KR'),
+        // include country code too
+      ],
     );
   }
 }
@@ -71,6 +81,7 @@ class _HomePageState extends State<HomePage> {
     QuerySnapshot<Map<String, dynamic>> data =
         await firestore.collection('assignments').orderBy('deadline').get();
     final ls = data.docs.toList();
+    ls.sort((a, b) => a.data()['deadline'] == null ? 1 : 0);
     return ls;
   }
 
@@ -90,6 +101,82 @@ class _HomePageState extends State<HomePage> {
     precacheImage(AssetImage('assets/hosan.png'), context);
   }
 
+  Widget assignmentCard(BuildContext context, AsyncSnapshot snapshot,
+      QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data();
+
+    Duration? timeDiff;
+    String? timeDiffStr;
+    if (data['deadline'] != null) {
+      timeDiff =
+          (data['deadline'].toDate() as DateTime).difference(DateTime.now());
+      if (timeDiff.inSeconds <= 0) {
+        final timeDiffNagative =
+            DateTime.now().difference(data['deadline'].toDate() as DateTime);
+        if (timeDiffNagative.inDays > 0)
+          timeDiffStr = '${timeDiffNagative.inDays}일 전 마감됨';
+        else if (timeDiffNagative.inHours > 0)
+          timeDiffStr = '${timeDiffNagative.inHours}시간 전 마감됨';
+        else if (timeDiffNagative.inMinutes > 0)
+          timeDiffStr = '${timeDiffNagative.inMinutes}분 전 마감됨';
+        else
+          timeDiffStr = '${timeDiffNagative.inSeconds}초 전 마감됨';
+      } else {
+        if (timeDiff.inDays > 0)
+          timeDiffStr = '${timeDiff.inDays}일 남음';
+        else if (timeDiff.inHours > 0)
+          timeDiffStr = '${timeDiff.inHours}시간 남음';
+        else if (timeDiff.inMinutes > 0)
+          timeDiffStr = '${timeDiff.inMinutes}분 남음';
+        else
+          timeDiffStr = '${timeDiff.inSeconds}초 남음';
+      }
+    }
+
+    final subjectStr = data['subject'] is DocumentReference
+        ? (snapshot.data[1] as List)
+            .firstWhere((e) => e.id == data['subject'].id)['name']
+        : data['subject'];
+
+    return Card(
+        margin: EdgeInsets.symmetric(vertical: 4),
+        color: Colors.white,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: Text(data['title']),
+              subtitle: RichText(
+                text: TextSpan(
+                    style: TextStyle(color: Colors.grey[600]),
+                    children: [
+                      TextSpan(text: '$subjectStr '),
+                      TextSpan(
+                          text:
+                              '${data['teacher'] != null ? data['teacher'] + ' ' : ''}| '),
+                      TextSpan(
+                          text: data['deadline'] == null
+                              ? '기한 없음'
+                              : '$timeDiffStr',
+                          style:
+                              data['deadline'] != null && timeDiff!.inDays < 0
+                                  ? TextStyle(color: Colors.red)
+                                  : TextStyle())
+                    ]),
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AssignmentPage(assignmentId: doc.id),
+                  ),
+                );
+              },
+            ),
+          ],
+        ));
+  }
+
   @override
   Widget build(BuildContext context) {
     return DoubleBack(
@@ -100,196 +187,156 @@ class _HomePageState extends State<HomePage> {
           centerTitle: true,
         ),
         body: RefreshIndicator(
-          child: SingleChildScrollView(
-            physics:
-                BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-            child: Container(
-              padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-              child: Column(
-                children: <Widget>[
-                  Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('현재 할당된 과제',
-                              style: Theme.of(context).textTheme.headline6),
-                          TextButton(onPressed: () {}, child: Text('더보기')),
-                        ],
-                      ),
-                      SizedBox(height: 5),
-                      FutureBuilder(
-                        future: Future.wait([_assignments, _subjects]),
-                        builder:
-                            (BuildContext context, AsyncSnapshot snapshot) {
-                          if (!snapshot.hasData)
-                            return CircularProgressIndicator();
-                          return Column(
-                            children: (snapshot.data[0] as List)
-                                .where((e) =>
-                                    (e.data()['deadline'].toDate() as DateTime)
-                                        .difference(DateTime.now())
-                                        .inSeconds >
-                                    0)
-                                .map<Widget>((e) {
-                              final data = e.data();
-                              final timeDiff =
-                                  (data['deadline'].toDate() as DateTime)
-                                      .difference(DateTime.now());
-                              String timeDiffStr;
-                              if (timeDiff.inDays > 0)
-                                timeDiffStr = '${timeDiff.inDays}일 남음';
-                              else if (timeDiff.inHours > 0)
-                                timeDiffStr = '${timeDiff.inHours}시간 남음';
-                              else if (timeDiff.inMinutes > 0)
-                                timeDiffStr = '${timeDiff.inMinutes}분 남음';
-                              else
-                                timeDiffStr = '${timeDiff.inSeconds}초 남음';
-
-                              final subjectStr = data['subject']
-                                      is DocumentReference
-                                  ? (snapshot.data[1] as List).firstWhere(
-                                      (e) => e.id == data['subject'].id)['name']
-                                  : data['subject'];
-
-                              return Card(
-                                  margin: EdgeInsets.symmetric(vertical: 4),
-                                  color: Colors.white,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      ListTile(
-                                        title: Text(data['title']),
-                                        subtitle: RichText(
-                                          text: TextSpan(
-                                              style: TextStyle(
-                                                  color: Colors.grey[600]),
-                                              children: [
-                                                TextSpan(
-                                                    text: '$subjectStr '
-                                                        '${data['teacher']} | '),
-                                                TextSpan(
-                                                    text: '$timeDiffStr',
-                                                    style: timeDiff.inDays < 0
-                                                        ? TextStyle(
-                                                            color: Colors.red)
-                                                        : TextStyle())
-                                              ]),
-                                        ),
-                                        onTap: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  AssignmentPage(
-                                                      assignmentId: e.id),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ],
-                                  ));
-                            }).toList(),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                  Divider(),
-                  Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('현재 수행평가',
-                              style: Theme.of(context).textTheme.headline6),
-                          TextButton(onPressed: () {}, child: Text('더보기')),
-                        ],
-                      ),
-                      SizedBox(height: 5),
-                      Card(
-                          margin: EdgeInsets.symmetric(vertical: 4),
-                          color: Colors.white,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              ListTile(
-                                title: Text('이거 완성하기'),
-                                subtitle: Text('ㅁㄴㅇㄹ | 0일 남음'),
-                                onTap: () {},
-                              ),
-                            ],
-                          )),
-                    ],
-                  ),
-                  Divider(),
-                  Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('최근 학급 공지',
-                              style: Theme.of(context).textTheme.headline6),
-                          TextButton(onPressed: () {}, child: Text('더보기')),
-                        ],
-                      ),
-                      SizedBox(height: 5),
-                      Card(
-                          margin: EdgeInsets.symmetric(vertical: 4),
-                          color: Colors.white,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              ListTile(
-                                title: Text('분리수거좀 제대로 해라'),
-                                subtitle: Text('황부연 작성 | 2일 전'),
-                                onTap: () {},
-                              ),
-                            ],
-                          )),
-                      Card(
-                          margin: EdgeInsets.symmetric(vertical: 4),
-                          color: Colors.white,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              ListTile(
-                                title: Text('2학기 시간표'),
-                                subtitle: Text('[담임] 영어 이종국 | 한 달 전'),
-                                onTap: () {},
-                              ),
-                            ],
-                          )),
-                    ],
-                  ),
-                  Divider(),
-                  Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('오늘의 급식',
-                              style: Theme.of(context).textTheme.headline6),
-                          TextButton(onPressed: () {}, child: Text('더보기')),
-                        ],
-                      ),
-                      SizedBox(height: 5),
-                      Card(
-                          margin: EdgeInsets.symmetric(vertical: 4),
-                          color: Colors.white,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              ListTile(
-                                title: Text('2021년 9월 19일'),
-                                subtitle: Text('ㅁㄴㅇㄹ\nㅁㄴㅇㄹ\nㅁㄴㅇㄹ\nㅁㄴㅇㄹ\n'),
-                                onTap: () {},
-                              ),
-                            ],
-                          )),
-                    ],
-                  )
-                ],
+          child: Container(
+            height: double.infinity,
+            child: SingleChildScrollView(
+              physics:
+              BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+              child: Container(
+                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                child: Column(
+                  children: <Widget>[
+                    Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('현재 할당된 과제',
+                                style: Theme.of(context).textTheme.headline6),
+                            TextButton(
+                              child: Text('더보기'),
+                              onPressed: () {
+                                Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => AssignmentsPage()));
+                              },
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 5),
+                        FutureBuilder(
+                          future: Future.wait([_assignments, _subjects]),
+                          builder:
+                              (BuildContext context, AsyncSnapshot snapshot) {
+                            if (!snapshot.hasData)
+                              return CircularProgressIndicator();
+                            return Column(
+                              children: (snapshot.data[0] as List)
+                                  .where((e) => e.data()['deadline'] == null
+                                  ? true
+                                  : (e.data()['deadline'].toDate()
+                              as DateTime)
+                                  .difference(DateTime.now())
+                                  .inSeconds >
+                                  0)
+                                  .map<Widget>((e) {
+                                return assignmentCard(context, snapshot, e);
+                              }).toList(),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    Divider(),
+                    Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('현재 수행평가',
+                                style: Theme.of(context).textTheme.headline6),
+                            TextButton(
+                              child: Text('더보기'),
+                              onPressed: () {},
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 5),
+                        Card(
+                            margin: EdgeInsets.symmetric(vertical: 4),
+                            color: Colors.white,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ListTile(
+                                  title: Text('이거 완성하기'),
+                                  subtitle: Text('ㅁㄴㅇㄹ | 0일 남음'),
+                                  onTap: () {},
+                                ),
+                              ],
+                            )),
+                      ],
+                    ),
+                    Divider(),
+                    Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('최근 학급 공지',
+                                style: Theme.of(context).textTheme.headline6),
+                            TextButton(onPressed: () {}, child: Text('더보기')),
+                          ],
+                        ),
+                        SizedBox(height: 5),
+                        Card(
+                            margin: EdgeInsets.symmetric(vertical: 4),
+                            color: Colors.white,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ListTile(
+                                  title: Text('분리수거좀 제대로 해라'),
+                                  subtitle: Text('황부연 작성 | 2일 전'),
+                                  onTap: () {},
+                                ),
+                              ],
+                            )),
+                        Card(
+                            margin: EdgeInsets.symmetric(vertical: 4),
+                            color: Colors.white,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ListTile(
+                                  title: Text('2학기 시간표'),
+                                  subtitle: Text('[담임] 영어 이종국 | 한 달 전'),
+                                  onTap: () {},
+                                ),
+                              ],
+                            )),
+                      ],
+                    ),
+                    Divider(),
+                    Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('오늘의 급식',
+                                style: Theme.of(context).textTheme.headline6),
+                            TextButton(onPressed: () {}, child: Text('더보기')),
+                          ],
+                        ),
+                        SizedBox(height: 5),
+                        Card(
+                            margin: EdgeInsets.symmetric(vertical: 4),
+                            color: Colors.white,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ListTile(
+                                  title: Text('2021년 9월 19일'),
+                                  subtitle: Text('ㅁㄴㅇㄹ\nㅁㄴㅇㄹ\nㅁㄴㅇㄹ\nㅁㄴㅇㄹ\n'),
+                                  onTap: () {},
+                                ),
+                              ],
+                            )),
+                      ],
+                    )
+                  ],
+                ),
               ),
             ),
           ),

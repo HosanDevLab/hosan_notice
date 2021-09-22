@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hosan_notice/main.dart';
-import 'package:hosan_notice/register.dart';
+import 'package:hosan_notice/pages/register.dart';
 
 class LoginPage extends StatefulWidget {
   @override

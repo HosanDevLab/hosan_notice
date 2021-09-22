@@ -71,17 +71,33 @@ class _AssignmentPageState extends State<AssignmentPage> {
 
           final data = snapshot.data[0].data();
 
-          final timeDiff = (data['deadline'].toDate() as DateTime)
-              .difference(DateTime.now());
-          String timeDiffStr;
-          if (timeDiff.inDays > 0)
-            timeDiffStr = '${timeDiff.inDays}일 남음';
-          else if (timeDiff.inHours > 0)
-            timeDiffStr = '${timeDiff.inHours}시간 남음';
-          else if (timeDiff.inMinutes > 0)
-            timeDiffStr = '${timeDiff.inMinutes}분 남음';
-          else
-            timeDiffStr = '${timeDiff.inSeconds}초 남음';
+          Duration? timeDiff;
+          String? timeDiffStr;
+          if (data['deadline'] != null) {
+            timeDiff = (data['deadline'].toDate() as DateTime)
+                .difference(DateTime.now());
+            if (timeDiff.inSeconds <= 0) {
+              final timeDiffNagative = DateTime.now()
+                  .difference(data['deadline'].toDate() as DateTime);
+              if (timeDiffNagative.inDays > 0)
+                timeDiffStr = '${timeDiffNagative.inDays}일 전 마감됨';
+              else if (timeDiffNagative.inHours > 0)
+                timeDiffStr = '${timeDiffNagative.inHours}시간 전 마감됨';
+              else if (timeDiffNagative.inMinutes > 0)
+                timeDiffStr = '${timeDiffNagative.inMinutes}분 전 마감됨';
+              else
+                timeDiffStr = '${timeDiffNagative.inSeconds}초 전 마감됨';
+            } else {
+              if (timeDiff.inDays > 0)
+                timeDiffStr = '${timeDiff.inDays}일 남음';
+              else if (timeDiff.inHours > 0)
+                timeDiffStr = '${timeDiff.inHours}시간 남음';
+              else if (timeDiff.inMinutes > 0)
+                timeDiffStr = '${timeDiff.inMinutes}분 남음';
+              else
+                timeDiffStr = '${timeDiff.inSeconds}초 남음';
+            }
+          }
 
           return Scaffold(
               appBar: AppBar(
@@ -90,7 +106,9 @@ class _AssignmentPageState extends State<AssignmentPage> {
                   children: [
                     Text(data['title']),
                     Text(
-                        '기한: ${data['deadline'].toDate().toLocal().toString().split('.')[0]} 까지',
+                        data['deadline'] != null
+                            ? '기한: ${data['deadline'].toDate().toLocal().toString().split('.')[0]} 까지'
+                            : '기한 없음',
                         style: Theme.of(context)
                             .textTheme
                             .subtitle2!
@@ -98,6 +116,10 @@ class _AssignmentPageState extends State<AssignmentPage> {
                   ],
                 ),
                 toolbarHeight: 70,
+                backgroundColor:
+                    (data['deadline'] == null || timeDiff!.inSeconds >= 0)
+                        ? Colors.deepPurple
+                        : Colors.pink,
               ),
               body: RefreshIndicator(
                   child: Container(
@@ -116,43 +138,52 @@ class _AssignmentPageState extends State<AssignmentPage> {
                                     horizontalTitleGap: 2,
                                     leading: Icon(Icons.subject, size: 28),
                                     title: Text(
-                                        data['subject'] is DocumentReference
-                                            ? (snapshot.data[1] as List)
-                                                .firstWhere((e) =>
-                                                    e.id ==
-                                                    data['subject'].id)['name']
-                                            : data['subject'],
-                                        overflow: TextOverflow.ellipsis,
+                                      data['subject'] is DocumentReference
+                                          ? (snapshot.data[1] as List)
+                                              .firstWhere((e) =>
+                                                  e.id ==
+                                                  data['subject'].id)['name']
+                                          : data['subject'],
+                                      overflow: TextOverflow.ellipsis,
                                       style: TextStyle(fontSize: 16),
                                     ),
                                     onTap: () {},
                                   )),
                             ),
-                            Expanded(
-                              flex: 3,
-                              child: Card(
-                                  margin: EdgeInsets.fromLTRB(6, 20, 20, 0),
-                                  child: ListTile(
-                                    horizontalTitleGap: 2,
-                                    leading: Icon(Icons.person, size: 28),
-                                    title: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(data['teacher'],
-                                            overflow: TextOverflow.ellipsis),
-                                        Text('선생님', style: TextStyle(fontSize: 12)),
-                                      ],
-                                    ),
-                                    onTap: () {},
-                                  )),
-                            )
+                            (data['teacher'] != null
+                                ? Expanded(
+                                    flex: 3,
+                                    child: Card(
+                                        margin:
+                                            EdgeInsets.fromLTRB(6, 20, 20, 0),
+                                        child: ListTile(
+                                          horizontalTitleGap: 2,
+                                          leading: Icon(Icons.person, size: 28),
+                                          title: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(data['teacher'],
+                                                  overflow:
+                                                      TextOverflow.ellipsis),
+                                              Text('선생님',
+                                                  style:
+                                                      TextStyle(fontSize: 12)),
+                                            ],
+                                          ),
+                                          onTap: () {},
+                                        )),
+                                  )
+                                : SizedBox(width: 14))
                           ],
                         ),
                         Card(
                             margin: EdgeInsets.fromLTRB(20, 12, 20, 0),
                             child: ListTile(
                               leading: Icon(Icons.timer, size: 28),
-                              title: Text(timeDiffStr),
+                              title: Text(data['deadline'] == null
+                                  ? '기한 없음'
+                                  : timeDiffStr!),
                               onTap: () {},
                             )),
                         SizedBox(
@@ -163,7 +194,10 @@ class _AssignmentPageState extends State<AssignmentPage> {
                                 padding: EdgeInsets.symmetric(
                                     vertical: 16, horizontal: 20),
                                 child: SelectableText(
-                                    data['description'].replaceAll(r'\n', '\n'),
+                                    (data['description'] as String).isNotEmpty
+                                        ? data['description']
+                                            .replaceAll(r'\n', '\n')
+                                        : '(내용 없음)',
                                     style: TextStyle(fontSize: 16)),
                               )),
                         ),

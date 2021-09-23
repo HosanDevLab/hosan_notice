@@ -25,6 +25,7 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
   bool isBeingAdded = false;
   late String title;
   late String description;
+  String type = 'assignment';
 
   late Future<DocumentSnapshot<Map<String, dynamic>>> _subjects;
 
@@ -88,68 +89,81 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
                         child: Form(
                           key: _formKey,
                           child: Column(children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  flex: 6,
-                                  child: Card(
-                                      margin: EdgeInsets.fromLTRB(20, 20, 6, 0),
-                                      child: ListTile(
-                                        horizontalTitleGap: 2,
-                                        leading: Icon(Icons.subject, size: 28),
-                                        title: Text(data['name'],
-                                            overflow: TextOverflow.ellipsis),
-                                        onTap: () {},
-                                      )),
-                                ),
-                                Expanded(
-                                  flex: 5,
-                                  child: Card(
-                                      margin: EdgeInsets.fromLTRB(6, 20, 20, 0),
-                                      child: ListTile(
-                                        horizontalTitleGap: 2,
-                                        leading: Icon(Icons.person, size: 28),
-                                        title: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            DropdownButton(
-                                              value: teacher,
-                                              isExpanded: true,
-                                              hint: Text('선생님',
-                                                  overflow:
-                                                      TextOverflow.ellipsis),
-                                              items: [
-                                                DropdownMenuItem(
-                                                    child: Text('선택 안 함',
-                                                        overflow: TextOverflow
-                                                            .ellipsis),
-                                                    value: 0),
-                                                ...(data['teachers'] as List)
-                                                    .map((e) => DropdownMenuItem(
-                                                        child: Text(e,
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis),
-                                                        value: e))
-                                              ],
-                                              onChanged: (value) {
-                                                setState(() {
-                                                  teacher = value is String
-                                                      ? value
-                                                      : null;
-                                                });
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                        onTap: () {},
-                                      )),
-                                )
-                              ],
-                            ),
                             Card(
                                 margin: EdgeInsets.fromLTRB(20, 12, 20, 0),
+                                child: ListTile(
+                                  horizontalTitleGap: 2,
+                                  leading: Icon(Icons.subject, size: 28),
+                                  title: Text(data['name'],
+                                      overflow: TextOverflow.ellipsis),
+                                  onTap: () {},
+                                )),
+                            Card(
+                                margin: EdgeInsets.fromLTRB(20, 10, 20, 0),
+                                child: ListTile(
+                                  horizontalTitleGap: 2,
+                                  leading: Icon(Icons.person, size: 28),
+                                  title: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      DropdownButton(
+                                        value: teacher,
+                                        isExpanded: true,
+                                        hint: Text('선생님',
+                                            overflow: TextOverflow.ellipsis),
+                                        items: [
+                                          DropdownMenuItem(
+                                              child: Text('선택 안 함',
+                                                  overflow:
+                                                      TextOverflow.ellipsis),
+                                              value: 0),
+                                          ...(data['teachers'] as List).map(
+                                              (e) => DropdownMenuItem(
+                                                  child: Text(e,
+                                                      overflow: TextOverflow
+                                                          .ellipsis),
+                                                  value: e))
+                                        ],
+                                        onChanged: (value) {
+                                          setState(() {
+                                            teacher =
+                                                value is String ? value : null;
+                                          });
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                  onTap: () {},
+                                )),
+                            Card(
+                                margin: EdgeInsets.fromLTRB(20, 12, 20, 0),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                        child: RadioListTile(
+                                            title: Text('과제'),
+                                            value: 'assignment',
+                                            groupValue: type,
+                                            onChanged: (value) {
+                                              setState(() {
+                                                type = value as String;
+                                              });
+                                            })),
+                                    Expanded(
+                                        child: RadioListTile(
+                                            title: Text('수행평가'),
+                                            value: 'assessment',
+                                            groupValue: type,
+                                            onChanged: (value) {
+                                              setState(() {
+                                                type = value as String;
+                                              });
+                                            })),
+                                  ],
+                                )),
+                            Card(
+                                margin: EdgeInsets.fromLTRB(20, 10, 20, 0),
                                 child: ListTile(
                                   leading: Icon(Icons.timer, size: 28),
                                   title: Column(

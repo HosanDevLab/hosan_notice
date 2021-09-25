@@ -51,6 +51,14 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
             e.data()['subject'] ==
             firestore.collection('subjects').doc(subjectId));
 
+    final filteredSubjectAssignments = subjectAssignments
+        .where((e) => e.data()['deadline'] == null
+        ? true
+        : (e.data()['deadline'].toDate() as DateTime)
+        .difference(DateTime.now())
+        .inSeconds >
+        0);
+
     return Card(
         color: Colors.white,
         elevation: 4,
@@ -67,17 +75,11 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
                 ),
               ),
               SizedBox(height: 16),
-              (subjectAssignments.isNotEmpty
+              (filteredSubjectAssignments.isNotEmpty
                   ? Expanded(
                       child: ListView(
                           shrinkWrap: true,
-                          children: subjectAssignments
-                              .where((e) => e.data()['deadline'] == null
-                                  ? true
-                                  : (e.data()['deadline'].toDate() as DateTime)
-                                          .difference(DateTime.now())
-                                          .inSeconds >
-                                      0)
+                          children: filteredSubjectAssignments
                               .map<Widget>(
                             (e) {
                               final data = e.data();

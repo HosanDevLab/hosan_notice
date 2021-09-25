@@ -3,6 +3,7 @@ import 'package:double_back_to_close/double_back_to_close.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hosan_notice/pages/assignment.dart';
 import 'package:hosan_notice/pages/assignments.dart';
@@ -10,6 +11,7 @@ import 'package:hosan_notice/widgets/drawer.dart';
 import 'package:hosan_notice/pages/login.dart';
 
 void main() async {
+  await dotenv.load(fileName: ".env");
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   runApp(App());

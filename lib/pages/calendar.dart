@@ -136,7 +136,7 @@ class _CalendarPageState extends State<CalendarPage> {
                               subtitle: Text((snapshot.data[1] as List)
                                       .firstWhere((e) =>
                                           data['subject'].id == e.id)['name'] +
-                                  ' ${data['teacher']} | ' +
+                                  ' ${data['teacher'] ?? ''} | ' +
                                   deadlineStr),
                               onTap: () {
                                 Navigator.push(

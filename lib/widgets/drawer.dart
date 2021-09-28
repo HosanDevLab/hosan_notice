@@ -147,8 +147,8 @@ class _MainDrawerState extends State<MainDrawer> {
                       context: context,
                       builder: (BuildContext context) {
                         return AlertDialog(
-                          title: Text('로그아웃할까요?'),
-                          content: Text('나 보기가 역겨워 가실 때에는 말없이 고이 보내 드리우리다.'),
+                          title: Text('로그아웃'),
+                          content: Text('로그아웃할까요?'),
                           actions: <Widget>[
                             TextButton(
                               child: Text('계속하기'),

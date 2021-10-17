@@ -7,6 +7,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hosan_notice/pages/assignments.dart';
 import 'package:hosan_notice/main.dart';
 import 'package:hosan_notice/pages/calendar.dart';
+import 'package:hosan_notice/pages/meal_info.dart';
 import 'package:hosan_notice/pages/toilet_paper_status.dart';
 import 'package:package_info/package_info.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -108,11 +109,28 @@ class _MainDrawerState extends State<MainDrawer> {
               ),
               Divider(height: 0),
               ListTile(
+                title: Text('교내 네비게이션'),
+                dense: true,
+                leading: Icon(Icons.room),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushReplacement(
+                      widget.parentContext,
+                      MaterialPageRoute(
+                          builder: (context) => ToiletPaperStatusPage()));
+                },
+              ),
+              Divider(height: 0),
+              ListTile(
                 title: Text('급식 메뉴'),
                 dense: true,
                 leading: Icon(Icons.dining),
                 onTap: () {
                   Navigator.pop(context);
+                  Navigator.pushReplacement(
+                      widget.parentContext,
+                      MaterialPageRoute(
+                          builder: (context) => MealInfoPage()));
                 },
               ),
               Divider(height: 0),

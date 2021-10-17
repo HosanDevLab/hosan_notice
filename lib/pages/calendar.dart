@@ -65,7 +65,18 @@ class _CalendarPageState extends State<CalendarPage> {
             child: FutureBuilder(
               future: Future.wait([_assignments, _subjects]),
               builder: (BuildContext context, AsyncSnapshot snapshot) {
-                if (!snapshot.hasData) return CircularProgressIndicator();
+                if (!snapshot.hasData) {
+                  return Center(
+                      child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                        CircularProgressIndicator(color: Colors.deepPurple),
+                        Padding(
+                          padding: EdgeInsets.only(top: 10),
+                          child: Text('불러오는 중', textAlign: TextAlign.center),
+                        )
+                      ]));
+                }
 
                 Iterable<QueryDocumentSnapshot<Map<String, dynamic>>>
                     _getEventsDay(DateTime day) {
@@ -79,6 +90,8 @@ class _CalendarPageState extends State<CalendarPage> {
                         deadline.day == day.day;
                   });
                 }
+
+                final eventsDay = _getEventsDay(_selectedDay);
 
                 return Column(
                   children: <Widget>[
@@ -113,44 +126,55 @@ class _CalendarPageState extends State<CalendarPage> {
                     ),
                     Divider(),
                     Expanded(
-                      child: ListView(
-                        shrinkWrap: true,
-                        physics: BouncingScrollPhysics(
-                            parent: AlwaysScrollableScrollPhysics()),
-                        children: _getEventsDay(_selectedDay).map((e) {
-                          final data = e.data();
-                          final DateTime? deadline = data['deadline'] == null
-                              ? null
-                              : data['deadline'].toDate();
+                      child: eventsDay.length > 0
+                          ? ListView(
+                              shrinkWrap: true,
+                              physics: BouncingScrollPhysics(
+                                  parent: AlwaysScrollableScrollPhysics()),
+                              children: eventsDay.map((e) {
+                                final data = e.data();
+                                final DateTime? deadline =
+                                    data['deadline'] == null
+                                        ? null
+                                        : data['deadline'].toDate();
 
-                          final deadlineStr = deadline == null
-                              ? '기한 없음'
-                              : DateFormat('a hh:mm 까지')
-                                  .format(deadline)
-                                  .replaceAll('AM', '오전')
-                                  .replaceAll('PM', '오후');
+                                final deadlineStr = deadline == null
+                                    ? '기한 없음'
+                                    : DateFormat('a hh:mm 까지')
+                                        .format(deadline)
+                                        .replaceAll('AM', '오전')
+                                        .replaceAll('PM', '오후');
 
-                          return Card(
-                            child: ListTile(
-                              title: Text(data['title']),
-                              subtitle: Text((snapshot.data[1] as List)
-                                      .firstWhere((e) =>
-                                          data['subject'].id == e.id)['name'] +
-                                  ' ${data['teacher'] ?? ''} | ' +
-                                  deadlineStr),
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        AssignmentPage(assignmentId: e.id),
+                                return Card(
+                                  child: ListTile(
+                                    title: Text(data['title']),
+                                    subtitle: Text((snapshot.data[1] as List)
+                                            .firstWhere((e) =>
+                                                data['subject'].id ==
+                                                e.id)['name'] +
+                                        ' ${data['teacher'] ?? ''} | ' +
+                                        deadlineStr),
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => AssignmentPage(
+                                              assignmentId: e.id),
+                                        ),
+                                      );
+                                    },
                                   ),
                                 );
-                              },
+                              }).toList(),
+                            )
+                          : Align(
+                              alignment: Alignment.center,
+                              child: Container(
+                                  padding: EdgeInsets.only(bottom: 20),
+                                  child: Text('이날 마감되는 과제가 없습니다!',
+                                      style:
+                                          TextStyle(color: Colors.grey[700]))),
                             ),
-                          );
-                        }).toList(),
-                      ),
                     )
                   ],
                 );

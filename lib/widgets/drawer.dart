@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hosan_notice/pages/assignments.dart';
 import 'package:hosan_notice/main.dart';
@@ -26,6 +27,7 @@ class _MainDrawerState extends State<MainDrawer> {
   final user = FirebaseAuth.instance.currentUser!;
   final firestore = FirebaseFirestore.instance;
   final refreshKey = GlobalKey<RefreshIndicatorState>();
+  final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
   @override
   void didChangeDependencies() {
@@ -101,10 +103,8 @@ class _MainDrawerState extends State<MainDrawer> {
                 leading: Icon(Icons.event_note),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.pushReplacement(
-                      widget.parentContext,
-                      MaterialPageRoute(
-                          builder: (context) => CalendarPage()));
+                  Navigator.pushReplacement(widget.parentContext,
+                      MaterialPageRoute(builder: (context) => CalendarPage()));
                 },
               ),
               Divider(height: 0),
@@ -112,12 +112,27 @@ class _MainDrawerState extends State<MainDrawer> {
                 title: Text('교내 네비게이션'),
                 dense: true,
                 leading: Icon(Icons.room),
-                onTap: () {
+                onTap: () async {
                   Navigator.pop(context);
-                  Navigator.pushReplacement(
-                      widget.parentContext,
-                      MaterialPageRoute(
-                          builder: (context) => ToiletPaperStatusPage()));
+                  var androidPlatformChannelSpecifics =
+                      AndroidNotificationDetails('your channel id',
+                          'your channel name', channelDescription: 'your channel description',
+                          importance: Importance.max,
+                          priority: Priority.high);
+
+                  var iosPlatformChannelSpecifics =
+                      IOSNotificationDetails(sound: 'slow_spring.board.aiff');
+                  var platformChannelSpecifics = NotificationDetails(
+                      android: androidPlatformChannelSpecifics,
+                      iOS: iosPlatformChannelSpecifics);
+
+                  await flutterLocalNotificationsPlugin.show(
+                    0,
+                    '심플 Notification',
+                    '이것은 Flutter 노티피케이션!',
+                    platformChannelSpecifics,
+                    payload: 'Hello Flutter',
+                  );
                 },
               ),
               Divider(height: 0),
@@ -127,10 +142,8 @@ class _MainDrawerState extends State<MainDrawer> {
                 leading: Icon(Icons.dining),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.pushReplacement(
-                      widget.parentContext,
-                      MaterialPageRoute(
-                          builder: (context) => MealInfoPage()));
+                  Navigator.pushReplacement(widget.parentContext,
+                      MaterialPageRoute(builder: (context) => MealInfoPage()));
                 },
               ),
               Divider(height: 0),

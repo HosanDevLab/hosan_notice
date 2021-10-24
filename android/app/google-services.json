@@ -14,10 +14,79 @@
       },
       "oauth_client": [
         {
+          "client_id": "661237482006-eeb7bbeqqjib2n4fr2qvubgv9n9mi9eb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.arpaap.hosan_notice",
+            "certificate_hash": "4962e660e31be152c33ac71c891e2412ebf488fc"
+          }
+        },
+        {
           "client_id": "661237482006-fksl6lndtb32nthl0gmr8duj5cittbnc.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.arpaap.hosan_notice",
+            "certificate_hash": "c4730a17d4072b9ccaf451a851893ff0f40131eb"
+          }
+        },
+        {
+          "client_id": "661237482006-hl1hbuc8d2foa2838qn6esp5ffqpg5i1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.arpaap.hosan_notice",
+            "certificate_hash": "8b023e0b5c18a8b889b69deeb068118ca56e79ec"
+          }
+        },
+        {
+          "client_id": "661237482006-50huuvkhnsb646bo61cg3n8f4qn8hnoo.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBapUU4VVQmJbnDGhJXKl7GhBlFdrMCje8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "661237482006-50huuvkhnsb646bo61cg3n8f4qn8hnoo.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:661237482006:android:e64d5bf3b73afa346fab37",
+        "android_client_info": {
+          "package_name": "com.hosandevlab.hosan_notice"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "661237482006-0rjbp56r74n9l7nb8h8gqdvejrl3t30l.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hosandevlab.hosan_notice",
+            "certificate_hash": "8b023e0b5c18a8b889b69deeb068118ca56e79ec"
+          }
+        },
+        {
+          "client_id": "661237482006-4no15vftfksi7pl47h83087985tcejn2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hosandevlab.hosan_notice",
+            "certificate_hash": "4962e660e31be152c33ac71c891e2412ebf488fc"
+          }
+        },
+        {
+          "client_id": "661237482006-l5sd7q8o04aidnor3ck5bi5lv5k64ke3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hosandevlab.hosan_notice",
             "certificate_hash": "c4730a17d4072b9ccaf451a851893ff0f40131eb"
           }
         },

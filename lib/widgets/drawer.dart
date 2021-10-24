@@ -7,6 +7,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hosan_notice/pages/assignments.dart';
 import 'package:hosan_notice/main.dart';
+import 'package:hosan_notice/pages/beacon.dart';
 import 'package:hosan_notice/pages/calendar.dart';
 import 'package:hosan_notice/pages/meal_info.dart';
 import 'package:hosan_notice/pages/toilet_paper_status.dart';
@@ -109,14 +110,26 @@ class _MainDrawerState extends State<MainDrawer> {
               ),
               Divider(height: 0),
               ListTile(
-                title: Text('교내 네비게이션'),
+                title: Text('비콘'),
                 dense: true,
-                leading: Icon(Icons.room),
+                leading: Icon(Icons.bluetooth_connected),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushReplacement(widget.parentContext,
+                      MaterialPageRoute(builder: (context) => BeaconScanPage()));
+                },
+              ),
+              Divider(height: 0),
+              ListTile(
+                title: Text('알림 테스트'),
+                dense: true,
+                leading: Icon(Icons.notifications),
                 onTap: () async {
                   Navigator.pop(context);
                   var androidPlatformChannelSpecifics =
-                      AndroidNotificationDetails('your channel id',
-                          'your channel name', channelDescription: 'your channel description',
+                      AndroidNotificationDetails(
+                          'your channel id', 'your channel name',
+                          channelDescription: 'your channel description',
                           importance: Importance.max,
                           priority: Priority.high);
 
@@ -128,11 +141,20 @@ class _MainDrawerState extends State<MainDrawer> {
 
                   await flutterLocalNotificationsPlugin.show(
                     0,
-                    '심플 Notification',
+                    '테스트 알림',
                     '이것은 Flutter 노티피케이션!',
                     platformChannelSpecifics,
                     payload: 'Hello Flutter',
                   );
+                },
+              ),
+              Divider(height: 0),
+              ListTile(
+                title: Text('교내 네비게이션'),
+                dense: true,
+                leading: Icon(Icons.room),
+                onTap: () {
+                  Navigator.pop(context);
                 },
               ),
               Divider(height: 0),

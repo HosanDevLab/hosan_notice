@@ -24,14 +24,14 @@ void main() async {
   remoteConfig.fetchAndActivate();
 
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-  FlutterLocalNotificationsPlugin();
+      FlutterLocalNotificationsPlugin();
 
   const AndroidInitializationSettings initializationSettingsAndroid =
-  AndroidInitializationSettings('ic_stat_app_icon');
+      AndroidInitializationSettings('ic_stat_app_icon');
   final IOSInitializationSettings initializationSettingsIOS =
-  IOSInitializationSettings();
+      IOSInitializationSettings();
   final MacOSInitializationSettings initializationSettingsMacOS =
-  MacOSInitializationSettings();
+      MacOSInitializationSettings();
   final InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
       iOS: initializationSettingsIOS,
@@ -39,7 +39,7 @@ void main() async {
   await flutterLocalNotificationsPlugin.initialize(initializationSettings,
       onSelectNotification: (payload) {
     print('noti payload $payload');
-      });
+  });
 
   runApp(App());
 }
@@ -219,8 +219,8 @@ class _HomePageState extends State<HomePage> {
           child: Container(
             height: double.infinity,
             child: SingleChildScrollView(
-              physics:
-              BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+              physics: BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics()),
               child: Container(
                 padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                 child: Column(
@@ -238,7 +238,8 @@ class _HomePageState extends State<HomePage> {
                                 Navigator.pushReplacement(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) => AssignmentsPage()));
+                                        builder: (context) =>
+                                            AssignmentsPage()));
                               },
                             ),
                           ],
@@ -253,12 +254,12 @@ class _HomePageState extends State<HomePage> {
                             return Column(
                               children: (snapshot.data[0] as List)
                                   .where((e) => e.data()['deadline'] == null
-                                  ? true
-                                  : (e.data()['deadline'].toDate()
-                              as DateTime)
-                                  .difference(DateTime.now())
-                                  .inSeconds >
-                                  0)
+                                      ? true
+                                      : (e.data()['deadline'].toDate()
+                                                  as DateTime)
+                                              .difference(DateTime.now())
+                                              .inSeconds >
+                                          0)
                                   .map<Widget>((e) {
                                 return assignmentCard(context, snapshot, e);
                               }).toList(),

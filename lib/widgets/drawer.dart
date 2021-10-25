@@ -10,6 +10,7 @@ import 'package:hosan_notice/main.dart';
 import 'package:hosan_notice/pages/beacon.dart';
 import 'package:hosan_notice/pages/calendar.dart';
 import 'package:hosan_notice/pages/meal_info.dart';
+import 'package:hosan_notice/pages/navigation.dart';
 import 'package:hosan_notice/pages/toilet_paper_status.dart';
 import 'package:package_info/package_info.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -110,13 +111,28 @@ class _MainDrawerState extends State<MainDrawer> {
               ),
               Divider(height: 0),
               ListTile(
+                title: Text('교내 네비게이션'),
+                dense: true,
+                leading: Icon(Icons.room),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushReplacement(
+                      widget.parentContext,
+                      MaterialPageRoute(
+                          builder: (context) => NavigationPage()));
+                },
+              ),
+              Divider(height: 0),
+              ListTile(
                 title: Text('비콘'),
                 dense: true,
                 leading: Icon(Icons.bluetooth_connected),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.pushReplacement(widget.parentContext,
-                      MaterialPageRoute(builder: (context) => BeaconScanPage()));
+                  Navigator.pushReplacement(
+                      widget.parentContext,
+                      MaterialPageRoute(
+                          builder: (context) => BeaconScanPage()));
                 },
               ),
               Divider(height: 0),
@@ -146,15 +162,6 @@ class _MainDrawerState extends State<MainDrawer> {
                     platformChannelSpecifics,
                     payload: 'Hello Flutter',
                   );
-                },
-              ),
-              Divider(height: 0),
-              ListTile(
-                title: Text('교내 네비게이션'),
-                dense: true,
-                leading: Icon(Icons.room),
-                onTap: () {
-                  Navigator.pop(context);
                 },
               ),
               Divider(height: 0),

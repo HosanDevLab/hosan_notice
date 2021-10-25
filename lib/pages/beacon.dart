@@ -3,7 +3,6 @@ import 'package:android_intent_plus/android_intent.dart';
 import 'package:double_back_to_close/double_back_to_close.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_blue/flutter_blue.dart';
 import 'package:hosan_notice/widgets/drawer.dart';
 
 import '../messages.dart';
@@ -13,7 +12,6 @@ class BeaconScanPage extends StatefulWidget {
 }
 
 class _BeaconScanPageState extends State<BeaconScanPage> {
-  final flutterBlue = FlutterBlue.instance;
   final api = Api();
   late Future<List<MinewBeaconData?>> _scannedBeacons;
   late Timer _timer;

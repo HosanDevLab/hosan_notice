@@ -1,5 +1,6 @@
 package com.hosandevlab.hosan_notice
 
+import android.bluetooth.BluetoothAdapter
 import android.util.Log
 import com.hosandevlab.hosan_notice.pigeon.Pigeon.*
 import com.hosandevlab.hosan_notice.pigeon.Pigeon.Api
@@ -28,11 +29,9 @@ class MainActivity : FlutterActivity(), Api {
                 rangeBeacons = minewBeacons
             }
 
-            override fun onUpdateState(p0: BluetoothState?) {
-            }
+            override fun onUpdateState(p0: BluetoothState?) {}
 
         })
-        Log.d("start", "start")
     }
 
     override fun startScan() {
@@ -49,9 +48,9 @@ class MainActivity : FlutterActivity(), Api {
             data.uuid = it.getBeaconValue(BeaconValueIndex.MinewBeaconValueIndex_UUID).stringValue
             data.name = it.getBeaconValue(BeaconValueIndex.MinewBeaconValueIndex_Name).stringValue
             data.major =
-                it.getBeaconValue(BeaconValueIndex.MinewBeaconValueIndex_Major).intValue.toLong()
+                it.getBeaconValue(BeaconValueIndex.MinewBeaconValueIndex_Major).stringValue
             data.minor =
-                it.getBeaconValue(BeaconValueIndex.MinewBeaconValueIndex_Minor).intValue.toLong()
+                it.getBeaconValue(BeaconValueIndex.MinewBeaconValueIndex_Minor).stringValue
             data.mac = it.getBeaconValue(BeaconValueIndex.MinewBeaconValueIndex_MAC).stringValue
             data.rssi =
                 it.getBeaconValue(BeaconValueIndex.MinewBeaconValueIndex_RSSI).intValue.toLong()
@@ -68,5 +67,13 @@ class MainActivity : FlutterActivity(), Api {
         }.toMutableList()
 
         return beaconData
+    }
+
+    override fun enableBluetooth() {
+        val bluetoothAdapter: BluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+        val isEnabled: Boolean = bluetoothAdapter.isEnabled
+        if (!isEnabled) {
+            bluetoothAdapter.enable()
+        }
     }
 }

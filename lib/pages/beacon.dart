@@ -1,8 +1,9 @@
 import 'dart:async';
-
+import 'package:android_intent_plus/android_intent.dart';
 import 'package:double_back_to_close/double_back_to_close.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_blue/flutter_blue.dart';
 import 'package:hosan_notice/widgets/drawer.dart';
 
 import '../messages.dart';
@@ -12,21 +13,26 @@ class BeaconScanPage extends StatefulWidget {
 }
 
 class _BeaconScanPageState extends State<BeaconScanPage> {
+  final flutterBlue = FlutterBlue.instance;
   final api = Api();
-
   late Future<List<MinewBeaconData?>> _scannedBeacons;
   late Timer _timer;
 
   @override
   void initState() {
-    api.startScan();
+    super.initState();
     _scannedBeacons = api.getScannedBeacons();
-    Timer.periodic(Duration(seconds: 1), (timer) {
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       setState(() {
         _scannedBeacons = api.getScannedBeacons();
       });
     });
-    super.initState();
+    () async {
+      final intent = AndroidIntent(
+          action: "android.bluetooth.adapter.action.REQUEST_ENABLE");
+      await intent.launch();
+      await api.startScan();
+    }();
   }
 
   @override
@@ -70,7 +76,8 @@ class _BeaconScanPageState extends State<BeaconScanPage> {
                       children: snapshot.data!.map<Widget>((e) {
                         return Card(
                           child: ListTile(
-                            contentPadding: EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                            contentPadding: EdgeInsets.symmetric(
+                                vertical: 6, horizontal: 8),
                             onTap: () {},
                             title: Text(e!.name!),
                             subtitle: Column(

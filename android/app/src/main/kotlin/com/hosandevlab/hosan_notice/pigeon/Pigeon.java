@@ -29,13 +29,13 @@ public class Pigeon {
     public String getName() { return name; }
     public void setName(String setterArg) { this.name = setterArg; }
 
-    private Long major;
-    public Long getMajor() { return major; }
-    public void setMajor(Long setterArg) { this.major = setterArg; }
+    private String major;
+    public String getMajor() { return major; }
+    public void setMajor(String setterArg) { this.major = setterArg; }
 
-    private Long minor;
-    public Long getMinor() { return minor; }
-    public void setMinor(Long setterArg) { this.minor = setterArg; }
+    private String minor;
+    public String getMinor() { return minor; }
+    public void setMinor(String setterArg) { this.minor = setterArg; }
 
     private String mac;
     public String getMac() { return mac; }
@@ -87,9 +87,9 @@ public class Pigeon {
       Object name = map.get("name");
       fromMapResult.name = (String)name;
       Object major = map.get("major");
-      fromMapResult.major = (major == null) ? null : ((major instanceof Integer) ? (Integer)major : (Long)major);
+      fromMapResult.major = (String)major;
       Object minor = map.get("minor");
-      fromMapResult.minor = (minor == null) ? null : ((minor instanceof Integer) ? (Integer)minor : (Long)minor);
+      fromMapResult.minor = (String)minor;
       Object mac = map.get("mac");
       fromMapResult.mac = (String)mac;
       Object rssi = map.get("rssi");
@@ -138,6 +138,7 @@ public class Pigeon {
     List<MinewBeaconData> getScannedBeacons();
     void startScan();
     void stopScan();
+    void enableBluetooth();
 
     /** The codec used by Api. */
     static MessageCodec<Object> getCodec() {
@@ -192,6 +193,25 @@ public class Pigeon {
             Map<String, Object> wrapped = new HashMap<>();
             try {
               api.stopScan();
+              wrapped.put("result", null);
+            }
+            catch (Error | RuntimeException exception) {
+              wrapped.put("error", wrapError(exception));
+            }
+            reply.reply(wrapped);
+          });
+        } else {
+          channel.setMessageHandler(null);
+        }
+      }
+      {
+        BasicMessageChannel<Object> channel =
+            new BasicMessageChannel<>(binaryMessenger, "dev.flutter.pigeon.Api.enableBluetooth", getCodec());
+        if (api != null) {
+          channel.setMessageHandler((message, reply) -> {
+            Map<String, Object> wrapped = new HashMap<>();
+            try {
+              api.enableBluetooth();
               wrapped.put("result", null);
             }
             catch (Error | RuntimeException exception) {

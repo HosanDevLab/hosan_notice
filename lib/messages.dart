@@ -11,8 +11,8 @@ import 'package:flutter/services.dart';
 class MinewBeaconData {
   String? uuid;
   String? name;
-  int? major;
-  int? minor;
+  String? major;
+  String? minor;
   String? mac;
   int? rssi;
   int? batteryLevel;
@@ -42,8 +42,8 @@ class MinewBeaconData {
     return MinewBeaconData()
       ..uuid = pigeonMap['uuid'] as String?
       ..name = pigeonMap['name'] as String?
-      ..major = pigeonMap['major'] as int?
-      ..minor = pigeonMap['minor'] as int?
+      ..major = pigeonMap['major'] as String?
+      ..minor = pigeonMap['minor'] as String?
       ..mac = pigeonMap['mac'] as String?
       ..rssi = pigeonMap['rssi'] as int?
       ..batteryLevel = pigeonMap['batteryLevel'] as int?
@@ -138,6 +138,29 @@ class Api {
   Future<void> stopScan() async {
     final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
         'dev.flutter.pigeon.Api.stopScan', codec, binaryMessenger: _binaryMessenger);
+    final Map<Object?, Object?>? replyMap =
+        await channel.send(null) as Map<Object?, Object?>?;
+    if (replyMap == null) {
+      throw PlatformException(
+        code: 'channel-error',
+        message: 'Unable to establish connection on channel.',
+        details: null,
+      );
+    } else if (replyMap['error'] != null) {
+      final Map<Object?, Object?> error = (replyMap['error'] as Map<Object?, Object?>?)!;
+      throw PlatformException(
+        code: (error['code'] as String?)!,
+        message: error['message'] as String?,
+        details: error['details'],
+      );
+    } else {
+      return;
+    }
+  }
+
+  Future<void> enableBluetooth() async {
+    final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.Api.enableBluetooth', codec, binaryMessenger: _binaryMessenger);
     final Map<Object?, Object?>? replyMap =
         await channel.send(null) as Map<Object?, Object?>?;
     if (replyMap == null) {

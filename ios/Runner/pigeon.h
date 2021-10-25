@@ -13,8 +13,8 @@ NS_ASSUME_NONNULL_BEGIN
 @interface BKMinewBeaconData : NSObject
 @property(nonatomic, copy, nullable) NSString * uuid;
 @property(nonatomic, copy, nullable) NSString * name;
-@property(nonatomic, strong, nullable) NSNumber * major;
-@property(nonatomic, strong, nullable) NSNumber * minor;
+@property(nonatomic, copy, nullable) NSString * major;
+@property(nonatomic, copy, nullable) NSString * minor;
 @property(nonatomic, copy, nullable) NSString * mac;
 @property(nonatomic, strong, nullable) NSNumber * rssi;
 @property(nonatomic, strong, nullable) NSNumber * batteryLevel;
@@ -31,6 +31,7 @@ NSObject<FlutterMessageCodec> *BKApiGetCodec(void);
 - (nullable NSArray<BKMinewBeaconData *> *)getScannedBeaconsWithError:(FlutterError *_Nullable *_Nonnull)error;
 - (void)startScanWithError:(FlutterError *_Nullable *_Nonnull)error;
 - (void)stopScanWithError:(FlutterError *_Nullable *_Nonnull)error;
+- (void)enableBluetoothWithError:(FlutterError *_Nullable *_Nonnull)error;
 @end
 
 extern void BKApiSetup(id<FlutterBinaryMessenger> binaryMessenger, NSObject<BKApi> *_Nullable api);

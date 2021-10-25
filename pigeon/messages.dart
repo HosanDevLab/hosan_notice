@@ -3,8 +3,8 @@ import 'package:pigeon/pigeon.dart';
 class MinewBeaconData {
   late String uuid;
   late String name;
-  late int major;
-  late int minor;
+  late String major;
+  late String minor;
   late String mac;
   late int rssi;
   late int batteryLevel;
@@ -19,4 +19,5 @@ abstract class Api {
   List<MinewBeaconData> getScannedBeacons();
   void startScan();
   void stopScan();
+  void enableBluetooth();
 }

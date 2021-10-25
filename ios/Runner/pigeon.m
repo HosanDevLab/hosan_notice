@@ -189,4 +189,22 @@ void BKApiSetup(id<FlutterBinaryMessenger> binaryMessenger, NSObject<BKApi> *api
       [channel setMessageHandler:nil];
     }
   }
+  {
+    FlutterBasicMessageChannel *channel =
+      [FlutterBasicMessageChannel
+        messageChannelWithName:@"dev.flutter.pigeon.Api.enableBluetooth"
+        binaryMessenger:binaryMessenger
+        codec:BKApiGetCodec()];
+    if (api) {
+      NSCAssert([api respondsToSelector:@selector(enableBluetoothWithError:)], @"BKApi api (%@) doesn't respond to @selector(enableBluetoothWithError:)", api);
+      [channel setMessageHandler:^(id _Nullable message, FlutterReply callback) {
+        FlutterError *error;
+        [api enableBluetoothWithError:&error];
+        callback(wrapResult(nil, error));
+      }];
+    }
+    else {
+      [channel setMessageHandler:nil];
+    }
+  }
 }

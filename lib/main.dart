@@ -3,13 +3,27 @@ import 'package:double_back_to_close/double_back_to_close.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hosan_notice/pages/assignment.dart';
 import 'package:hosan_notice/pages/assignments.dart';
+import 'package:hosan_notice/tasks/beacon_listen.dart';
 import 'package:hosan_notice/widgets/drawer.dart';
 import 'package:hosan_notice/pages/login.dart';
+import 'package:workmanager/workmanager.dart';
+
+void callbackDispatcher() {
+  Workmanager().executeTask((taskName, inputData) async {
+    switch (taskName) {
+      case 'beaconListen':
+        await beaconListen();
+        break;
+    }
+    return Future.value(true);
+  });
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +36,9 @@ void main() async {
     minimumFetchInterval: Duration(minutes: 1),
   ));
   remoteConfig.fetchAndActivate();
+
+  Workmanager().initialize(callbackDispatcher, isInDebugMode: kDebugMode);
+  Workmanager().registerPeriodicTask("1", "beaconListen", frequency: Duration(seconds: 10));
 
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();

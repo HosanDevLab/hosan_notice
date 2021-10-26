@@ -4,6 +4,7 @@ import 'package:double_back_to_close/double_back_to_close.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hosan_notice/widgets/drawer.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../messages.dart';
 
@@ -29,6 +30,7 @@ class _BeaconScanPageState extends State<BeaconScanPage> {
       final intent = AndroidIntent(
           action: "android.bluetooth.adapter.action.REQUEST_ENABLE");
       await intent.launch();
+      await Permission.location.request();
       await api.startScan();
     }();
   }
@@ -36,6 +38,7 @@ class _BeaconScanPageState extends State<BeaconScanPage> {
   @override
   void dispose() {
     _timer.cancel();
+    api.stopScan();
     super.dispose();
   }
 

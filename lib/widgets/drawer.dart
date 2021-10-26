@@ -11,6 +11,7 @@ import 'package:hosan_notice/pages/beacon.dart';
 import 'package:hosan_notice/pages/calendar.dart';
 import 'package:hosan_notice/pages/meal_info.dart';
 import 'package:hosan_notice/pages/navigation.dart';
+import 'package:hosan_notice/pages/register.dart';
 import 'package:hosan_notice/pages/toilet_paper_status.dart';
 import 'package:package_info/package_info.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -195,6 +196,21 @@ class _MainDrawerState extends State<MainDrawer> {
                 leading: Icon(Icons.people),
                 onTap: () {
                   Navigator.pop(context);
+                },
+              ),
+              Divider(height: 0),
+              ListTile(
+                title: Text('등록 화면'),
+                dense: true,
+                leading: Icon(Icons.login),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    widget.parentContext,
+                    MaterialPageRoute(
+                      builder: (context) => RegisterPage(),
+                    ),
+                  );
                 },
               ),
               Divider(height: 0),

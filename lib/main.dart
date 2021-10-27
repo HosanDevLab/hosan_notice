@@ -7,8 +7,8 @@ import 'package:double_back_to_close/double_back_to_close.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hosan_notice/pages/assignment.dart';
@@ -16,35 +16,6 @@ import 'package:hosan_notice/pages/assignments.dart';
 import 'package:hosan_notice/tasks/beacon_listen.dart';
 import 'package:hosan_notice/widgets/drawer.dart';
 import 'package:hosan_notice/pages/login.dart';
-import 'package:workmanager/workmanager.dart';
-
-void callbackDispatcher() {
-  Workmanager().executeTask((taskName, inputData) async {
-    final sendPort = IsolateNameServer.lookupPortByName('port');
-    assert(sendPort != null);
-    var port = ReceivePort();
-    var completer = Completer<bool>();
-
-    late StreamSubscription subscription;
-    subscription = port.listen((message) {
-      bool result = message;
-      completer.complete(result);
-      subscription.cancel();
-    });
-    sendPort!.send([port.sendPort, taskName, inputData]);
-
-    return completer.future;
-  });
-}
-
-bool callbackImplementation(String taskName) {
-  switch (taskName) {
-    case 'beaconListen':
-      beaconListen();
-      break;
-  }
-  return true;
-}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -59,19 +30,6 @@ void main() async {
     ),
   );
   remoteConfig.fetchAndActivate();
-
-  Workmanager().initialize(callbackDispatcher, isInDebugMode: kDebugMode);
-  final port = ReceivePort();
-  IsolateNameServer.removePortNameMapping('port');
-  IsolateNameServer.registerPortWithName(port.sendPort, 'port');
-  port.listen((dynamic data) async {
-    SendPort sendPort = data[0];
-    String taskName = data[1];
-    sendPort.send(callbackImplementation(taskName));
-  });
-
-  Workmanager().registerOneOffTask("1", "beaconListen",
-      backoffPolicy: BackoffPolicy.exponential);
 
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
@@ -92,6 +50,74 @@ void main() async {
   });
 
   runApp(App());
+}
+
+void startCallback() {
+  FlutterForegroundTask.setTaskHandler(ForegroundTaskHandler());
+}
+
+class ForegroundTaskHandler implements TaskHandler {
+  @override
+  Future<void> onStart(DateTime timestamp, SendPort? sendPort) async {}
+
+  @override
+  Future<void> onEvent(DateTime timestamp, SendPort? sendPort) async {
+    // final data = await FlutterForegroundTask.getData(key: 'beaconDocs');
+
+    await FlutterForegroundTask.updateService(
+        notificationText: timestamp.toString());
+  }
+
+  @override
+  Future<void> onDestroy(DateTime timestamp) async {
+    await FlutterForegroundTask.clearAllData();
+  }
+}
+
+void initAndBeginForeground() async {
+  await FlutterForegroundTask.init(
+    androidNotificationOptions: AndroidNotificationOptions(
+      channelId: 'foreground',
+      channelName: '포어그라운드 알림',
+      channelDescription: '포어그라운드 서비스가 실행 중일때 표시됩니다.',
+      channelImportance: NotificationChannelImportance.LOW,
+      priority: NotificationPriority.LOW,
+      iconData: NotificationIconData(
+        resType: ResourceType.drawable,
+        resPrefix: ResourcePrefix.ic,
+        name: 'stat_app_icon',
+      ),
+    ),
+    iosNotificationOptions: IOSNotificationOptions(
+      showNotification: true,
+      playSound: false,
+    ),
+    foregroundTaskOptions: ForegroundTaskOptions(
+      interval: 5000,
+      autoRunOnBoot: true,
+    ),
+    printDevLog: true,
+  );
+  /*
+  final firestore = FirebaseFirestore.instance;
+  final beaconDocs = (await firestore.collection('beacons').get()).docs;
+
+  await FlutterForegroundTask.saveData(key: 'beaconDocs', value: beaconDocs);
+  */
+  await FlutterForegroundTask.stopService();
+  if (await FlutterForegroundTask.isRunningService) {
+    await FlutterForegroundTask.updateService(
+      notificationTitle: '자동 출결 시스템 동작중',
+      notificationText: '업데이트 중...',
+      callback: startCallback,
+    );
+  } else {
+    await FlutterForegroundTask.startService(
+      notificationTitle: '자동 출결 시스템 동작중',
+      notificationText: '시작 중...',
+      callback: startCallback,
+    );
+  }
 }
 
 class App extends StatelessWidget {
@@ -125,6 +151,7 @@ class App extends StatelessWidget {
                   )
                 ])));
           }
+
           return user != null && snapshot.data.exists
               ? HomePage()
               : LoginPage();
@@ -175,9 +202,15 @@ class _HomePageState extends State<HomePage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    initAndBeginForeground();
     _assignments = fetchAssignments();
     _subjects = fetchSubjects();
     precacheImage(AssetImage('assets/hosan.png'), context);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   Widget assignmentCard(BuildContext context, AsyncSnapshot snapshot,

@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:isolate';
+import 'dart:ui';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:double_back_to_close/double_back_to_close.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -16,13 +20,29 @@ import 'package:workmanager/workmanager.dart';
 
 void callbackDispatcher() {
   Workmanager().executeTask((taskName, inputData) async {
-    switch (taskName) {
-      case 'beaconListen':
-        await beaconListen();
-        break;
-    }
-    return Future.value(true);
+    final sendPort = IsolateNameServer.lookupPortByName('port');
+    assert(sendPort != null);
+    var port = ReceivePort();
+    var completer = Completer<bool>();
+
+    late StreamSubscription subscription;
+    subscription = port.listen((message) {
+      bool result = message;
+      completer.complete(result);
+      subscription.cancel();
+    });
+    sendPort!.send([port.sendPort, taskName, inputData]);
+
+    return completer.future;
   });
+}
+
+bool callbackImplementation(String taskName) {
+  switch (taskName) {
+    case 'beaconListen':
+      beaconListen();
+      break;
+  }
 }
 
 void main() async {
@@ -40,7 +60,17 @@ void main() async {
   remoteConfig.fetchAndActivate();
 
   Workmanager().initialize(callbackDispatcher, isInDebugMode: kDebugMode);
-  Workmanager().registerOneOffTask("1", "beaconListen");
+  final port = ReceivePort();
+  IsolateNameServer.removePortNameMapping('port');
+  IsolateNameServer.registerPortWithName(port.sendPort, 'port');
+  port.listen((dynamic data) async {
+    SendPort sendPort = data[0];
+    String taskName = data[1];
+    sendPort.send(callbackImplementation(taskName));
+  });
+
+  Workmanager().registerOneOffTask("1", "beaconListen",
+      backoffPolicy: BackoffPolicy.exponential);
 
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();

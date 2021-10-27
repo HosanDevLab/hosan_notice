@@ -43,6 +43,7 @@ bool callbackImplementation(String taskName) {
       beaconListen();
       break;
   }
+  return true;
 }
 
 void main() async {

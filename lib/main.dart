@@ -31,14 +31,16 @@ void main() async {
 
   final remoteConfig = RemoteConfig.instance;
 
-  remoteConfig.setConfigSettings(RemoteConfigSettings(
-    fetchTimeout: Duration(seconds: 10),
-    minimumFetchInterval: Duration(minutes: 1),
-  ));
+  remoteConfig.setConfigSettings(
+    RemoteConfigSettings(
+      fetchTimeout: Duration(seconds: 10),
+      minimumFetchInterval: Duration(minutes: 1),
+    ),
+  );
   remoteConfig.fetchAndActivate();
 
   Workmanager().initialize(callbackDispatcher, isInDebugMode: kDebugMode);
-  Workmanager().registerPeriodicTask("1", "beaconListen", frequency: Duration(seconds: 10));
+  Workmanager().registerOneOffTask("1", "beaconListen");
 
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();

@@ -29,6 +29,7 @@ NSObject<FlutterMessageCodec> *BKApiGetCodec(void);
 
 @protocol BKApi
 - (nullable NSArray<BKMinewBeaconData *> *)getScannedBeaconsWithError:(FlutterError *_Nullable *_Nonnull)error;
+- (nullable NSArray<NSDictionary *> *)getScannedBeaconsAsMapWithError:(FlutterError *_Nullable *_Nonnull)error;
 - (void)startScanWithError:(FlutterError *_Nullable *_Nonnull)error;
 - (void)stopScanWithError:(FlutterError *_Nullable *_Nonnull)error;
 - (void)enableBluetoothWithError:(FlutterError *_Nullable *_Nonnull)error;

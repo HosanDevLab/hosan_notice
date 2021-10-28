@@ -10,6 +10,7 @@ import 'package:hosan_notice/main.dart';
 import 'package:hosan_notice/pages/beacon.dart';
 import 'package:hosan_notice/pages/calendar.dart';
 import 'package:hosan_notice/pages/meal_info.dart';
+import 'package:hosan_notice/pages/my_attend.dart';
 import 'package:hosan_notice/pages/navigation.dart';
 import 'package:hosan_notice/pages/register.dart';
 import 'package:hosan_notice/pages/toilet_paper_status.dart';
@@ -101,6 +102,17 @@ class _MainDrawerState extends State<MainDrawer> {
               ),
               Divider(height: 0),
               ListTile(
+                title: Text('내 출결 및 활동'),
+                dense: true,
+                leading: Icon(Icons.fact_check),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushReplacement(widget.parentContext,
+                      MaterialPageRoute(builder: (context) => MyAttendancePage()));
+                },
+              ),
+              Divider(height: 0),
+              ListTile(
                 title: Text('한눈에 보는 일정표'),
                 dense: true,
                 leading: Icon(Icons.event_note),
@@ -121,48 +133,6 @@ class _MainDrawerState extends State<MainDrawer> {
                       widget.parentContext,
                       MaterialPageRoute(
                           builder: (context) => NavigationPage()));
-                },
-              ),
-              Divider(height: 0),
-              ListTile(
-                title: Text('비콘'),
-                dense: true,
-                leading: Icon(Icons.bluetooth_connected),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacement(
-                      widget.parentContext,
-                      MaterialPageRoute(
-                          builder: (context) => BeaconScanPage()));
-                },
-              ),
-              Divider(height: 0),
-              ListTile(
-                title: Text('알림 테스트'),
-                dense: true,
-                leading: Icon(Icons.notifications),
-                onTap: () async {
-                  Navigator.pop(context);
-                  var androidPlatformChannelSpecifics =
-                      AndroidNotificationDetails(
-                          'your channel id', 'your channel name',
-                          channelDescription: 'your channel description',
-                          importance: Importance.max,
-                          priority: Priority.high);
-
-                  var iosPlatformChannelSpecifics =
-                      IOSNotificationDetails(sound: 'slow_spring.board.aiff');
-                  var platformChannelSpecifics = NotificationDetails(
-                      android: androidPlatformChannelSpecifics,
-                      iOS: iosPlatformChannelSpecifics);
-
-                  await flutterLocalNotificationsPlugin.show(
-                    0,
-                    '테스트 알림',
-                    '이것은 Flutter 노티피케이션!',
-                    platformChannelSpecifics,
-                    payload: 'Hello Flutter',
-                  );
                 },
               ),
               Divider(height: 0),
@@ -200,7 +170,7 @@ class _MainDrawerState extends State<MainDrawer> {
               ),
               Divider(height: 0),
               ListTile(
-                title: Text('등록 화면'),
+                title: Text('[DEBUG] 등록 화면'),
                 dense: true,
                 leading: Icon(Icons.login),
                 onTap: () {
@@ -210,6 +180,48 @@ class _MainDrawerState extends State<MainDrawer> {
                     MaterialPageRoute(
                       builder: (context) => RegisterPage(),
                     ),
+                  );
+                },
+              ),
+              Divider(height: 0),
+              ListTile(
+                title: Text('[DEBUG] 비콘'),
+                dense: true,
+                leading: Icon(Icons.bluetooth_connected),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushReplacement(
+                      widget.parentContext,
+                      MaterialPageRoute(
+                          builder: (context) => BeaconScanPage()));
+                },
+              ),
+              Divider(height: 0),
+              ListTile(
+                title: Text('[DEBUG] 알림 테스트'),
+                dense: true,
+                leading: Icon(Icons.notifications),
+                onTap: () async {
+                  Navigator.pop(context);
+                  var androidPlatformChannelSpecifics =
+                  AndroidNotificationDetails(
+                      'test_channel', '테스트 알림',
+                      channelDescription: '테스트용 알림입니다.',
+                      importance: Importance.max,
+                      priority: Priority.high);
+
+                  var iosPlatformChannelSpecifics =
+                  IOSNotificationDetails(sound: 'slow_spring.board.aiff');
+                  var platformChannelSpecifics = NotificationDetails(
+                      android: androidPlatformChannelSpecifics,
+                      iOS: iosPlatformChannelSpecifics);
+
+                  await flutterLocalNotificationsPlugin.show(
+                    0,
+                    '테스트 알림',
+                    '이것은 Flutter 노티피케이션!',
+                    platformChannelSpecifics,
+                    payload: 'Hello Flutter',
                   );
                 },
               ),

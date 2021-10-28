@@ -136,6 +136,7 @@ public class Pigeon {
   /** Generated interface from Pigeon that represents a handler of messages from Flutter.*/
   public interface Api {
     List<MinewBeaconData> getScannedBeacons();
+    List<Map<Object, Object>> getScannedBeaconsAsMap();
     void startScan();
     void stopScan();
     void enableBluetooth();
@@ -155,6 +156,25 @@ public class Pigeon {
             Map<String, Object> wrapped = new HashMap<>();
             try {
               List<MinewBeaconData> output = api.getScannedBeacons();
+              wrapped.put("result", output);
+            }
+            catch (Error | RuntimeException exception) {
+              wrapped.put("error", wrapError(exception));
+            }
+            reply.reply(wrapped);
+          });
+        } else {
+          channel.setMessageHandler(null);
+        }
+      }
+      {
+        BasicMessageChannel<Object> channel =
+            new BasicMessageChannel<>(binaryMessenger, "dev.flutter.pigeon.Api.getScannedBeaconsAsMap", getCodec());
+        if (api != null) {
+          channel.setMessageHandler((message, reply) -> {
+            Map<String, Object> wrapped = new HashMap<>();
+            try {
+              List<Map<Object, Object>> output = api.getScannedBeaconsAsMap();
               wrapped.put("result", output);
             }
             catch (Error | RuntimeException exception) {

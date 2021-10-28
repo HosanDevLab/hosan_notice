@@ -1,7 +1,6 @@
 package com.hosandevlab.hosan_notice
 
 import android.bluetooth.BluetoothAdapter
-import android.util.Log
 import com.hosandevlab.hosan_notice.pigeon.Pigeon.*
 import com.hosandevlab.hosan_notice.pigeon.Pigeon.Api
 import com.minew.beacon.*
@@ -64,6 +63,28 @@ class MainActivity : FlutterActivity(), Api {
                 it.getBeaconValue(BeaconValueIndex.MinewBeaconValueIndex_TxPower).intValue.toLong()
             data.inRange = it.getBeaconValue(BeaconValueIndex.MinewBeaconValueIndex_InRage).isBool
             data
+        }.toMutableList()
+
+        return beaconData
+    }
+
+    override fun getScannedBeaconsAsMap(): MutableList<MutableMap<Any, Any>> {
+        val beaconData = this.scannedBeacons.map {
+            val beaconDataMap = mutableMapOf<String, Any>()
+            beaconDataMap["uuid"] = it.uuid
+            beaconDataMap["name"] = it.name
+            beaconDataMap["major"] = it.major
+            beaconDataMap["minor"] = it.minor
+            beaconDataMap["mac"] = it.mac
+            beaconDataMap["rssi"] = it.rssi
+            beaconDataMap["batteryLevel"] = it.batteryLevel
+            beaconDataMap["temperature"] = it.temperature
+            beaconDataMap["humidity"] = it.humidity
+            beaconDataMap["txPower"] = it.txPower
+            beaconDataMap["inRange"] = it.inRange
+
+            @Suppress("UNCHECKED_CAST")
+            beaconDataMap as MutableMap<Any, Any>
         }.toMutableList()
 
         return beaconData

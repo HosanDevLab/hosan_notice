@@ -156,6 +156,24 @@ void BKApiSetup(id<FlutterBinaryMessenger> binaryMessenger, NSObject<BKApi> *api
   {
     FlutterBasicMessageChannel *channel =
       [FlutterBasicMessageChannel
+        messageChannelWithName:@"dev.flutter.pigeon.Api.getScannedBeaconsAsMap"
+        binaryMessenger:binaryMessenger
+        codec:BKApiGetCodec()];
+    if (api) {
+      NSCAssert([api respondsToSelector:@selector(getScannedBeaconsAsMapWithError:)], @"BKApi api (%@) doesn't respond to @selector(getScannedBeaconsAsMapWithError:)", api);
+      [channel setMessageHandler:^(id _Nullable message, FlutterReply callback) {
+        FlutterError *error;
+        NSArray<NSDictionary *> *output = [api getScannedBeaconsAsMapWithError:&error];
+        callback(wrapResult(output, error));
+      }];
+    }
+    else {
+      [channel setMessageHandler:nil];
+    }
+  }
+  {
+    FlutterBasicMessageChannel *channel =
+      [FlutterBasicMessageChannel
         messageChannelWithName:@"dev.flutter.pigeon.Api.startScan"
         binaryMessenger:binaryMessenger
         codec:BKApiGetCodec()];

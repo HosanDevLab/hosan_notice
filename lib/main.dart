@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:isolate';
 import 'dart:ui';
 
+import 'package:android_intent_plus/android_intent.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:double_back_to_close/double_back_to_close.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -16,6 +17,9 @@ import 'package:hosan_notice/pages/assignments.dart';
 import 'package:hosan_notice/tasks/beacon_listen.dart';
 import 'package:hosan_notice/widgets/drawer.dart';
 import 'package:hosan_notice/pages/login.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+import 'messages.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +34,30 @@ void main() async {
     ),
   );
   remoteConfig.fetchAndActivate();
+
+  await FlutterForegroundTask.init(
+    androidNotificationOptions: AndroidNotificationOptions(
+      channelId: 'foreground',
+      channelName: '포어그라운드 알림',
+      channelDescription: '포어그라운드 서비스가 실행 중일때 표시됩니다.',
+      channelImportance: NotificationChannelImportance.LOW,
+      priority: NotificationPriority.LOW,
+      iconData: NotificationIconData(
+        resType: ResourceType.drawable,
+        resPrefix: ResourcePrefix.ic,
+        name: 'stat_app_icon',
+      ),
+    ),
+    iosNotificationOptions: IOSNotificationOptions(
+      showNotification: true,
+      playSound: false,
+    ),
+    foregroundTaskOptions: ForegroundTaskOptions(
+      interval: 5000,
+      autoRunOnBoot: true,
+    ),
+    printDevLog: true,
+  );
 
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
@@ -58,66 +86,96 @@ void startCallback() {
 
 class ForegroundTaskHandler implements TaskHandler {
   @override
-  Future<void> onStart(DateTime timestamp, SendPort? sendPort) async {}
+  onStart(DateTime timestamp, SendPort? sendPort) async {}
 
   @override
-  Future<void> onEvent(DateTime timestamp, SendPort? sendPort) async {
-    // final data = await FlutterForegroundTask.getData(key: 'beaconDocs');
-
-    await FlutterForegroundTask.updateService(
-        notificationText: timestamp.toString());
+  onEvent(DateTime timestamp, SendPort? sendPort) async {
+    sendPort?.send("updateScannedBeacons");
   }
 
   @override
-  Future<void> onDestroy(DateTime timestamp) async {
+  onDestroy(DateTime timestamp) async {
     await FlutterForegroundTask.clearAllData();
   }
 }
 
 void initAndBeginForeground() async {
-  await FlutterForegroundTask.init(
-    androidNotificationOptions: AndroidNotificationOptions(
-      channelId: 'foreground',
-      channelName: '포어그라운드 알림',
-      channelDescription: '포어그라운드 서비스가 실행 중일때 표시됩니다.',
-      channelImportance: NotificationChannelImportance.LOW,
-      priority: NotificationPriority.LOW,
-      iconData: NotificationIconData(
-        resType: ResourceType.drawable,
-        resPrefix: ResourcePrefix.ic,
-        name: 'stat_app_icon',
-      ),
-    ),
-    iosNotificationOptions: IOSNotificationOptions(
-      showNotification: true,
-      playSound: false,
-    ),
-    foregroundTaskOptions: ForegroundTaskOptions(
-      interval: 5000,
-      autoRunOnBoot: true,
-    ),
-    printDevLog: true,
-  );
-  /*
-  final firestore = FirebaseFirestore.instance;
-  final beaconDocs = (await firestore.collection('beacons').get()).docs;
-
-  await FlutterForegroundTask.saveData(key: 'beaconDocs', value: beaconDocs);
-  */
-  await FlutterForegroundTask.stopService();
+  late ReceivePort? receivePort;
   if (await FlutterForegroundTask.isRunningService) {
-    await FlutterForegroundTask.updateService(
-      notificationTitle: '자동 출결 시스템 동작중',
-      notificationText: '업데이트 중...',
-      callback: startCallback,
-    );
+    receivePort = await FlutterForegroundTask.restartService();
   } else {
-    await FlutterForegroundTask.startService(
+    receivePort = await FlutterForegroundTask.startService(
       notificationTitle: '자동 출결 시스템 동작중',
       notificationText: '시작 중...',
       callback: startCallback,
     );
   }
+
+  final api = Api();
+  await api.startScan();
+
+  await Firebase.initializeApp();
+  final firestore = FirebaseFirestore.instance;
+  final beaconData = (await firestore.collection('beacons').get()).docs;
+
+  receivePort?.listen((message) async {
+    switch (message) {
+      case 'updateScannedBeacons':
+        final scannedBeacons = await api.getScannedBeacons();
+
+        final notiText = "디버그 모드에서 실행 중: " +
+            "비콘 ${beaconData.length}개 로드됨 | " +
+            "${scannedBeacons.length}개 스캔됨";
+
+        print(scannedBeacons.length.toString());
+
+        FlutterForegroundTask.updateService(notificationText: notiText);
+
+        // 교내 비콘이 감지될 경우, 즉 사용자가 학교 내에 있는 경우 출석 인정
+        if (beaconData
+            .any((e) => scannedBeacons.map((e) => e!.uuid).contains(e.id))) {
+          final now = DateTime.now();
+          final attendAny = await firestore
+              .collection('attendance')
+              .where(
+                'attendedAt',
+                isGreaterThanOrEqualTo: DateTime(now.year, now.month, now.day),
+              )
+              .limit(1)
+              .get();
+          // 오늘 출석 내역 없는 경우 출석 등록
+          if (attendAny.size == 0) {
+            final user = FirebaseAuth.instance.currentUser;
+
+            await firestore.collection('attendance').add({
+              'uid': user!.uid,
+              'attendedAt': now
+            });
+
+            final androidPlatformChannelSpecifics =
+            AndroidNotificationDetails(
+                'your channel id', 'your channel name',
+                channelDescription: 'your channel description',
+                importance: Importance.low,
+                priority: Priority.low);
+
+            final iosPlatformChannelSpecifics =
+            IOSNotificationDetails(sound: 'slow_spring.board.aiff');
+            var platformChannelSpecifics = NotificationDetails(
+                android: androidPlatformChannelSpecifics,
+                iOS: iosPlatformChannelSpecifics);
+
+            await flutterLocalNotificationsPlugin.show(
+              0,
+              '출석이 체크되었습니다!',
+              '${now.toString().split('.')[0]}에 교문을 통과했습니다.',
+              platformChannelSpecifics,
+            );
+          }
+        }
+        break;
+    }
+  });
 }
 
 class App extends StatelessWidget {
@@ -135,6 +193,7 @@ class App extends StatelessWidget {
           if (user == null) return null;
           CollectionReference students =
               FirebaseFirestore.instance.collection('students');
+
           return await students.doc(user.uid).get();
         }(),
         builder: (BuildContext context, AsyncSnapshot snapshot) {
@@ -200,9 +259,20 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    () async {
+      final intent = AndroidIntent(
+          action: "android.bluetooth.adapter.action.REQUEST_ENABLE");
+      await intent.launch();
+      await Permission.location.request();
+      initAndBeginForeground();
+    }();
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    initAndBeginForeground();
     _assignments = fetchAssignments();
     _subjects = fetchSubjects();
     precacheImage(AssetImage('assets/hosan.png'), context);

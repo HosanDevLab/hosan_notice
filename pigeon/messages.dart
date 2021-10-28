@@ -17,6 +17,7 @@ class MinewBeaconData {
 @HostApi()
 abstract class Api {
   List<MinewBeaconData> getScannedBeacons();
+  List<Map> getScannedBeaconsAsMap();
   void startScan();
   void stopScan();
   void enableBluetooth();

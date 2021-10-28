@@ -112,7 +112,7 @@ class _MainDrawerState extends State<MainDrawer> {
               ),
               Divider(height: 0),
               ListTile(
-                title: Text('교내 네비게이션'),
+                title: Text('교내 내비게이션'),
                 dense: true,
                 leading: Icon(Icons.room),
                 onTap: () {

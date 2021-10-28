@@ -38,7 +38,7 @@ class _NavigationPageState extends State<NavigationPage> {
         message: '뒤로가기를 한번 더 누르면 종료합니다.',
         child: Scaffold(
           appBar: AppBar(
-            title: Text('교내 네비게이션'),
+            title: Text('교내 내비게이션'),
             centerTitle: true,
           ),
           body: FutureBuilder(

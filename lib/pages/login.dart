@@ -138,7 +138,86 @@ class _LoginPageState extends State<LoginPage> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisAlignment: MainAxisAlignment.center,
-            children: [TextButton(onPressed: () {}, child: Text('교직원 로그인'))],
+            children: [
+              TextButton(
+                child: Text('교직원 로그인'),
+                onPressed: () async {
+                  try {
+                    await FirebaseAuth.instance.signOut();
+                    await GoogleSignIn().signOut();
+
+                    final GoogleSignInAccount? googleSignInAccount =
+                        await GoogleSignIn().signIn();
+                    final GoogleSignInAuthentication
+                    googleSignInAuthentication =
+                        await googleSignInAccount!.authentication;
+
+                    final AuthCredential credential =
+                    GoogleAuthProvider.credential(
+                      accessToken: googleSignInAuthentication.accessToken,
+                      idToken: googleSignInAuthentication.idToken,
+                    );
+
+                    final signInData = await FirebaseAuth.instance
+                        .signInWithCredential(credential);
+
+                    if (signInData.user!.email!.split('@').last !=
+                        'hosan.hs.kr') {
+                      showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text("호산고 계정이 아닙니다."),
+                              content: Text(
+                                  "호산고등학교에서 발급한 Google 계정 (숫자@hosan.hs.kr)으로 로그인하세요!\n\n계정을 잊어버리셨다면 선생님께 문의해주세요."),
+                              actions: <Widget>[
+                                TextButton(
+                                  child: Text("닫기"),
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                              ],
+                            );
+                          });
+                      return;
+                    }
+
+                    DocumentSnapshot me =
+                    await firestore.collection('teachers').doc(signInData.user!.uid).get();
+
+                    if (me.exists) {
+                      await Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => HomePage()));
+                    } else {
+                      AlertDialog(
+                        title: Text("존재하지 않는 교직원 계정입니다."),
+                        content: Text(
+                            "호산고등학교에서 발급한 Google 계정 (숫자@hosan.hs.kr)으로 로그인하세요!\n\n계정을 잊어버리셨다면 선생님께 문의해주세요."),
+                        actions: <Widget>[
+                          TextButton(
+                            child: Text("닫기"),
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                          ),
+                        ],
+                      );
+                    }
+                  } catch (e) {
+                    throw e;
+                  } finally {
+                    if (!isDisposed) {
+                      setState(() {
+                        isLoggingIn = false;
+                      });
+                    }
+                  }
+                },
+              )
+            ],
           ),
           Expanded(
             child: Container(),

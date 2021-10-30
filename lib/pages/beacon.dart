@@ -21,7 +21,7 @@ class _BeaconScanPageState extends State<BeaconScanPage> {
   void initState() {
     super.initState();
     _scannedBeacons = api.getScannedBeacons();
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) async {
       setState(() {
         _scannedBeacons = api.getScannedBeacons();
       });
@@ -38,7 +38,6 @@ class _BeaconScanPageState extends State<BeaconScanPage> {
   @override
   void dispose() {
     _timer.cancel();
-    api.stopScan();
     super.dispose();
   }
 

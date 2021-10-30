@@ -284,7 +284,7 @@ class _MainDrawerState extends State<MainDrawer> {
                       applicationIcon: Image.asset('assets/hosan.png',
                           width: 70, height: 70),
                       applicationVersion: packageInfo.version,
-                      applicationLegalese: '호산고 제3기 로봇공학반 교내 피지컬 컴퓨팅 대회 출품작',
+                      applicationLegalese: '제8회 대한민국 SW 융합 해커톤 대회 출품작',
                       children: [
                         Padding(
                           padding: EdgeInsets.only(top: 20),

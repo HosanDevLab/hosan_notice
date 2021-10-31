@@ -12,7 +12,7 @@
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
 
     <application
-        android:label="호산고 알리미"
+        android:label="호산고 앱비"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"

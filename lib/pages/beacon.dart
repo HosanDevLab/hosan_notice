@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:android_intent_plus/android_intent.dart';
 import 'package:double_back_to_close/double_back_to_close.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -27,9 +26,6 @@ class _BeaconScanPageState extends State<BeaconScanPage> {
       });
     });
     () async {
-      final intent = AndroidIntent(
-          action: "android.bluetooth.adapter.action.REQUEST_ENABLE");
-      await intent.launch();
       await Permission.location.request();
       await api.startScan();
     }();

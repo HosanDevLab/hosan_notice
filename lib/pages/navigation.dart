@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:android_intent_plus/android_intent.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:double_back_to_close/double_back_to_close.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -57,9 +56,6 @@ class _NavigationPageState extends State<NavigationPage> {
       });
     });
     () async {
-      final intent = AndroidIntent(
-          action: "android.bluetooth.adapter.action.REQUEST_ENABLE");
-      await intent.launch();
       await Permission.location.request();
       await api.startScan();
     }();
@@ -199,6 +195,26 @@ class _NavigationPageState extends State<NavigationPage> {
                             case 'stairs':
                               type = '계단';
                               icon = Icon(Icons.stairs);
+                              break;
+                            case 'office':
+                              type = '교무실/사무실';
+                              icon = Icon(Icons.business);
+                              break;
+                            case 'multimedia':
+                              type = "컴퓨터실";
+                              icon = Icon(Icons.monitor);
+                              break;
+                            case 'library':
+                              type = '도서관';
+                              icon = Icon(Icons.library_books);
+                              break;
+                            case 'lecture':
+                              type = '강당';
+                              icon = Icon(Icons.sports_volleyball);
+                              break;
+                            case 'broadcasting':
+                              type = '방송';
+                              icon = Icon(Icons.podcasts);
                               break;
                             default:
                               type = '';

@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -23,7 +22,6 @@ class PathSearchPage extends StatefulWidget {
 
 class _PathSearchPageState extends State<PathSearchPage> {
   late String startRoomId, destRoomId;
-  final _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -82,6 +80,7 @@ class _PathSearchPageState extends State<PathSearchPage> {
                   for (var oneGraph in graph[node]!.entries) {
                     final toGo = oneGraph.key;
                     final betweenDist = oneGraph.value;
+                    print('${node} -> ${toGo}');
                     final toDist = routing[node]['shortestDist'] + betweenDist;
                     if ((routing[toGo]['shortestDist'] >= toDist) ||
                         routing[toGo]['route'].isEmpty) {
@@ -121,128 +120,150 @@ class _PathSearchPageState extends State<PathSearchPage> {
                 final trace = routing[destRoomId]['route'];
                 print(trace);
 
-                return SingleChildScrollView(
-                    physics: BouncingScrollPhysics(
-                      parent: AlwaysScrollableScrollPhysics(),
-                    ),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints.tightFor(
-                        height: max(500, constraints.maxHeight),
-                      ),
+                return FutureBuilder(future: () async {
+                  await Future.delayed(Duration(milliseconds: 1000));
+                  return true;
+                }(), builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return Center(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Card(
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                vertical: 16,
-                                horizontal: 12,
+                          CircularProgressIndicator(color: Colors.deepPurple),
+                          Padding(
+                            padding: EdgeInsets.only(top: 10),
+                            child: Text('경로 탐색 중', textAlign: TextAlign.center),
+                          )
+                        ],
+                      ),
+                    );
+                  }
+
+                  return SingleChildScrollView(
+                      physics: BouncingScrollPhysics(
+                        parent: AlwaysScrollableScrollPhysics(),
+                      ),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints.tightFor(
+                          height: max(500, constraints.maxHeight),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Card(
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  vertical: 16,
+                                  horizontal: 12,
+                                ),
+                                width: double.infinity,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '다음과 같이 최단경로를 탐색합니다.',
+                                      style: TextStyle(fontSize: 16),
+                                    ),
+                                    Divider(height: 20),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '출발: ${startRoom.isNotEmpty ? startRoom.first.data()['name'] : ''}',
+                                          style: TextStyle(fontSize: 18),
+                                        ),
+                                        SizedBox(height: 10),
+                                        Text(
+                                          '도착: ${destRoom.isNotEmpty ? destRoom.first.data()['name'] : ''}',
+                                          style: TextStyle(fontSize: 18),
+                                        )
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
-                              width: double.infinity,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                            ),
+                            Divider(),
+                            Container(
+                              padding: EdgeInsets.all(5),
+                              child: Text(
+                                "최단 경로",
+                                style: Theme.of(context).textTheme.headline6,
+                              ),
+                            ),
+                            Expanded(
+                                child: Scrollbar(
+                              isAlwaysShown: true,
+                              child: ListView(
                                 children: [
-                                  Text(
-                                    '다음과 같이 최단경로를 탐색합니다.',
-                                    style: TextStyle(fontSize: 16),
-                                  ),
-                                  Divider(height: 20),
-                                  Column(
-                                    children: [
-                                      Text(
-                                        '출발: ${startRoom.isNotEmpty ? startRoom.first.data()['name'] : ''}',
-                                        style: TextStyle(fontSize: 18),
+                                  Card(
+                                    elevation: 1.5,
+                                    child: ListTile(
+                                      leading: RotationTransition(
+                                        turns: AlwaysStoppedAnimation(90 / 360),
+                                        child: Icon(Icons.play_arrow),
                                       ),
-                                      SizedBox(height: 10),
-                                      Text(
-                                        '도착: ${destRoom.isNotEmpty ? destRoom.first.data()['name'] : ''}',
-                                        style: TextStyle(fontSize: 18),
-                                      )
-                                    ],
+                                      horizontalTitleGap: 0,
+                                      title: Text(
+                                        "${startRoom.first.data()['name']} 출발",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  ...trace.sublist(1).map((e) {
+                                    final room = widget.rooms
+                                        .firstWhere((r) => r.id == e);
+                                    return Card(
+                                      elevation: 1.5,
+                                      child: ListTile(
+                                          leading: Icon(
+                                            room['type'] == 'stairs'
+                                                ? Icons.stairs
+                                                : Icons.keyboard_arrow_down,
+                                          ),
+                                          horizontalTitleGap: 0,
+                                          title: RichText(
+                                            text: TextSpan(
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                  fontSize: 16,
+                                                ),
+                                                children: [
+                                                  TextSpan(
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                    text: room.data()['name'],
+                                                  ),
+                                                  TextSpan(text: ' 으(로) 이동하세요.')
+                                                ]),
+                                          )),
+                                    );
+                                  }),
+                                  Card(
+                                    elevation: 1.5,
+                                    child: ListTile(
+                                      leading: Icon(Icons.check_circle),
+                                      horizontalTitleGap: 0,
+                                      title: Text(
+                                        "${destRoom.first.data()['name']} 도착",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
-                            ),
-                          ),
-                          Divider(),
-                          Container(
-                            padding: EdgeInsets.all(5),
-                            child: Text(
-                              "최단 경로",
-                              style: Theme.of(context).textTheme.headline6,
-                            ),
-                          ),
-                          Expanded(
-                              child: Scrollbar(
-                            isAlwaysShown: true,
-                            controller: _scrollController,
-                            child: ListView(
-                              children: [
-                                Card(
-                                  elevation: 1.5,
-                                  child: ListTile(
-                                    leading: RotationTransition(
-                                      turns: AlwaysStoppedAnimation(90 / 360),
-                                      child: Icon(Icons.play_arrow),
-                                    ),
-                                    horizontalTitleGap: 0,
-                                    title: Text(
-                                      "${startRoom.first.data()['name']} 출발",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                ...trace.sublist(1).map((e) {
-                                  final room =
-                                      widget.rooms.firstWhere((r) => r.id == e);
-                                  return Card(
-                                    elevation: 1.5,
-                                    child: ListTile(
-                                        leading: Icon(
-                                          room['type'] == 'stairs'
-                                              ? Icons.stairs
-                                              : Icons.keyboard_arrow_down,
-                                        ),
-                                        horizontalTitleGap: 0,
-                                        title: RichText(
-                                          text: TextSpan(
-                                              style: TextStyle(
-                                                color: Colors.black,
-                                                fontSize: 16,
-                                              ),
-                                              children: [
-                                                TextSpan(
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                  text: room.data()['name'],
-                                                ),
-                                                TextSpan(text: ' 으(로) 이동하세요.')
-                                              ]),
-                                        )),
-                                  );
-                                }),
-                                Card(
-                                  elevation: 1.5,
-                                  child: ListTile(
-                                    leading: Icon(Icons.check_circle),
-                                    horizontalTitleGap: 0,
-                                    title: Text(
-                                      "${destRoom.first.data()['name']} 도착",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )),
-                        ],
-                      ),
-                    ));
+                            )),
+                          ],
+                        ),
+                      ));
+                });
               },
             )),
         onRefresh: () async {},

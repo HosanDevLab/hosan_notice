@@ -126,8 +126,6 @@ void initAndBeginForeground() async {
         "비콘 ${beacons.length}개 로드됨 | " +
         "${scannedBeacons.length}개 스캔됨";
 
-    print(scannedBeacons.length.toString());
-
     FlutterForegroundTask.updateService(notificationText: notiText);
 
     final now = DateTime.now();
@@ -188,9 +186,7 @@ void initAndBeginForeground() async {
         ? beacons.firstWhere((e) => e.id == currentBeacon!.uuid)
         : null;
 
-    print('${prevBeaconFBData?.id} - ${currentBeaconFBData?.id}');
     if (prevBeaconFBData?.id != currentBeaconFBData?.id) {
-      print('CHANGED');
 
       if (currentBeaconFBData != null) {
         // 입실
@@ -202,8 +198,6 @@ void initAndBeginForeground() async {
         });
       } else if (prevBeaconFBData != null) {
         // 퇴실
-        print(
-            'akdhasklhklfhawhfkkhklflkhawkfhawklhwaklwahflkwahflkwafhakwlfhwflkah');
         await firestore.collection('activities').add({
           'room': prevBeaconFBData!.data()['room'],
           'type': 'out',
@@ -428,10 +422,11 @@ class _HomePageState extends State<HomePage> {
                               child: Text('더보기'),
                               onPressed: () {
                                 Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            AssignmentsPage()));
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => AssignmentsPage(),
+                                  ),
+                                );
                               },
                             ),
                           ],
@@ -493,8 +488,8 @@ class _HomePageState extends State<HomePage> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 ListTile(
-                                  title: Text('이거 완성하기'),
-                                  subtitle: Text('ㅁㄴㅇㄹ | 0일 남음'),
+                                  title: Text('완성하기'),
+                                  subtitle: Text('SW해커톤 | 9시간 남음'),
                                   onTap: () {},
                                 ),
                               ],
@@ -520,7 +515,7 @@ class _HomePageState extends State<HomePage> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 ListTile(
-                                  title: Text('분리수거좀 제대로 해라'),
+                                  title: Text('테스트 공지'),
                                   subtitle: Text('황부연 작성 | 2일 전'),
                                   onTap: () {},
                                 ),
@@ -534,7 +529,7 @@ class _HomePageState extends State<HomePage> {
                               children: [
                                 ListTile(
                                   title: Text('2학기 시간표'),
-                                  subtitle: Text('[담임] 영어 이종국 | 한 달 전'),
+                                  subtitle: Text('[담임] 영어 OOO | 한 달 전'),
                                   onTap: () {},
                                 ),
                               ],
@@ -547,7 +542,7 @@ class _HomePageState extends State<HomePage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('오늘의 급식',
+                            Text('최근 급식',
                                 style: Theme.of(context).textTheme.headline6),
                             TextButton(onPressed: () {}, child: Text('더보기')),
                           ],
@@ -560,8 +555,8 @@ class _HomePageState extends State<HomePage> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 ListTile(
-                                  title: Text('2021년 9월 19일'),
-                                  subtitle: Text('ㅁㄴㅇㄹ\nㅁㄴㅇㄹ\nㅁㄴㅇㄹ\nㅁㄴㅇㄹ\n'),
+                                  title: Text('2021년 11월 1일'),
+                                  subtitle: Text('테스트'),
                                   onTap: () {},
                                 ),
                               ],

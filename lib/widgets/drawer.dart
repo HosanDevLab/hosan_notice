@@ -13,6 +13,7 @@ import 'package:hosan_notice/pages/meal_info.dart';
 import 'package:hosan_notice/pages/my_attend.dart';
 import 'package:hosan_notice/pages/navigation.dart';
 import 'package:hosan_notice/pages/register.dart';
+import 'package:hosan_notice/pages/std_monitor.dart';
 import 'package:hosan_notice/pages/toilet_paper_status.dart';
 import 'package:package_info/package_info.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -148,28 +149,6 @@ class _MainDrawerState extends State<MainDrawer> {
               ),
               Divider(height: 0),
               ListTile(
-                title: Text('화장실 휴지 현황'),
-                dense: true,
-                leading: Icon(Icons.data_usage),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacement(
-                      widget.parentContext,
-                      MaterialPageRoute(
-                          builder: (context) => ToiletPaperStatusPage()));
-                },
-              ),
-              Divider(height: 0),
-              ListTile(
-                title: Text('교직원 배치도'),
-                dense: true,
-                leading: Icon(Icons.people),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-              Divider(height: 0),
-              ListTile(
                 title: Text('[DEBUG] 등록 화면'),
                 dense: true,
                 leading: Icon(Icons.login),
@@ -194,6 +173,19 @@ class _MainDrawerState extends State<MainDrawer> {
                       widget.parentContext,
                       MaterialPageRoute(
                           builder: (context) => BeaconScanPage()));
+                },
+              ),
+              Divider(height: 0),
+              ListTile(
+                title: Text('[교직원용] 학생 모니터링'),
+                dense: true,
+                leading: Icon(Icons.monitor),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushReplacement(
+                      widget.parentContext,
+                      MaterialPageRoute(
+                          builder: (context) => StudentMonitorPage()));
                 },
               ),
               Divider(height: 0),

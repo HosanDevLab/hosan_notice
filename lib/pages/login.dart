@@ -25,7 +25,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('호산고 알리미 로그인'),
+        title: Text('호산고 앱비 로그인'),
       ),
       body: Center(
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -45,7 +45,7 @@ class _LoginPageState extends State<LoginPage> {
             ],
           ),
           SizedBox(height: 5),
-          Text('학업 알림 및 휴지 현황 시스템'),
+          Text('학업 관리, 자동 출결, 내비게이션 시스템'),
           SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -224,7 +224,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
           Padding(
             padding: EdgeInsets.only(bottom: 16),
-            child: Text('개발 및 운영: 호산고 제3기 로봇공학반\n2021 강해 이승민 황부연',
+            child: Text('개발 및 운영: HosanDevLab\n2021 강해 이승민 황부연',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.caption),
           )

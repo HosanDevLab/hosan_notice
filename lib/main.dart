@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:isolate';
-import 'dart:ui';
 
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -91,6 +90,9 @@ class ForegroundTaskHandler implements TaskHandler {
   onEvent(DateTime timestamp, SendPort? sendPort) async {
     sendPort?.send(null);
   }
+
+  @override
+  void onButtonPressed(String id) async {}
 
   @override
   onDestroy(DateTime timestamp) async {

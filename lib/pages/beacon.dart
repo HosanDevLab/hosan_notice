@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:double_back_to_close/double_back_to_close.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hosan_notice/widgets/drawer.dart';
 import 'package:permission_handler/permission_handler.dart';

@@ -29,13 +29,13 @@ dependencies:
   google_sign_in: ^5.1.0
   firebase_core: ^1.6.0
   firebase_auth: ^3.1.1
-  firebase_analytics: ^5.0.2
-  firebase_remote_config: ^0.11.0+1
+  firebase_analytics: ^9.0.5
+  firebase_remote_config: ^1.0.4
   flutter_local_notifications: ^9.0.0
   package_info: ^2.0.2
   url_launcher: ^6.0.11
-  cloud_firestore: ^2.5.3
-  webview_flutter: ^2.0.14
+  cloud_firestore: ^3.1.6
+  webview_flutter: ^3.0.0
   double_back_to_close: ^2.0.0
   intl: ^0.17.0
   table_calendar: ^3.0.2

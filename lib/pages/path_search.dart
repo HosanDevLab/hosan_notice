@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class PathSearchPage extends StatefulWidget {
@@ -80,7 +79,7 @@ class _PathSearchPageState extends State<PathSearchPage> {
                   for (var oneGraph in graph[node]!.entries) {
                     final toGo = oneGraph.key;
                     final betweenDist = oneGraph.value;
-                    print('${node} -> ${toGo}');
+                    print('$node -> $toGo');
                     final toDist = routing[node]['shortestDist'] + betweenDist;
                     if ((routing[toGo]['shortestDist'] >= toDist) ||
                         routing[toGo]['route'].isEmpty) {

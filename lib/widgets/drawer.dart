@@ -2,16 +2,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hosan_notice/pages/assignments.dart';
 import 'package:hosan_notice/main.dart';
-import 'package:hosan_notice/pages/beacon.dart';
 import 'package:hosan_notice/pages/calendar.dart';
+import 'package:hosan_notice/pages/dev_tools.dart';
 import 'package:hosan_notice/pages/meal_info.dart';
 import 'package:hosan_notice/pages/my_attend.dart';
 import 'package:hosan_notice/pages/navigation.dart';
-import 'package:hosan_notice/pages/register.dart';
 import 'package:hosan_notice/pages/std_monitor.dart';
 import 'package:package_info/package_info.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -30,7 +28,6 @@ class _MainDrawerState extends State<MainDrawer> {
   final user = FirebaseAuth.instance.currentUser!;
   final firestore = FirebaseFirestore.instance;
   final refreshKey = GlobalKey<RefreshIndicatorState>();
-  final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
   @override
   void didChangeDependencies() {
@@ -62,8 +59,9 @@ class _MainDrawerState extends State<MainDrawer> {
         Expanded(
           flex: 2,
           child: ListView(
-            physics:
-                BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+            physics: BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
             padding: EdgeInsets.zero,
             children: [
               Divider(height: 0),
@@ -73,8 +71,12 @@ class _MainDrawerState extends State<MainDrawer> {
                 leading: Icon(Icons.home),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.pushReplacement(widget.parentContext,
-                      MaterialPageRoute(builder: (context) => HomePage()));
+                  Navigator.pushReplacement(
+                    widget.parentContext,
+                    MaterialPageRoute(
+                      builder: (context) => HomePage(),
+                    ),
+                  );
                 },
               ),
               Divider(height: 0),
@@ -85,9 +87,11 @@ class _MainDrawerState extends State<MainDrawer> {
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.pushReplacement(
-                      widget.parentContext,
-                      MaterialPageRoute(
-                          builder: (context) => AssignmentsPage()));
+                    widget.parentContext,
+                    MaterialPageRoute(
+                      builder: (context) => AssignmentsPage(),
+                    ),
+                  );
                 },
               ),
               Divider(height: 0),
@@ -106,8 +110,12 @@ class _MainDrawerState extends State<MainDrawer> {
                 leading: Icon(Icons.fact_check),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.pushReplacement(widget.parentContext,
-                      MaterialPageRoute(builder: (context) => MyAttendancePage()));
+                  Navigator.pushReplacement(
+                    widget.parentContext,
+                    MaterialPageRoute(
+                      builder: (context) => MyAttendancePage(),
+                    ),
+                  );
                 },
               ),
               Divider(height: 0),
@@ -117,8 +125,12 @@ class _MainDrawerState extends State<MainDrawer> {
                 leading: Icon(Icons.event_note),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.pushReplacement(widget.parentContext,
-                      MaterialPageRoute(builder: (context) => CalendarPage()));
+                  Navigator.pushReplacement(
+                    widget.parentContext,
+                    MaterialPageRoute(
+                      builder: (context) => CalendarPage(),
+                    ),
+                  );
                 },
               ),
               Divider(height: 0),
@@ -129,9 +141,11 @@ class _MainDrawerState extends State<MainDrawer> {
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.pushReplacement(
-                      widget.parentContext,
-                      MaterialPageRoute(
-                          builder: (context) => NavigationPage()));
+                    widget.parentContext,
+                    MaterialPageRoute(
+                      builder: (context) => NavigationPage(),
+                    ),
+                  );
                 },
               ),
               Divider(height: 0),
@@ -141,38 +155,28 @@ class _MainDrawerState extends State<MainDrawer> {
                 leading: Icon(Icons.dining),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.pushReplacement(widget.parentContext,
-                      MaterialPageRoute(builder: (context) => MealInfoPage()));
-                },
-              ),
-              Divider(height: 0),
-              ListTile(
-                title: Text('[DEBUG] 등록 화면'),
-                dense: true,
-                leading: Icon(Icons.login),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
+                  Navigator.pushReplacement(
                     widget.parentContext,
                     MaterialPageRoute(
-                      builder: (context) => RegisterPage(),
+                      builder: (context) => MealInfoPage(),
                     ),
                   );
                 },
               ),
               Divider(height: 0),
               ListTile(
-                title: Text('[DEBUG] 비콘'),
-                dense: true,
-                leading: Icon(Icons.bluetooth_connected),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacement(
+                  title: Text('개발자 옵션'),
+                  dense: true,
+                  leading: Icon(Icons.adb),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushReplacement(
                       widget.parentContext,
                       MaterialPageRoute(
-                          builder: (context) => BeaconScanPage()));
-                },
-              ),
+                        builder: (context) => DevtoolsPage(),
+                      ),
+                    );
+                  }),
               Divider(height: 0),
               ListTile(
                 title: Text('[교직원용] 학생 모니터링'),
@@ -184,35 +188,6 @@ class _MainDrawerState extends State<MainDrawer> {
                       widget.parentContext,
                       MaterialPageRoute(
                           builder: (context) => StudentMonitorPage()));
-                },
-              ),
-              Divider(height: 0),
-              ListTile(
-                title: Text('[DEBUG] 알림 테스트'),
-                dense: true,
-                leading: Icon(Icons.notifications),
-                onTap: () async {
-                  Navigator.pop(context);
-                  var androidPlatformChannelSpecifics =
-                  AndroidNotificationDetails(
-                      'test_channel', '테스트 알림',
-                      channelDescription: '테스트용 알림입니다.',
-                      importance: Importance.max,
-                      priority: Priority.high);
-
-                  var iosPlatformChannelSpecifics =
-                  IOSNotificationDetails(sound: 'slow_spring.board.aiff');
-                  var platformChannelSpecifics = NotificationDetails(
-                      android: androidPlatformChannelSpecifics,
-                      iOS: iosPlatformChannelSpecifics);
-
-                  await flutterLocalNotificationsPlugin.show(
-                    0,
-                    '테스트 알림',
-                    '이것은 Flutter 노티피케이션!',
-                    platformChannelSpecifics,
-                    payload: 'Hello Flutter',
-                  );
                 },
               ),
               Divider(height: 0),

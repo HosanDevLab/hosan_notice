@@ -55,6 +55,8 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Widget firstPage(BuildContext context) {
     return SingleChildScrollView(
+        child: Container(
+      padding: EdgeInsets.symmetric(vertical: 22, horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -74,13 +76,14 @@ class _RegisterPageState extends State<RegisterPage> {
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(5.0)),
                       contentPadding:
-                      EdgeInsets.symmetric(vertical: 16, horizontal: 12)),
+                          EdgeInsets.symmetric(vertical: 16, horizontal: 12)),
                   onChanged: (value) {},
                   onSaved: (value) {
                     grade = value as int;
                   },
                   items: List.generate(3, (index) => index + 1)
-                      .map((e) => DropdownMenuItem(child: Text('$e학년'), value: e))
+                      .map((e) =>
+                          DropdownMenuItem(child: Text('$e학년'), value: e))
                       .toList(),
                 ),
               ),
@@ -97,13 +100,14 @@ class _RegisterPageState extends State<RegisterPage> {
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(5.0)),
                       contentPadding:
-                      EdgeInsets.symmetric(vertical: 16, horizontal: 12)),
+                          EdgeInsets.symmetric(vertical: 16, horizontal: 12)),
                   onChanged: (value) {},
                   onSaved: (value) {
                     classNum = value as int;
                   },
                   items: List.generate(10, (index) => index + 1)
-                      .map((e) => DropdownMenuItem(child: Text('$e반'), value: e))
+                      .map(
+                          (e) => DropdownMenuItem(child: Text('$e반'), value: e))
                       .toList(),
                 ),
               ),
@@ -129,7 +133,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         borderRadius: BorderRadius.circular(5.0),
                       ),
                       contentPadding:
-                      EdgeInsets.symmetric(vertical: 18, horizontal: 12)),
+                          EdgeInsets.symmetric(vertical: 18, horizontal: 12)),
                 ),
               )
             ],
@@ -151,41 +155,41 @@ class _RegisterPageState extends State<RegisterPage> {
                   borderRadius: BorderRadius.circular(5.0),
                 ),
                 contentPadding:
-                EdgeInsets.symmetric(vertical: 18, horizontal: 12)),
+                    EdgeInsets.symmetric(vertical: 18, horizontal: 12)),
           ),
           SizedBox(height: 16),
           RichText(
               text: TextSpan(style: TextStyle(color: Colors.black), children: [
-                TextSpan(text: '등록하면 '),
-                TextSpan(
-                  text: '<호산고 앱비> 개인정보 처리방침',
-                  style: TextStyle(color: Colors.blue),
-                  recognizer: TapGestureRecognizer()
-                    ..onTap = () {
-                      showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: Text('개인정보 처리방침'),
-                              content: WebView(
-                                initialUrl: 'about:blank',
-                                onWebViewCreated:
-                                    (WebViewController webViewController) async {
-                                  _controller = webViewController;
-                                  String fileText = await rootBundle
-                                      .loadString('assets/privacy.html');
-                                  _controller.loadUrl(Uri.dataFromString(fileText,
+            TextSpan(text: '등록하면 '),
+            TextSpan(
+              text: '<호산고 앱비> 개인정보 처리방침',
+              style: TextStyle(color: Colors.blue),
+              recognizer: TapGestureRecognizer()
+                ..onTap = () {
+                  showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text('개인정보 처리방침'),
+                          content: WebView(
+                            initialUrl: 'about:blank',
+                            onWebViewCreated:
+                                (WebViewController webViewController) async {
+                              _controller = webViewController;
+                              String fileText = await rootBundle
+                                  .loadString('assets/privacy.html');
+                              _controller.loadUrl(Uri.dataFromString(fileText,
                                       mimeType: 'text/html',
                                       encoding: Encoding.getByName('utf-8'))
-                                      .toString());
-                                },
-                              ),
-                            );
-                          });
-                    },
-                ),
-                TextSpan(text: '에 동의하는 것으로 간주됩니다.')
-              ])),
+                                  .toString());
+                            },
+                          ),
+                        );
+                      });
+                },
+            ),
+            TextSpan(text: '에 동의하는 것으로 간주됩니다.')
+          ])),
           Padding(
               padding: EdgeInsets.symmetric(vertical: 16.0),
               child: SizedBox(
@@ -212,7 +216,7 @@ class _RegisterPageState extends State<RegisterPage> {
               )),
         ],
       ),
-    );
+    ));
   }
 
   Widget secondPage(BuildContext context) {
@@ -222,133 +226,138 @@ class _RegisterPageState extends State<RegisterPage> {
         child: SingleChildScrollView(
           physics:
               BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text('수강 과목을 선택합니다',
-                  style: Theme.of(context).textTheme.subtitle1),
-              SizedBox(height: 18),
-              FutureBuilder(
-                  future: _subjects,
-                  builder: (BuildContext context, AsyncSnapshot snapshot) {
-                    if (!snapshot.hasData) return CircularProgressIndicator();
+          child: Container(
+            padding: EdgeInsets.symmetric(vertical: 22, horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text('수강 과목을 선택합니다',
+                    style: Theme.of(context).textTheme.subtitle1),
+                SizedBox(height: 18),
+                FutureBuilder(
+                    future: _subjects,
+                    builder: (BuildContext context, AsyncSnapshot snapshot) {
+                      if (!snapshot.hasData) return CircularProgressIndicator();
 
-                    return Column(
-                      children: [
-                        ListView(
-                          physics: NeverScrollableScrollPhysics(),
-                          shrinkWrap: true,
-                          children: (snapshot.data as List)
-                              .where((e) => e.data()['grade'] == grade)
-                              .map((e) {
-                            final data = e.data();
-                            return InkWell(
-                              onTap: () {
-                                setState(() {
-                                  _selectedSubjects[e.id] =
-                                      _selectedSubjects[e.id] == true
-                                          ? false
-                                          : true;
-                                });
-                              },
+                      return Column(
+                        children: [
+                          ListView(
+                            physics: NeverScrollableScrollPhysics(),
+                            shrinkWrap: true,
+                            children: (snapshot.data as List)
+                                .where((e) => e.data()['grade'] == grade)
+                                .map((e) {
+                              final data = e.data();
+                              return InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    _selectedSubjects[e.id] =
+                                        _selectedSubjects[e.id] == true
+                                            ? false
+                                            : true;
+                                  });
+                                },
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: <Widget>[
+                                    Transform.scale(
+                                      scale: 1.08,
+                                      child: Checkbox(
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(4)),
+                                        value: data['isRequired'] == true ||
+                                            _selectedSubjects[e.id] == true,
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _selectedSubjects[e.id] = value;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                    Text(
+                                        (data['isRequired'] ? '[필수] ' : '') +
+                                            data['name'],
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .subtitle1)
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                          Padding(
+                              padding: EdgeInsets.symmetric(vertical: 16.0),
                               child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: <Widget>[
-                                  Transform.scale(
-                                    scale: 1.08,
-                                    child: Checkbox(
-                                      shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(4)),
-                                      value: data['isRequired'] == true ||
-                                          _selectedSubjects[e.id] == true,
-                                      onChanged: (value) {
+                                children: [
+                                  Expanded(
+                                      child: Container(
+                                    height: 45,
+                                    child: OutlinedButton.icon(
+                                      icon: Icon(Icons.arrow_back),
+                                      label: Text('이전',
+                                          style: TextStyle(fontSize: 16)),
+                                      onPressed: () {
                                         setState(() {
-                                          _selectedSubjects[e.id] = value;
+                                          _index = 0;
                                         });
                                       },
                                     ),
-                                  ),
-                                  Text(
-                                      (data['isRequired'] ? '[필수] ' : '') +
-                                          data['name'],
-                                      style:
-                                          Theme.of(context).textTheme.subtitle1)
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                        Padding(
-                            padding: EdgeInsets.symmetric(vertical: 16.0),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                    child: Container(
-                                  height: 45,
-                                  child: OutlinedButton.icon(
-                                    icon: Icon(Icons.arrow_back),
-                                    label: Text('이전',
-                                        style: TextStyle(fontSize: 16)),
-                                    onPressed: () {
-                                      setState(() {
-                                        _index = 0;
-                                      });
-                                    },
-                                  ),
-                                )),
-                                SizedBox(width: 10),
-                                Expanded(
-                                    child: Container(
-                                  height: 45,
-                                  child: ElevatedButton.icon(
-                                    icon: Icon(Icons.check),
-                                    label: Text('등록하기',
-                                        style: TextStyle(fontSize: 16)),
-                                    onPressed: () {
-                                      if (_formKey.currentState!.validate()) {
-                                        setState(() {
-                                          _formKey.currentState!.save();
-                                        });
-                                        final requiredSubjectKeys =
-                                            (snapshot.data as List)
-                                                .where((e) =>
-                                                    e.data()['isRequired'] ==
-                                                        true &&
-                                                    e.data()['grade'] == grade)
-                                                .map((e) => e.id);
-                                        requiredSubjectKeys.forEach((e) {
-                                          _selectedSubjects[e] = true;
-                                        });
+                                  )),
+                                  SizedBox(width: 10),
+                                  Expanded(
+                                      child: Container(
+                                    height: 45,
+                                    child: ElevatedButton.icon(
+                                      icon: Icon(Icons.check),
+                                      label: Text('등록하기',
+                                          style: TextStyle(fontSize: 16)),
+                                      onPressed: () {
+                                        if (_formKey.currentState!.validate()) {
+                                          setState(() {
+                                            _formKey.currentState!.save();
+                                          });
+                                          final requiredSubjectKeys = (snapshot
+                                                  .data as List)
+                                              .where((e) =>
+                                                  e.data()['isRequired'] ==
+                                                      true &&
+                                                  e.data()['grade'] == grade)
+                                              .map((e) => e.id);
+                                          requiredSubjectKeys.forEach((e) {
+                                            _selectedSubjects[e] = true;
+                                          });
 
-                                        firestore
-                                            .collection('students')
-                                            .doc(user!.uid)
-                                            .set({
-                                          'name': name,
-                                          'grade': grade,
-                                          'classNum': classNum,
-                                          'numberInClass': numberInClass,
-                                          'isPending': false,
-                                          'subjects': _selectedSubjects.entries
-                                              .map((e) => firestore
-                                                  .collection('subjects')
-                                                  .doc(e.key))
-                                              .toList()
-                                        });
-                                        setState(() {
-                                          _index = 2;
-                                        });
-                                      }
-                                    },
-                                  ),
-                                )),
-                              ],
-                            )),
-                      ],
-                    );
-                  }),
-            ],
+                                          firestore
+                                              .collection('students')
+                                              .doc(user!.uid)
+                                              .set({
+                                            'name': name,
+                                            'grade': grade,
+                                            'classNum': classNum,
+                                            'numberInClass': numberInClass,
+                                            'isPending': false,
+                                            'subjects': _selectedSubjects
+                                                .entries
+                                                .map((e) => firestore
+                                                    .collection('subjects')
+                                                    .doc(e.key))
+                                                .toList()
+                                          });
+                                          setState(() {
+                                            _index = 2;
+                                          });
+                                        }
+                                      },
+                                    ),
+                                  )),
+                                ],
+                              )),
+                        ],
+                      );
+                    }),
+              ],
+            ),
           ),
         ),
       ),
@@ -363,49 +372,62 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Widget thirdPage(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text('앱 사용을 위한 권한을 허용해주세요.',
-            style: Theme.of(context).textTheme.subtitle1),
-        SizedBox(height: 10),
-        Divider(),
-        ListTile(
-          leading: Icon(Icons.bluetooth),
-          title: Text('블루투스'),
-          subtitle: Text('자동 출결, 교내 네비게이션'),
-          contentPadding: EdgeInsets.symmetric(horizontal: 0),
-        ),
-        Divider(),
-        ListTile(
-          leading: Icon(Icons.location_on),
-          title: Text('위치'),
-          subtitle: Text('자동 출결, 교내 네비게이션'),
-          contentPadding: EdgeInsets.symmetric(horizontal: 0),
-        ),
-        Divider(),
-        SizedBox(height: 5),
-        SizedBox(
-          height: 45,
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () async {
-              await [
-                Permission.location,
-                Permission.bluetooth,
-              ].request();
-              Navigator.pop(context);
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => HomePage(),
+    return Container(
+      height: double.infinity,
+      child: SingleChildScrollView(
+        physics: BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: 22, horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text('앱 사용을 위한 권한을 허용해주세요.',
+                  style: Theme.of(context).textTheme.subtitle1),
+              SizedBox(height: 10),
+              Divider(),
+              ListTile(
+                leading: Icon(Icons.bluetooth),
+                title: Text('블루투스'),
+                subtitle: Text('자동 출결, 교내 네비게이션'),
+                contentPadding: EdgeInsets.symmetric(horizontal: 0),
+              ),
+              Divider(),
+              ListTile(
+                leading: Icon(Icons.location_on),
+                title: Text('위치'),
+                subtitle: Text('자동 출결, 교내 네비게이션'),
+                contentPadding: EdgeInsets.symmetric(horizontal: 0),
+              ),
+              Divider(),
+              Text(
+                '[호산고 알리미] 는 앱을 닫거나 직접 사용하지 않는 경우에도 자동 출결, 교내 내비게이션 기능을 사용하기 위해 위치 데이터에 접근합니다. 계속하면 이에 동의하는 것으로 간주합니다.',
+                style: Theme.of(context).textTheme.caption,
+              ),
+              SizedBox(height: 18),
+              SizedBox(
+                height: 45,
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    await [
+                      Permission.location,
+                      Permission.bluetooth,
+                    ].request();
+                    Navigator.pop(context);
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => HomePage(),
+                      ),
+                    );
+                  },
+                  child: Text('계속하기', style: TextStyle(fontSize: 16)),
                 ),
-              );
-            },
-            child: Text('계속하기', style: TextStyle(fontSize: 16)),
+              )
+            ],
           ),
-        )
-      ],
+        ),
+      ),
     );
   }
 
@@ -418,7 +440,6 @@ class _RegisterPageState extends State<RegisterPage> {
       body: Form(
         key: _formKey,
         child: Container(
-          padding: EdgeInsets.symmetric(vertical: 22, horizontal: 20),
           child: AnimatedIndexedStack(
             duration: Duration(milliseconds: 250),
             index: _index,

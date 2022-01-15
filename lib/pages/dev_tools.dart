@@ -32,6 +32,8 @@ class _DevtoolsPageState extends State<DevtoolsPage> {
         ),
         body: Container(
           child: ListView(
+            physics:
+                BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
             children: [
               SizedBox(height: 16),
               Row(
@@ -45,7 +47,10 @@ class _DevtoolsPageState extends State<DevtoolsPage> {
               ),
               ListTile(
                 title: Text('유저 ID 토큰 확인'),
-                subtitle: Text('현재 유저 클라이언트의 Firebase ID Token 확인하기'),
+                subtitle: Text(
+                  '현재 유저 클라이언트의 Firebase ID Token 확인하기',
+                  style: TextStyle(fontSize: 14),
+                ),
                 onTap: () {
                   showDialog(
                       context: context,
@@ -67,7 +72,10 @@ class _DevtoolsPageState extends State<DevtoolsPage> {
                                 child: SingleChildScrollView(
                                   child: Container(
                                     padding: EdgeInsets.only(right: 5),
-                                    child: Text(snapshot.data!),
+                                    child: Text(
+                                      snapshot.data!,
+                                      style: TextStyle(fontSize: 14),
+                                    ),
                                   ),
                                 ),
                                 isAlwaysShown: true,
@@ -101,7 +109,10 @@ class _DevtoolsPageState extends State<DevtoolsPage> {
               ),
               ListTile(
                 title: Text('등록 화면으로 이동'),
-                subtitle: Text('등록 화면으로 이동'),
+                subtitle: Text(
+                  '등록 화면으로 이동',
+                  style: TextStyle(fontSize: 14),
+                ),
                 onTap: () {
                   Navigator.push(
                     context,
@@ -114,7 +125,10 @@ class _DevtoolsPageState extends State<DevtoolsPage> {
               Divider(height: 0),
               ListTile(
                 title: Text('비콘 디버깅'),
-                subtitle: Text('내 주변 비콘 스캔'),
+                subtitle: Text(
+                  '내 주변 비콘 스캔',
+                  style: TextStyle(fontSize: 14),
+                ),
                 onTap: () {
                   Navigator.push(
                     context,
@@ -136,7 +150,10 @@ class _DevtoolsPageState extends State<DevtoolsPage> {
               ),
               ListTile(
                 title: Text('테스트 알림 전송'),
-                subtitle: Text('알림 테스트'),
+                subtitle: Text(
+                  '알림 테스트',
+                  style: TextStyle(fontSize: 14),
+                ),
                 onTap: () async {
                   var androidPlatformChannelSpecifics =
                       AndroidNotificationDetails('test_channel', '테스트 알림',

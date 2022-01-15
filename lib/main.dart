@@ -189,7 +189,6 @@ void initAndBeginForeground() async {
         : null;
 
     if (prevBeaconFBData?.id != currentBeaconFBData?.id) {
-
       if (currentBeaconFBData != null) {
         // 입실
         await firestore.collection('activities').add({
@@ -441,7 +440,16 @@ class _HomePageState extends State<HomePage> {
                             if (!snapshot.hasData)
                               return CircularProgressIndicator();
 
-                            if (snapshot.data[0].isEmpty) {
+                            final recentAssignments = (snapshot.data[0] as List)
+                                .where((e) => e.data()['deadline'] == null
+                                    ? true
+                                    : (e.data()['deadline'].toDate()
+                                                as DateTime)
+                                            .difference(DateTime.now())
+                                            .inSeconds >
+                                        0);
+
+                            if (recentAssignments.isEmpty) {
                               return Container(
                                 padding: EdgeInsets.all(10),
                                 child: Text(
@@ -452,15 +460,7 @@ class _HomePageState extends State<HomePage> {
                             }
 
                             return Column(
-                              children: (snapshot.data[0] as List)
-                                  .where((e) => e.data()['deadline'] == null
-                                      ? true
-                                      : (e.data()['deadline'].toDate()
-                                                  as DateTime)
-                                              .difference(DateTime.now())
-                                              .inSeconds >
-                                          0)
-                                  .map<Widget>((e) {
+                              children: recentAssignments.map<Widget>((e) {
                                 return assignmentCard(context, snapshot, e);
                               }).toList(),
                             );

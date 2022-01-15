@@ -200,7 +200,6 @@ class _MainDrawerState extends State<MainDrawer> {
                       context: context,
                       builder: (BuildContext context) {
                         return AlertDialog(
-                          title: Text('로그아웃'),
                           content: Text('로그아웃할까요?'),
                           actions: <Widget>[
                             TextButton(
@@ -287,8 +286,7 @@ class _MainDrawerState extends State<MainDrawer> {
                               style: TextStyle(color: Colors.black),
                               text: '\n\n* 앱 이용과 관련해 문의사항이 있으시거나 '
                                   '오류 등으로 이용에 지장이 생기는 경우 '
-                                  '언제든 상기 메일 주소를 통해 연락 '
-                                  '또는 주중에 1학년 8반에 방문해주십시오.',
+                                  '언제든 상기 메일 주소를 통해 연락해주시기 바랍니다.',
                             ),
                           ])),
                         )

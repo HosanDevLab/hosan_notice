@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:hosan_notice/pages/register.dart';
 import 'package:hosan_notice/widgets/drawer.dart';
+import 'package:localstorage/localstorage.dart';
 
 import 'beacon.dart';
 
@@ -16,6 +17,7 @@ class DevtoolsPage extends StatefulWidget {
 
 class _DevtoolsPageState extends State<DevtoolsPage> {
   final user = FirebaseAuth.instance.currentUser!;
+  final storage = new LocalStorage('auth.json');
   final firestore = FirebaseFirestore.instance;
   final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
@@ -72,7 +74,7 @@ class _DevtoolsPageState extends State<DevtoolsPage> {
                                 child: SingleChildScrollView(
                                   child: Container(
                                     padding: EdgeInsets.only(right: 5),
-                                    child: Text(
+                                    child: SelectableText(
                                       snapshot.data!,
                                       style: TextStyle(fontSize: 14),
                                     ),
@@ -88,6 +90,49 @@ class _DevtoolsPageState extends State<DevtoolsPage> {
                               onPressed: () => Clipboard.setData(
                                   ClipboardData(text: idToken)),
                             ),
+                            TextButton(
+                              child: Text('닫기'),
+                              onPressed: () => Navigator.pop(context, "닫기"),
+                            )
+                          ],
+                        );
+                      });
+                },
+              ),
+              Divider(height: 0),
+              ListTile(
+                title: Text('Shared Preferences 확인'),
+                subtitle: Text(
+                  '애플리케이션 공유 변수 확인',
+                  style: TextStyle(fontSize: 14),
+                ),
+                onTap: () {
+                  showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: Text('Shared Preferences'),
+                          content: FutureBuilder(
+                            future: storage.ready,
+                            builder: (BuildContext context,
+                                AsyncSnapshot snapshot) {
+                              if (snapshot.data != true) return Text('불러오는 중');
+
+                              return Scrollbar(
+                                child: SingleChildScrollView(
+                                  child: Container(
+                                    padding: EdgeInsets.only(right: 5),
+                                    child: SelectableText(
+                                      storage.getItem('AUTH_TOKEN').toString(),
+                                      style: TextStyle(fontSize: 14),
+                                    ),
+                                  ),
+                                ),
+                                isAlwaysShown: true,
+                              );
+                            },
+                          ),
+                          actions: [
                             TextButton(
                               child: Text('닫기'),
                               onPressed: () => Navigator.pop(context, "닫기"),

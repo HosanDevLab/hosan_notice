@@ -7,8 +7,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:hosan_notice/modules/jwt_retry.dart';
 import 'package:hosan_notice/widgets/drawer.dart';
-import 'package:http/http.dart' as http;
+import 'package:localstorage/localstorage.dart';
 
 class MealInfoPage extends StatefulWidget {
   @override
@@ -17,6 +18,7 @@ class MealInfoPage extends StatefulWidget {
 
 class _MealInfoPageState extends State<MealInfoPage> {
   final user = FirebaseAuth.instance.currentUser!;
+  final storage = new LocalStorage('auth.json');
   final firestore = FirebaseFirestore.instance;
   final remoteConfig = RemoteConfig.instance;
   final refreshKey = GlobalKey<RefreshIndicatorState>();
@@ -30,15 +32,24 @@ class _MealInfoPageState extends State<MealInfoPage> {
     var rawData = remoteConfig.getAll()['BACKEND_HOST'];
     var cfgs = jsonDecode(rawData!.asString());
 
-    final response = await http.get(
-        Uri.parse(
-            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/meal-info'),
-        headers: {'ID-Token': await user.getIdToken(true)});
+    final client = jwtRetryClient();
 
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
-    } else {
-      throw Exception('Failed to load post');
+    try {
+      final response = await client.get(
+          Uri.parse(
+              '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/meal-info'),
+          headers: {
+            'ID-Token': await user.getIdToken(true),
+            'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+          });
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Failed to load post');
+      }
+    } finally {
+      client.close();
     }
   }
 
@@ -69,12 +80,13 @@ class _MealInfoPageState extends State<MealInfoPage> {
             child: Column(
               children: [
                 Text(
-                  diffDays == 0 ? '오늘'
-                     : diffDays == 1
-                        ? '내일'
-                        : diffDays == 2
-                            ? '모레'
-                            : '${dt.month}월 ${dt.day}일 ($dayofWeek)',
+                    diffDays == 0
+                        ? '오늘'
+                        : diffDays == 1
+                            ? '내일'
+                            : diffDays == 2
+                                ? '모레'
+                                : '${dt.month}월 ${dt.day}일 ($dayofWeek)',
                     style: TextStyle(fontSize: 22)),
                 SizedBox(height: 24, child: Divider()),
                 Expanded(
@@ -165,8 +177,8 @@ class _MealInfoPageState extends State<MealInfoPage> {
                               label: Text('최근으로')),
                           SizedBox(width: 10),
                           OutlinedButton(
-                              style:
-                              TextButton.styleFrom(minimumSize: Size(0, 35)),
+                              style: TextButton.styleFrom(
+                                  minimumSize: Size(0, 35)),
                               onPressed: () async {
                                 final date = await showDatePicker(
                                     context: context,

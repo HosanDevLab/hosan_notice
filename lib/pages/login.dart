@@ -1,26 +1,65 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hosan_notice/main.dart';
+import 'package:hosan_notice/modules/get_device_id.dart';
 import 'package:hosan_notice/pages/register.dart';
 import 'package:http/http.dart' as http;
-import 'dart:io';
+import 'package:localstorage/localstorage.dart';
 
 class LoginPage extends StatefulWidget {
   @override
   _LoginPageState createState() => _LoginPageState();
 }
 
+final showLoginErrorDialog = (BuildContext context, http.Response response) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      final msg = jsonDecode(response.body)['message'];
+
+      return AlertDialog(
+        title: Text('로그인에 실패했습니다.'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('오류 메시지:'),
+            SizedBox(height: 12),
+            Text(
+              msg,
+              style: Theme.of(context).textTheme.bodyText2,
+            ),
+            SizedBox(height: 12),
+            Text(
+              '문제가 지속될 경우 21181@hosan.hs.kr로 문의해주십시오. 위 오류 메시지를 같이 알려주시면 해결에 도움이 됩니다.',
+              style: Theme.of(context).textTheme.caption,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: Text('닫기'),
+          )
+        ],
+      );
+    },
+  );
+};
+
 class _LoginPageState extends State<LoginPage> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   final remoteConfig = RemoteConfig.instance;
+  final storage = new LocalStorage('auth.json');
   bool isLoggingIn = false;
   bool isDisposed = false;
 
@@ -28,6 +67,247 @@ class _LoginPageState extends State<LoginPage> {
   void dispose() {
     super.dispose();
     isDisposed = true;
+  }
+
+  Future<void> doLogin() async {
+    if (isLoggingIn) return;
+    if (!isDisposed) {
+      setState(() {
+        isLoggingIn = true;
+      });
+    }
+
+    try {
+      // 로그인 전 초기화
+      await FirebaseAuth.instance.signOut();
+      await GoogleSignIn().signOut();
+
+      await storage.deleteItem('AUTH_TOKEN');
+      await storage.deleteItem('REFRESH_TOKEN');
+
+      // 구글 로그인 창 표시
+      final googleSignInAccount = await GoogleSignIn().signIn();
+
+      if (googleSignInAccount == null) {
+        print('Login canceled');
+        return;
+      }
+
+      final googleSignInAuthentication =
+          await googleSignInAccount.authentication;
+
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleSignInAuthentication.accessToken,
+        idToken: googleSignInAuthentication.idToken,
+      );
+
+      var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+      var cfgs = jsonDecode(rawData!.asString());
+
+      final signInData =
+          await FirebaseAuth.instance.signInWithCredential(credential);
+
+      if (signInData.user == null) return;
+
+      if (signInData.user!.email!.split('@').last != 'hosan.hs.kr') {
+        showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text("호산고 계정이 아닙니다."),
+                content: Text(
+                    "호산고등학교에서 발급한 Google 계정 (숫자@hosan.hs.kr)으로 로그인하세요!\n\n계정을 잊어버리셨다면 선생님께 문의해주세요."),
+                actions: <Widget>[
+                  TextButton(
+                    child: Text("닫기"),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                ],
+              );
+            });
+
+        return;
+      }
+
+      // 디바이스 고유 식별자 불러오기
+      final deviceId = await getDeviceId();
+
+      if (deviceId == null || deviceId.isEmpty) {
+        showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text('로그인 보안 오류'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '부정이용 방지를 위한 디바이스 고유 식별자(ID)를 불러오는 데 실패했습니다.',
+                      style: Theme.of(context).textTheme.bodyText2,
+                    ),
+                    SizedBox(height: 12),
+                    Text(
+                      '문제가 지속될 경우 21181@hosan.hs.kr로 문의해주십시오. 위 오류 메시지를 같이 알려주시면 해결에 도움이 됩니다.',
+                      style: Theme.of(context).textTheme.caption,
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: Text('닫기'),
+                  )
+                ],
+              );
+            });
+      }
+
+      // 로그인 토큰 불러오는 엔드포인트
+      final getToken = () async {
+        return await http.get(
+            Uri.parse(
+                '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/auth/token'),
+            headers: {
+              'ID-Token': await signInData.user!.getIdToken(true),
+              'Device-ID': deviceId ?? '',
+            }).timeout(
+          Duration(seconds: 20),
+          onTimeout: () => http.Response(
+            '{"message":"연결 시간 초과"}',
+            403,
+            headers: {
+              HttpHeaders.contentTypeHeader: 'application/json; charset=utf-8',
+            },
+          ),
+        );
+      };
+
+      final response = await getToken();
+
+      // 로그인 최종 진행
+      final continueLogin = () async {
+        CollectionReference students = firestore.collection('students');
+
+        DocumentSnapshot me = await students.doc(signInData.user!.uid).get();
+
+        if (me.exists) {
+          await Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (context) => HomePage()));
+        } else {
+          await Navigator.push(
+              context, MaterialPageRoute(builder: (context) => RegisterPage()));
+        }
+      };
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        storage.setItem('AUTH_TOKEN', data['token']);
+        storage.setItem('REFRESH_TOKEN', data['refreshToken']);
+        continueLogin();
+      } else if (response.statusCode == 403 &&
+          jsonDecode(response.body)['code'] == 40300) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('이미 로그인된 기기가 존재해요.\n이 기기로 계속할까요?'),
+                  Divider(height: 36),
+                  Text(
+                    '주의! 부정이용 방지를 위해, 계속하면 기존에 로그인된 기기는 로그아웃하고 이 기기로 로그인됩니다.',
+                    style: Theme.of(context).textTheme.caption,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () async {
+                    Navigator.pop(context);
+
+                    showDialog(
+                      barrierDismissible: false,
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          content: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(),
+                              ),
+                              Container(
+                                margin: EdgeInsets.only(left: 16),
+                                child: Text("처리하는 중입니다..."),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+
+                    final respLogoutOther = await http.post(
+                        Uri.parse(
+                            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/auth/logout-other'),
+                        headers: {
+                          'ID-Token': await signInData.user!.getIdToken(true),
+                        }).timeout(
+                      Duration(seconds: 20),
+                      onTimeout: () => http.Response(
+                        '{"message":"연결 시간 초과"}',
+                        403,
+                        headers: {
+                          HttpHeaders.contentTypeHeader:
+                              'application/json; charset=utf-8',
+                        },
+                      ),
+                    );
+
+                    if (respLogoutOther.statusCode != 200) {
+                      showLoginErrorDialog(context, respLogoutOther);
+                      return;
+                    }
+
+                    final respToken = await getToken();
+
+                    final data = json.decode(respToken.body);
+                    storage.setItem('AUTH_TOKEN', data['token']);
+                    storage.setItem('REFRESH_TOKEN', data['refreshToken']);
+
+                    continueLogin();
+                  },
+                  child: Text('계속하기'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text('취소'),
+                )
+              ],
+            );
+          },
+        );
+      } else {
+        showLoginErrorDialog(context, response);
+      }
+    } finally {
+      if (!isDisposed) {
+        setState(() {
+          isLoggingIn = false;
+        });
+      }
+    }
   }
 
   @override
@@ -62,144 +342,7 @@ class _LoginPageState extends State<LoginPage> {
               SizedBox(
                 height: 42,
                 child: ElevatedButton.icon(
-                  onPressed: () async {
-                    if (isLoggingIn) return;
-                    if (!isDisposed) {
-                      setState(() {
-                        isLoggingIn = true;
-                      });
-                    }
-
-                    try {
-                      await FirebaseAuth.instance.signOut();
-                      await GoogleSignIn().signOut();
-
-                      final googleSignInAccount = await GoogleSignIn().signIn();
-
-                      if (googleSignInAccount == null) {
-                        print('Login canceled');
-                        return;
-                      }
-
-                      final googleSignInAuthentication =
-                          await googleSignInAccount.authentication;
-
-                      final AuthCredential credential =
-                          GoogleAuthProvider.credential(
-                        accessToken: googleSignInAuthentication.accessToken,
-                        idToken: googleSignInAuthentication.idToken,
-                      );
-
-                      String? deviceId;
-                      final deviceInfoPlugin = new DeviceInfoPlugin();
-                      try {
-                        if (Platform.isAndroid) {
-                          var build = await deviceInfoPlugin.androidInfo;
-                          deviceId = build.androidId; //UUID for Android
-                        } else if (Platform.isIOS) {
-                          var data = await deviceInfoPlugin.iosInfo;
-                          deviceId = data.identifierForVendor; //UUID for iOS
-                        }
-                      } on PlatformException {
-                        print('Failed to get platform version');
-                      }
-
-                      var rawData = remoteConfig.getAll()['BACKEND_HOST'];
-                      var cfgs = jsonDecode(rawData!.asString());
-
-                      final signInData = await FirebaseAuth.instance
-                          .signInWithCredential(credential);
-
-                      if (signInData.user == null) return;
-
-                      if (signInData.user!.email!.split('@').last !=
-                          'hosan.hs.kr') {
-                        showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                title: Text("호산고 계정이 아닙니다."),
-                                content: Text(
-                                    "호산고등학교에서 발급한 Google 계정 (숫자@hosan.hs.kr)으로 로그인하세요!\n\n계정을 잊어버리셨다면 선생님께 문의해주세요."),
-                                actions: <Widget>[
-                                  TextButton(
-                                    child: Text("닫기"),
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                    },
-                                  ),
-                                ],
-                              );
-                            });
-
-                        return;
-                      }
-
-                      if (deviceId == null) {
-                        showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                title: Text("디바이스 정보를 불러오는 데 실패했습니다."),
-                                content: Text(
-                                  "부정이용 방지를 위해 디바이스 고유 아이디를 불러오는 데 실패했습니다.",
-                                ),
-                                actions: <Widget>[
-                                  TextButton(
-                                    child: Text("닫기"),
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                    },
-                                  ),
-                                ],
-                              );
-                            });
-
-                        return;
-                      }
-
-                      final response = await http.get(
-                          Uri.parse(
-                              '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/login'),
-                          headers: {
-                            'ID-Token': await signInData.user!.getIdToken(true),
-                            'Device-ID': deviceId
-                          });
-
-                      if (response.statusCode != 200) {
-                        throw Exception('Failed to load post');
-                      }
-
-                      final data = json.decode(response.body);
-
-                      await FirebaseAuth.instance
-                          .signInWithCustomToken(data.token);
-
-                      CollectionReference students =
-                          firestore.collection('students');
-
-                      DocumentSnapshot me =
-                          await students.doc(signInData.user!.uid).get();
-
-                      if (me.exists) {
-                        await Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => HomePage()));
-                      } else {
-                        await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => RegisterPage()));
-                      }
-                    } finally {
-                      if (!isDisposed) {
-                        setState(() {
-                          isLoggingIn = false;
-                        });
-                      }
-                    }
-                  },
+                  onPressed: doLogin,
                   icon: Icon(Icons.login, size: 18),
                   label: Text(isLoggingIn ? "로그인 중..." : "호산고등학교 구글 계정으로 로그인"),
                 ),
@@ -213,6 +356,14 @@ class _LoginPageState extends State<LoginPage> {
               TextButton(
                 child: Text('교직원 로그인'),
                 onPressed: () async {
+                  showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          content: Text('개발중'),
+                        );
+                      });
+                  return;
                   try {
                     await FirebaseAuth.instance.signOut();
                     await GoogleSignIn().signOut();

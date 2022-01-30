@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -12,6 +15,7 @@ import 'package:hosan_notice/pages/my_attend.dart';
 import 'package:hosan_notice/pages/navigation.dart';
 import 'package:hosan_notice/pages/std_monitor.dart';
 import 'package:package_info/package_info.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../pages/login.dart';
@@ -27,6 +31,7 @@ class MainDrawer extends StatefulWidget {
 class _MainDrawerState extends State<MainDrawer> {
   final user = FirebaseAuth.instance.currentUser!;
   final firestore = FirebaseFirestore.instance;
+  final remoteConfig = RemoteConfig.instance;
   final refreshKey = GlobalKey<RefreshIndicatorState>();
 
   @override
@@ -37,6 +42,10 @@ class _MainDrawerState extends State<MainDrawer> {
 
   @override
   Widget build(BuildContext context) {
+    final devs =
+        jsonDecode(remoteConfig.getString('DEVELOPERS')) as List;
+    final isDev = devs.contains(user.uid);
+
     return Drawer(
         child: Column(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -163,20 +172,24 @@ class _MainDrawerState extends State<MainDrawer> {
                   );
                 },
               ),
-              Divider(height: 0),
-              ListTile(
-                  title: Text('개발자 옵션'),
-                  dense: true,
-                  leading: Icon(Icons.adb),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.pushReplacement(
-                      widget.parentContext,
-                      MaterialPageRoute(
-                        builder: (context) => DevtoolsPage(),
-                      ),
-                    );
-                  }),
+              ...(isDev
+                  ? [
+                      Divider(height: 0),
+                      ListTile(
+                          title: Text('개발자 옵션'),
+                          dense: true,
+                          leading: Icon(Icons.adb),
+                          onTap: () {
+                            Navigator.pop(context);
+                            Navigator.pushReplacement(
+                              widget.parentContext,
+                              MaterialPageRoute(
+                                builder: (context) => DevtoolsPage(),
+                              ),
+                            );
+                          })
+                    ]
+                  : []),
               Divider(height: 0),
               ListTile(
                 title: Text('[교직원용] 학생 모니터링'),
@@ -208,6 +221,12 @@ class _MainDrawerState extends State<MainDrawer> {
                                 Navigator.pop(context);
                                 await FirebaseAuth.instance.signOut();
                                 await GoogleSignIn().signOut();
+
+                                final prefs = await SharedPreferences.getInstance();
+
+                                prefs.remove('AUTH_TOKEN');
+                                prefs.remove('REFRESH_TOKEN');
+
                                 Navigator.pushReplacement(
                                     context,
                                     MaterialPageRoute(
@@ -248,7 +267,7 @@ class _MainDrawerState extends State<MainDrawer> {
                       applicationIcon: Image.asset('assets/hosan.png',
                           width: 70, height: 70),
                       applicationVersion: packageInfo.version,
-                      applicationLegalese: '제8회 대한민국 SW 융합 해커톤 대회 출품작',
+                      applicationLegalese: '제8회 대한민국 SW 융합 해커톤 대회 우수상 수상작',
                       children: [
                         Padding(
                           padding: EdgeInsets.only(top: 20),

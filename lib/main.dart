@@ -15,6 +15,7 @@ import 'package:hosan_notice/pages/assignment.dart';
 import 'package:hosan_notice/pages/assignments.dart';
 import 'package:hosan_notice/widgets/drawer.dart';
 import 'package:hosan_notice/pages/login.dart';
+import 'package:localstorage/localstorage.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'messages.dart';
@@ -216,6 +217,7 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
+    final storage = new LocalStorage('auth.json');
 
     return MaterialApp(
       title: '호산고등학교 알리미',
@@ -223,13 +225,20 @@ class App extends StatelessWidget {
         primarySwatch: Colors.deepPurple,
       ),
       home: FutureBuilder(
-        future: () async {
-          if (user == null) return null;
-          CollectionReference students =
-              FirebaseFirestore.instance.collection('students');
+        future: Future.wait([
+          () async {
+            if (user == null) return null;
+            CollectionReference students =
+                FirebaseFirestore.instance.collection('students');
 
-          return await students.doc(user.uid).get();
-        }(),
+            return await students.doc(user.uid).get();
+          }(),
+          () async {
+            final authToken = await storage.getItem('AUTH_TOKEN');
+            final refreshToken = await storage.getItem('REFRESH_TOKEN');
+            return [authToken, refreshToken];
+          }()
+        ]),
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           if (user != null && !snapshot.hasData) {
             return Scaffold(
@@ -245,7 +254,9 @@ class App extends StatelessWidget {
                 ])));
           }
 
-          return user != null && snapshot.data.exists
+          return user != null &&
+                  snapshot.data[0].exists &&
+                  !(snapshot.data[1] as List).contains(null)
               ? HomePage()
               : LoginPage();
         },

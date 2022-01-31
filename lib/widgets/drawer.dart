@@ -14,9 +14,8 @@ import 'package:hosan_notice/pages/dev_tools.dart';
 import 'package:hosan_notice/pages/meal_info.dart';
 import 'package:hosan_notice/pages/my_attend.dart';
 import 'package:hosan_notice/pages/navigation.dart';
-import 'package:hosan_notice/pages/std_monitor.dart';
+import 'package:localstorage/localstorage.dart';
 import 'package:package_info/package_info.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../pages/login.dart';
@@ -34,6 +33,7 @@ class _MainDrawerState extends State<MainDrawer> {
   final firestore = FirebaseFirestore.instance;
   final remoteConfig = RemoteConfig.instance;
   final refreshKey = GlobalKey<RefreshIndicatorState>();
+  final storage = new LocalStorage('auth.json');
 
   @override
   void didChangeDependencies() {
@@ -209,11 +209,8 @@ class _MainDrawerState extends State<MainDrawer> {
                                 await FirebaseAuth.instance.signOut();
                                 await GoogleSignIn().signOut();
 
-                                final prefs =
-                                    await SharedPreferences.getInstance();
-
-                                prefs.remove('AUTH_TOKEN');
-                                prefs.remove('REFRESH_TOKEN');
+                                await storage.deleteItem('AUTH_TOKEN');
+                                await storage.deleteItem('REFRESH_TOKEN');
 
                                 Navigator.pushReplacement(
                                     context,

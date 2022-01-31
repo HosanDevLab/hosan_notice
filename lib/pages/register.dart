@@ -162,7 +162,7 @@ class _RegisterPageState extends State<RegisterPage> {
               text: TextSpan(style: TextStyle(color: Colors.black), children: [
             TextSpan(text: '등록하면 '),
             TextSpan(
-              text: '<호산고 앱비> 개인정보 처리방침',
+              text: '<호산고 알리미> 개인정보 처리방침',
               style: TextStyle(color: Colors.blue),
               recognizer: TapGestureRecognizer()
                 ..onTap = () {

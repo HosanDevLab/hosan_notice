@@ -12,6 +12,7 @@ import 'package:hosan_notice/modules/get_device_id.dart';
 import 'package:hosan_notice/pages/register.dart';
 import 'package:http/http.dart' as http;
 import 'package:localstorage/localstorage.dart';
+import 'package:package_info/package_info.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -57,7 +58,7 @@ final showLoginErrorDialog = (BuildContext context, http.Response response) {
 };
 
 class _LoginPageState extends State<LoginPage> {
-  FirebaseFirestore firestore = FirebaseFirestore.instance;
+  final firestore = FirebaseFirestore.instance;
   final remoteConfig = RemoteConfig.instance;
   final storage = new LocalStorage('auth.json');
   bool isLoggingIn = false;
@@ -275,6 +276,8 @@ class _LoginPageState extends State<LoginPage> {
 
                     if (respLogoutOther.statusCode != 200) {
                       showLoginErrorDialog(context, respLogoutOther);
+                      await FirebaseAuth.instance.signOut();
+                      await GoogleSignIn().signOut();
                       return;
                     }
 
@@ -300,6 +303,8 @@ class _LoginPageState extends State<LoginPage> {
         );
       } else {
         showLoginErrorDialog(context, response);
+        await FirebaseAuth.instance.signOut();
+        await GoogleSignIn().signOut();
       }
     } finally {
       if (!isDisposed) {
@@ -446,9 +451,34 @@ class _LoginPageState extends State<LoginPage> {
           ),
           Padding(
             padding: EdgeInsets.only(bottom: 16),
-            child: Text('개발 및 운영: HosanDevLab\n2021 강해 이승민 황부연',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.caption),
+            child: Column(
+              children: [
+                Text('개발 및 운영: HosanDevLab\n제3기 로봇공학반 강해 이승민 황부연',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context)
+                        .textTheme
+                        .caption
+                        ?.apply(fontSizeDelta: -2)),
+                SizedBox(height: 4),
+                FutureBuilder(
+                    future: PackageInfo.fromPlatform(),
+                    builder: (BuildContext context,
+                        AsyncSnapshot<PackageInfo> snapshot) {
+                      final data = snapshot.data;
+
+                      return Text(
+                        snapshot.hasData
+                            ? '버전 ${data?.version}  |   빌드 번호 ${data?.buildNumber}'
+                            : '',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context)
+                            .textTheme
+                            .caption
+                            ?.apply(fontSizeDelta: -2),
+                      );
+                    })
+              ],
+            ),
           )
         ]),
       ),

@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hosan_notice/pages/assignments.dart';
 import 'package:hosan_notice/main.dart';
@@ -42,8 +43,7 @@ class _MainDrawerState extends State<MainDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    final devs =
-        jsonDecode(remoteConfig.getString('DEVELOPERS')) as List;
+    final devs = jsonDecode(remoteConfig.getString('DEVELOPERS')) as List;
     final isDev = devs.contains(user.uid);
 
     return Drawer(
@@ -192,19 +192,6 @@ class _MainDrawerState extends State<MainDrawer> {
                   : []),
               Divider(height: 0),
               ListTile(
-                title: Text('[교직원용] 학생 모니터링'),
-                dense: true,
-                leading: Icon(Icons.monitor),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacement(
-                      widget.parentContext,
-                      MaterialPageRoute(
-                          builder: (context) => StudentMonitorPage()));
-                },
-              ),
-              Divider(height: 0),
-              ListTile(
                 title: Text('로그아웃', style: TextStyle(color: Colors.red)),
                 dense: true,
                 leading: Icon(Icons.logout, color: Colors.red),
@@ -222,7 +209,8 @@ class _MainDrawerState extends State<MainDrawer> {
                                 await FirebaseAuth.instance.signOut();
                                 await GoogleSignIn().signOut();
 
-                                final prefs = await SharedPreferences.getInstance();
+                                final prefs =
+                                    await SharedPreferences.getInstance();
 
                                 prefs.remove('AUTH_TOKEN');
                                 prefs.remove('REFRESH_TOKEN');
@@ -264,8 +252,23 @@ class _MainDrawerState extends State<MainDrawer> {
                   showAboutDialog(
                       context: context,
                       applicationName: packageInfo.appName,
-                      applicationIcon: Image.asset('assets/hosan.png',
-                          width: 70, height: 70),
+                      applicationIcon: GestureDetector(
+                        onTap: () {
+                          Fluttertoast.showToast(
+                              msg: "호산고 알리미",
+                              toastLength: Toast.LENGTH_SHORT,
+                              gravity: ToastGravity.CENTER,
+                              timeInSecForIosWeb: 1,
+                              backgroundColor: Colors.green,
+                              textColor: Colors.white,
+                              fontSize: 16.0);
+                        },
+                        child: Image.asset(
+                          'assets/hosan.png',
+                          width: 70,
+                          height: 70,
+                        ),
+                      ),
                       applicationVersion: packageInfo.version,
                       applicationLegalese: '제8회 대한민국 SW 융합 해커톤 대회 우수상 수상작',
                       children: [

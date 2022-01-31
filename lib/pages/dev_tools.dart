@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:hosan_notice/pages/register.dart';
+import 'package:hosan_notice/pages/std_monitor.dart';
 import 'package:hosan_notice/widgets/drawer.dart';
 import 'package:localstorage/localstorage.dart';
 
@@ -114,8 +115,8 @@ class _DevtoolsPageState extends State<DevtoolsPage> {
                           title: Text('Shared Preferences'),
                           content: FutureBuilder(
                             future: storage.ready,
-                            builder: (BuildContext context,
-                                AsyncSnapshot snapshot) {
+                            builder:
+                                (BuildContext context, AsyncSnapshot snapshot) {
                               if (snapshot.data != true) return Text('불러오는 중');
 
                               return Scrollbar(
@@ -179,6 +180,22 @@ class _DevtoolsPageState extends State<DevtoolsPage> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => BeaconScanPage(),
+                    ),
+                  );
+                },
+              ),
+              Divider(height: 0),
+              ListTile(
+                title: Text('학생 모니터링 (교직원용)'),
+                subtitle: Text(
+                  '학생 모니터링 화면으로 이동',
+                  style: TextStyle(fontSize: 14),
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => StudentMonitorPage(),
                     ),
                   );
                 },

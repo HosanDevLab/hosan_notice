@@ -5,7 +5,7 @@ import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hosan_notice/modules/get_device_id.dart';
 import 'package:http/http.dart' as http;
-import 'package:http_retry/http_retry.dart';
+import 'package:http/retry.dart';
 import 'package:localstorage/localstorage.dart';
 
 final jwtRetryClient = () {
@@ -13,12 +13,13 @@ final jwtRetryClient = () {
   
   return RetryClient(
     http.Client(),
-    retries: 2,
+    retries: 1,
     delay: (_) => Duration(milliseconds: 500),
     when: (response) {
       return response.statusCode == 401 ? true : false;
     },
     onRetry: (req, res, retryCount) async {
+      print('retry=========================================================================');
       final user = FirebaseAuth.instance.currentUser!;
       final remoteConfig = RemoteConfig.instance;
 
@@ -40,6 +41,7 @@ final jwtRetryClient = () {
           final data = json.decode(response.body);
           await storage.setItem('AUTH_TOKEN', data['token']);
           await storage.setItem('REFRESH_TOKEN', data['refreshToken']);
+          print('done');
         } else {
           print(response.statusCode);
           print(response.body);

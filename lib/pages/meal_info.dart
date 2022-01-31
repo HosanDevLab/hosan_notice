@@ -7,9 +7,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:hosan_notice/modules/jwt_retry.dart';
+import 'package:hosan_notice/modules/get_device_id.dart';
 import 'package:hosan_notice/widgets/drawer.dart';
 import 'package:localstorage/localstorage.dart';
+import 'package:http/http.dart' as http;
 
 class MealInfoPage extends StatefulWidget {
   @override
@@ -32,24 +33,38 @@ class _MealInfoPageState extends State<MealInfoPage> {
     var rawData = remoteConfig.getAll()['BACKEND_HOST'];
     var cfgs = jsonDecode(rawData!.asString());
 
-    final client = jwtRetryClient();
+    final response = await http.get(
+        Uri.parse(
+            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/meal-info'),
+        headers: {
+          'ID-Token': await user.getIdToken(true),
+          'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+        });
 
-    try {
-      final response = await client.get(
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else if (response.statusCode == 401 &&
+        jsonDecode(response.body)['code'] == 40100) {
+      final response = await http.get(
           Uri.parse(
-              '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/meal-info'),
+              '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/auth/refresh'),
           headers: {
             'ID-Token': await user.getIdToken(true),
             'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+            'Refresh-Token': storage.getItem('REFRESH_TOKEN') ?? '',
+            'Device-ID': await getDeviceId() ?? ''
           });
 
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        final data = json.decode(response.body);
+        await storage.setItem('AUTH_TOKEN', data['token']);
+        await storage.setItem('REFRESH_TOKEN', data['refreshToken']);
+        return await fetchMealInfo();
       } else {
-        throw Exception('Failed to load post');
+        throw Exception('Failed to refresh token');
       }
-    } finally {
-      client.close();
+    } else {
+      throw Exception('Failed to load post');
     }
   }
 

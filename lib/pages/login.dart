@@ -7,12 +7,13 @@ import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:hosan_notice/main.dart';
 import 'package:hosan_notice/modules/get_device_id.dart';
-import 'package:hosan_notice/pages/register.dart';
 import 'package:http/http.dart' as http;
 import 'package:localstorage/localstorage.dart';
 import 'package:package_info/package_info.dart';
+
+import 'home.dart';
+import 'register.dart';
 
 class LoginPage extends StatefulWidget {
   @override

@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:hosan_notice/pages/assignment.dart';
 import 'package:intl/intl.dart';
+
+import 'assignment.dart';
 
 class NewAssignmentPage extends StatefulWidget {
   final String subjectId;

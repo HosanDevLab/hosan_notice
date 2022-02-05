@@ -5,10 +5,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:hosan_notice/main.dart';
 import 'package:hosan_notice/widgets/animated_indexed_stack.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+
+import 'home.dart';
 
 class RegisterPage extends StatefulWidget {
   @override

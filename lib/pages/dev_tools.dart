@@ -4,12 +4,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:hosan_notice/pages/register.dart';
-import 'package:hosan_notice/pages/std_monitor.dart';
 import 'package:hosan_notice/widgets/drawer.dart';
 import 'package:localstorage/localstorage.dart';
 
 import 'beacon.dart';
+import 'register.dart';
+import 'std_monitor.dart';
 
 class DevtoolsPage extends StatefulWidget {
   @override
@@ -52,7 +52,7 @@ class _DevtoolsPageState extends State<DevtoolsPage> {
                 title: Text('유저 ID 토큰 확인'),
                 subtitle: Text(
                   '현재 유저 클라이언트의 Firebase ID Token 확인하기',
-                  style: TextStyle(fontSize: 14),
+                  style: TextStyle(fontSize: 13),
                 ),
                 onTap: () {
                   showDialog(
@@ -77,7 +77,7 @@ class _DevtoolsPageState extends State<DevtoolsPage> {
                                     padding: EdgeInsets.only(right: 5),
                                     child: SelectableText(
                                       snapshot.data!,
-                                      style: TextStyle(fontSize: 14),
+                                      style: TextStyle(fontSize: 13),
                                     ),
                                   ),
                                 ),
@@ -105,7 +105,7 @@ class _DevtoolsPageState extends State<DevtoolsPage> {
                 title: Text('Shared Preferences 확인'),
                 subtitle: Text(
                   '애플리케이션 공유 변수 확인',
-                  style: TextStyle(fontSize: 14),
+                  style: TextStyle(fontSize: 13),
                 ),
                 onTap: () {
                   showDialog(
@@ -125,7 +125,7 @@ class _DevtoolsPageState extends State<DevtoolsPage> {
                                     padding: EdgeInsets.only(right: 5),
                                     child: SelectableText(
                                       storage.getItem('AUTH_TOKEN').toString(),
-                                      style: TextStyle(fontSize: 14),
+                                      style: TextStyle(fontSize: 13),
                                     ),
                                   ),
                                 ),
@@ -157,7 +157,7 @@ class _DevtoolsPageState extends State<DevtoolsPage> {
                 title: Text('등록 화면으로 이동'),
                 subtitle: Text(
                   '등록 화면으로 이동',
-                  style: TextStyle(fontSize: 14),
+                  style: TextStyle(fontSize: 13),
                 ),
                 onTap: () {
                   Navigator.push(
@@ -173,7 +173,7 @@ class _DevtoolsPageState extends State<DevtoolsPage> {
                 title: Text('비콘 디버깅'),
                 subtitle: Text(
                   '내 주변 비콘 스캔',
-                  style: TextStyle(fontSize: 14),
+                  style: TextStyle(fontSize: 13),
                 ),
                 onTap: () {
                   Navigator.push(
@@ -189,7 +189,7 @@ class _DevtoolsPageState extends State<DevtoolsPage> {
                 title: Text('학생 모니터링 (교직원용)'),
                 subtitle: Text(
                   '학생 모니터링 화면으로 이동',
-                  style: TextStyle(fontSize: 14),
+                  style: TextStyle(fontSize: 13),
                 ),
                 onTap: () {
                   Navigator.push(
@@ -214,7 +214,7 @@ class _DevtoolsPageState extends State<DevtoolsPage> {
                 title: Text('테스트 알림 전송'),
                 subtitle: Text(
                   '알림 테스트',
-                  style: TextStyle(fontSize: 14),
+                  style: TextStyle(fontSize: 13),
                 ),
                 onTap: () async {
                   var androidPlatformChannelSpecifics =

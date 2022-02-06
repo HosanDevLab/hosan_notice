@@ -27,6 +27,6 @@
 
 ## 개발자
 - 개발팀 HosanDevLab - 호산고 제3기 로봇공학반
-- [@ArpaAP](https://github.com/ArpaAP)
-- [@kanghea](https://github.com/kanghea)
-- [@ph1313](https://github.com/ph1313)
+- [@ArpaAP](https://github.com/ArpaAP) - 앱 및 서버 설계, 개발
+- [@kanghea](https://github.com/kanghea) - 하드웨어 개발
+- [@ph1313](https://github.com/ph1313) - 하드웨어 개발

@@ -7,7 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:hosan_notice/modules/get_device_id.dart';
+import 'package:hosan_notice/modules/refresh_token.dart';
 import 'package:hosan_notice/widgets/drawer.dart';
 import 'package:localstorage/localstorage.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -28,9 +28,9 @@ class _HomePageState extends State<HomePage> {
   final remoteConfig = RemoteConfig.instance;
   final storage = new LocalStorage('auth.json');
 
-  late Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _assignments,
-      _subjects;
+  late Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _subjects;
 
+  late Future<List<Map<dynamic, dynamic>>> _assignments;
   late Future<Map<dynamic, dynamic>> _me;
 
   Future<Map<dynamic, dynamic>> fetchStudentsMe() async {
@@ -49,36 +49,37 @@ class _HomePageState extends State<HomePage> {
       return json.decode(response.body);
     } else if (response.statusCode == 401 &&
         jsonDecode(response.body)['code'] == 40100) {
-      final response = await http.get(
-          Uri.parse(
-              '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/auth/refresh'),
-          headers: {
-            'ID-Token': await user.getIdToken(true),
-            'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
-            'Refresh-Token': storage.getItem('REFRESH_TOKEN') ?? '',
-            'Device-ID': await getDeviceId() ?? ''
-          });
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        await storage.setItem('AUTH_TOKEN', data['token']);
-        await storage.setItem('REFRESH_TOKEN', data['refreshToken']);
-        return await fetchStudentsMe();
-      } else {
-        throw Exception('Failed to refresh token');
-      }
+      await refreshToken();
+      return await fetchStudentsMe();
     } else {
       throw Exception('Failed to load post');
     }
   }
 
-  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
-      fetchAssignments() async {
-    QuerySnapshot<Map<String, dynamic>> data =
-        await firestore.collection('assignments').orderBy('deadline').get();
-    final ls = data.docs.toList();
-    ls.sort((a, b) => a.data()['deadline'] == null ? 1 : 0);
-    return ls;
+  Future<List<Map<dynamic, dynamic>>> fetchAssignments() async {
+    var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+    var cfgs = jsonDecode(rawData!.asString());
+
+    final response = await http.get(
+        Uri.parse(
+            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/assignments'),
+        headers: {
+          'ID-Token': await user.getIdToken(true),
+          'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+        });
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      data.sort((a, b) => a['deadline'] == null ? 1 : 0);
+      print(data);
+      return List.from(data);
+    } else if (response.statusCode == 401 &&
+        jsonDecode(response.body)['code'] == 40100) {
+      await refreshToken();
+      return await fetchAssignments();
+    } else {
+      throw Exception('Failed to load post');
+    }
   }
 
   Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
@@ -115,17 +116,15 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget assignmentCard(BuildContext context, AsyncSnapshot snapshot,
-      QueryDocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data();
-
+      Map<String, dynamic> assignment) {
     Duration? timeDiff;
     String? timeDiffStr;
-    if (data['deadline'] != null) {
-      timeDiff =
-          (data['deadline'].toDate() as DateTime).difference(DateTime.now());
+    if (assignment['deadline'] != null) {
+      timeDiff = DateTime.parse(assignment['deadline'])
+          .difference(DateTime.now());
       if (timeDiff.inSeconds <= 0) {
-        final timeDiffNagative =
-            DateTime.now().difference(data['deadline'].toDate() as DateTime);
+        final timeDiffNagative = DateTime.now()
+            .difference(DateTime.parse(assignment['deadline']));
         if (timeDiffNagative.inDays > 0)
           timeDiffStr = '${timeDiffNagative.inDays}일 전 마감됨';
         else if (timeDiffNagative.inHours > 0)
@@ -146,10 +145,10 @@ class _HomePageState extends State<HomePage> {
       }
     }
 
-    final subjectStr = data['subject'] is DocumentReference
+    final subjectStr = assignment['subject'] is DocumentReference
         ? (snapshot.data[1] as List)
-            .firstWhere((e) => e.id == data['subject'].id)['name']
-        : data['subject'];
+            .firstWhere((e) => e.id == assignment['subject'].id)['name']
+        : assignment['subject'];
 
     return Card(
         margin: EdgeInsets.symmetric(vertical: 4),
@@ -158,7 +157,7 @@ class _HomePageState extends State<HomePage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: Text(data['title']),
+              title: Text(assignment['title']),
               subtitle: RichText(
                 text: TextSpan(
                     style: TextStyle(color: Colors.grey[600]),
@@ -166,22 +165,23 @@ class _HomePageState extends State<HomePage> {
                       TextSpan(text: '$subjectStr '),
                       TextSpan(
                           text:
-                              '${data['teacher'] != null ? data['teacher'] + ' ' : ''}| '),
+                              '${assignment['teacher'] != null ? assignment['teacher'] + ' ' : ''}| '),
                       TextSpan(
-                          text: data['deadline'] == null
+                          text: assignment['deadline'] == null
                               ? '기한 없음'
                               : '$timeDiffStr',
-                          style:
-                              data['deadline'] != null && timeDiff!.inDays < 0
-                                  ? TextStyle(color: Colors.red)
-                                  : TextStyle())
+                          style: assignment['deadline'] != null &&
+                                  timeDiff!.inDays < 0
+                              ? TextStyle(color: Colors.red)
+                              : TextStyle())
                     ]),
               ),
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => AssignmentPage(assignmentId: doc.id),
+                    builder: (context) =>
+                        AssignmentPage(assignmentId: assignment['_id']),
                   ),
                 );
               },
@@ -264,11 +264,10 @@ class _HomePageState extends State<HomePage> {
                             if (!snapshot.hasData)
                               return CircularProgressIndicator();
 
-                            final recentAssignments = (snapshot.data[0] as List)
-                                .where((e) => e.data()['deadline'] == null
+                            final recentAssignments = snapshot.data[0].where(
+                                (e) => e['deadline'] == null
                                     ? true
-                                    : (e.data()['deadline'].toDate()
-                                                as DateTime)
+                                    : DateTime.parse(e['deadline'])
                                             .difference(DateTime.now())
                                             .inSeconds >
                                         0);

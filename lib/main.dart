@@ -267,9 +267,10 @@ class App extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
       ],
       supportedLocales: [
-        const Locale('ko', 'KR'),
+        Locale('ko', 'KR'),
         // include country code too
       ],
+      locale: Locale('ko'),
     );
   }
 }

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
@@ -135,6 +136,14 @@ class _LoginPageState extends State<LoginPage> {
 
       // 디바이스 고유 식별자 불러오기
       final deviceId = await getDeviceId();
+      late String? deviceName;
+
+      DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+      if (Platform.isAndroid) {
+        deviceName = (await deviceInfo.androidInfo).model;
+      } else if (Platform.isIOS) {
+        deviceName = (await deviceInfo.iosInfo).model;
+      }
 
       if (deviceId == null || deviceId.isEmpty) {
         showDialog(
@@ -177,6 +186,7 @@ class _LoginPageState extends State<LoginPage> {
             headers: {
               'ID-Token': await signInData.user!.getIdToken(true),
               'Device-ID': deviceId ?? '',
+              'Device-Name': deviceName ?? ''
             }).timeout(
           Duration(seconds: 20),
           onTimeout: () => http.Response(
@@ -206,13 +216,13 @@ class _LoginPageState extends State<LoginPage> {
         }
       };
 
+      final data = json.decode(response.body);
+
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
         storage.setItem('AUTH_TOKEN', data['token']);
         storage.setItem('REFRESH_TOKEN', data['refreshToken']);
         continueLogin();
-      } else if (response.statusCode == 403 &&
-          jsonDecode(response.body)['code'] == 40300) {
+      } else if (response.statusCode == 403 && data['code'] == 40300) {
         showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -221,7 +231,12 @@ class _LoginPageState extends State<LoginPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('이미 로그인된 기기가 존재해요.\n이 기기로 계속할까요?'),
+                  Text(
+                    '이미 로그인된 기기가 존재해요.\n이 기기로 계속할까요?',
+                    style: Theme.of(context).textTheme.subtitle2,
+                  ),
+                  SizedBox(height: 20),
+                  Text(data['deviceName']),
                   Divider(height: 36),
                   Text(
                     '주의! 부정이용 방지를 위해, 계속하면 기존에 로그인된 기기는 로그아웃하고 이 기기로 로그인됩니다.',

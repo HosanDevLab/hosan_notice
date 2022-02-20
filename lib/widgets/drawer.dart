@@ -13,6 +13,7 @@ import 'package:hosan_notice/pages/dev_tools.dart';
 import 'package:hosan_notice/pages/home.dart';
 import 'package:hosan_notice/pages/meal_info.dart';
 import 'package:hosan_notice/pages/my_attend.dart';
+import 'package:hosan_notice/pages/myclass.dart';
 import 'package:hosan_notice/pages/navigation.dart';
 import 'package:localstorage/localstorage.dart';
 import 'package:package_info/package_info.dart';
@@ -110,6 +111,12 @@ class _MainDrawerState extends State<MainDrawer> {
                 leading: Icon(Icons.school),
                 onTap: () {
                   Navigator.pop(context);
+                  Navigator.pushReplacement(
+                    widget.parentContext,
+                    MaterialPageRoute(
+                      builder: (context) => MyClassPage(),
+                    ),
+                  );
                 },
               ),
               Divider(height: 0),

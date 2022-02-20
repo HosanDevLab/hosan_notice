@@ -1,14 +1,18 @@
 import 'dart:convert';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hosan_notice/widgets/animated_indexed_stack.dart';
+import 'package:localstorage/localstorage.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:http/http.dart' as http;
 
+import '../modules/refresh_token.dart';
 import 'home.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -18,8 +22,10 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  FirebaseFirestore firestore = FirebaseFirestore.instance;
-  final user = FirebaseAuth.instance.currentUser;
+  final remoteConfig = RemoteConfig.instance;
+  final user = FirebaseAuth.instance.currentUser!;
+  final storage = new LocalStorage('auth.json');
+
   bool isLoggingIn = false;
   bool isDisposed = false;
   late WebViewController _controller;
@@ -38,14 +44,31 @@ class _RegisterPageState extends State<RegisterPage> {
     isDisposed = true;
   }
 
-  late Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _subjects;
+  late Future<List<Map<dynamic, dynamic>>> _subjects;
 
-  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
-      fetchSubjects() async {
-    QuerySnapshot<Map<String, dynamic>> data =
-        await firestore.collection('subjects').orderBy('order').get();
-    final ls = data.docs.toList();
-    return ls;
+  Future<List<Map<dynamic, dynamic>>> fetchSubjects() async {
+    var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+    var cfgs = jsonDecode(rawData!.asString());
+
+    final response = await http.get(
+        Uri.parse(
+            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/subjects/all'),
+        headers: {
+          'ID-Token': await user.getIdToken(true),
+          'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+        });
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as List;
+      data.sort((a, b) => a['order'] - b['order']);
+      return List.from(data);
+    } else if (response.statusCode == 401 &&
+        jsonDecode(response.body)['code'] == 40100) {
+      await refreshToken();
+      return await fetchSubjects();
+    } else {
+      throw Exception('Failed to load post');
+    }
   }
 
   @override
@@ -208,6 +231,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
                       _formKey.currentState!.save();
+                      FocusManager.instance.primaryFocus?.unfocus();
                       setState(() {
                         _index = 1;
                       });
@@ -220,155 +244,201 @@ class _RegisterPageState extends State<RegisterPage> {
     ));
   }
 
-  Widget secondPage(BuildContext context) {
-    return RefreshIndicator(
-      child: Container(
-        height: double.infinity,
-        child: SingleChildScrollView(
-          physics:
-              BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-          child: Container(
-            padding: EdgeInsets.symmetric(vertical: 22, horizontal: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text('수강 과목을 선택합니다',
-                    style: Theme.of(context).textTheme.subtitle1),
-                SizedBox(height: 18),
-                FutureBuilder(
-                    future: _subjects,
-                    builder: (BuildContext context, AsyncSnapshot snapshot) {
-                      if (!snapshot.hasData) return CircularProgressIndicator();
+  Future doRegister(AsyncSnapshot<List<Map<dynamic, dynamic>>> snapshot) async {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _formKey.currentState!.save();
+      });
+      final requiredSubjectKeys = (snapshot.data as List)
+          .where((e) => e['isRequired'] == true && e['grade'] == grade)
+          .map((e) => e['_id']);
+      requiredSubjectKeys.forEach((e) {
+        _selectedSubjects[e] = true;
+      });
 
-                      return Column(
-                        children: [
-                          ListView(
-                            physics: NeverScrollableScrollPhysics(),
-                            shrinkWrap: true,
-                            children: (snapshot.data as List)
-                                .where((e) => e.data()['grade'] == grade)
-                                .map((e) {
-                              final data = e.data();
-                              return InkWell(
-                                onTap: () {
-                                  setState(() {
-                                    _selectedSubjects[e.id] =
-                                        _selectedSubjects[e.id] == true
-                                            ? false
-                                            : true;
-                                  });
-                                },
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: <Widget>[
-                                    Transform.scale(
-                                      scale: 1.08,
-                                      child: Checkbox(
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(4)),
-                                        value: data['isRequired'] == true ||
-                                            _selectedSubjects[e.id] == true,
-                                        onChanged: (value) {
-                                          setState(() {
-                                            _selectedSubjects[e.id] = value;
-                                          });
-                                        },
-                                      ),
-                                    ),
-                                    Text(
-                                        (data['isRequired'] ? '[필수] ' : '') +
-                                            data['name'],
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .subtitle1)
-                                  ],
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                          Padding(
-                              padding: EdgeInsets.symmetric(vertical: 16.0),
+      Future<Map<dynamic, dynamic>> postData() async {
+        var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+        var cfgs = jsonDecode(rawData!.asString());
+
+        final response = await http.post(
+            Uri.parse(
+                '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/students'),
+            body: jsonEncode({
+              'name': name,
+              'grade': grade,
+              'classNum': classNum,
+              'numberInClass': numberInClass,
+              'subjects': _selectedSubjects.entries
+                  .where((e) => e.value)
+                  .map((e) => e.key)
+                  .toList()
+            }),
+            headers: {
+              'ID-Token': await user.getIdToken(true),
+              'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+              'Content-Type': 'application/json'
+            });
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          return data;
+        } else if (response.statusCode == 401 &&
+            jsonDecode(response.body)['code'] == 40100) {
+          await refreshToken();
+          return await postData();
+        } else {
+          throw Exception('Failed to load post');
+        }
+      }
+
+      BuildContext? ctx;
+      showDialog(
+        barrierDismissible: false,
+        context: context,
+        builder: (BuildContext context) {
+          ctx = context;
+          return AlertDialog(
+            content: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(
+                  height: 24,
+                  width: 24,
+                  child: CircularProgressIndicator(),
+                ),
+                Container(
+                  margin: EdgeInsets.only(left: 16),
+                  child: Text("처리하는 중입니다..."),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+
+      await postData();
+      Navigator.pop(ctx!);
+
+      setState(() {
+        _index = 2;
+      });
+    }
+  }
+
+  Widget secondPage(BuildContext context) {
+    return Container(
+      height: double.infinity,
+      child: SingleChildScrollView(
+        physics: BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: 22, horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                '올해 수강 과목을 선택합니다',
+                style: Theme.of(context).textTheme.subtitle1,
+              ),
+              SizedBox(height: 7),
+              Text(
+                '올해($grade학년) 수강 과목만 선택하세요.\n나중에 언제든 변경할 수 있어요.',
+                style: Theme.of(context)
+                    .textTheme
+                    .caption!
+                    .apply(fontSizeDelta: -1),
+              ),
+              SizedBox(height: 14),
+              FutureBuilder(
+                  future: _subjects,
+                  builder: (BuildContext context,
+                      AsyncSnapshot<List<Map<dynamic, dynamic>>> snapshot) {
+                    if (!snapshot.hasData) return CircularProgressIndicator();
+
+                    return Column(
+                      children: [
+                        ListView(
+                          physics: NeverScrollableScrollPhysics(),
+                          itemExtent: 40,
+                          shrinkWrap: true,
+                          children: (snapshot.data as List)
+                              .where((e) => e['grade'] == grade)
+                              .map((e) {
+                            return InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _selectedSubjects[e['_id']] =
+                                      _selectedSubjects[e['_id']] == true
+                                          ? false
+                                          : true;
+                                });
+                              },
                               child: Row(
-                                children: [
-                                  Expanded(
-                                      child: Container(
-                                    height: 45,
-                                    child: OutlinedButton.icon(
-                                      icon: Icon(Icons.arrow_back),
-                                      label: Text('이전',
-                                          style: TextStyle(fontSize: 16)),
-                                      onPressed: () {
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: <Widget>[
+                                  Transform.scale(
+                                    scale: 1.05,
+                                    child: Checkbox(
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(4)),
+                                      value: e['isRequired'] == true ||
+                                          _selectedSubjects[e['_id']] == true,
+                                      onChanged: (value) {
                                         setState(() {
-                                          _index = 0;
+                                          _selectedSubjects[e['_id']] = value;
                                         });
                                       },
                                     ),
-                                  )),
-                                  SizedBox(width: 10),
-                                  Expanded(
-                                      child: Container(
-                                    height: 45,
-                                    child: ElevatedButton.icon(
-                                      icon: Icon(Icons.check),
-                                      label: Text('등록하기',
-                                          style: TextStyle(fontSize: 16)),
-                                      onPressed: () {
-                                        if (_formKey.currentState!.validate()) {
-                                          setState(() {
-                                            _formKey.currentState!.save();
-                                          });
-                                          final requiredSubjectKeys = (snapshot
-                                                  .data as List)
-                                              .where((e) =>
-                                                  e.data()['isRequired'] ==
-                                                      true &&
-                                                  e.data()['grade'] == grade)
-                                              .map((e) => e.id);
-                                          requiredSubjectKeys.forEach((e) {
-                                            _selectedSubjects[e] = true;
-                                          });
-
-                                          firestore
-                                              .collection('students')
-                                              .doc(user!.uid)
-                                              .set({
-                                            'name': name,
-                                            'grade': grade,
-                                            'classNum': classNum,
-                                            'numberInClass': numberInClass,
-                                            'isPending': false,
-                                            'subjects': _selectedSubjects
-                                                .entries
-                                                .map((e) => firestore
-                                                    .collection('subjects')
-                                                    .doc(e.key))
-                                                .toList()
-                                          });
-                                          setState(() {
-                                            _index = 2;
-                                          });
-                                        }
-                                      },
-                                    ),
-                                  )),
+                                  ),
+                                  Text(
+                                      (e['isRequired'] ? '[필수] ' : '') +
+                                          e['name'],
+                                      style:
+                                          Theme.of(context).textTheme.subtitle2)
                                 ],
-                              )),
-                        ],
-                      );
-                    }),
-              ],
-            ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16.0),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                    child: Container(
+                                  height: 45,
+                                  child: OutlinedButton.icon(
+                                    icon: Icon(Icons.arrow_back),
+                                    label: Text('이전',
+                                        style: TextStyle(fontSize: 16)),
+                                    onPressed: () {
+                                      setState(() {
+                                        _index = 0;
+                                      });
+                                    },
+                                  ),
+                                )),
+                                SizedBox(width: 10),
+                                Expanded(
+                                    child: Container(
+                                  height: 45,
+                                  child: ElevatedButton.icon(
+                                    icon: Icon(Icons.check),
+                                    label: Text('등록하기',
+                                        style: TextStyle(fontSize: 16)),
+                                    onPressed: () => doRegister(snapshot),
+                                  ),
+                                )),
+                              ],
+                            )),
+                      ],
+                    );
+                  }),
+            ],
           ),
         ),
       ),
-      onRefresh: () async {
-        final fetchFuture = fetchSubjects();
-        setState(() {
-          _subjects = fetchFuture;
-        });
-        await Future.wait([fetchFuture]);
-      },
     );
   }
 

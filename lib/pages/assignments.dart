@@ -23,7 +23,33 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
   final remoteConfig = RemoteConfig.instance;
   final storage = new LocalStorage('auth.json');
 
-  late Future<List<Map<dynamic, dynamic>>> _assignments, _subjects;
+  late Future<List<Map<dynamic, dynamic>>> _assignments;
+  late Future<Map<dynamic, dynamic>> _me;
+
+  Future<Map<dynamic, dynamic>> fetchStudentsMe() async {
+    var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+    var cfgs = jsonDecode(rawData!.asString());
+
+    final response = await http.get(
+        Uri.parse(
+            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/students/me'),
+        headers: {
+          'ID-Token': await user.getIdToken(true),
+          'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+        });
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      (data['subjects'] as List).sort((a, b) => a['order'] - b['order']);
+      return data;
+    } else if (response.statusCode == 401 &&
+        jsonDecode(response.body)['code'] == 40100) {
+      await refreshToken();
+      return await fetchStudentsMe();
+    } else {
+      throw Exception('Failed to load post');
+    }
+  }
 
   Future<List<Map<dynamic, dynamic>>> fetchAssignments() async {
     var rawData = remoteConfig.getAll()['BACKEND_HOST'];
@@ -50,36 +76,11 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
     }
   }
 
-  Future<List<Map<dynamic, dynamic>>> fetchSubjects() async {
-    var rawData = remoteConfig.getAll()['BACKEND_HOST'];
-    var cfgs = jsonDecode(rawData!.asString());
-
-    final response = await http.get(
-        Uri.parse(
-            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/subjects/all'),
-        headers: {
-          'ID-Token': await user.getIdToken(true),
-          'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
-        });
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body) as List;
-      data.sort((a, b) => a['order'] - b['order']);
-      return List.from(data);
-    } else if (response.statusCode == 401 &&
-        jsonDecode(response.body)['code'] == 40100) {
-      await refreshToken();
-      return await fetchSubjects();
-    } else {
-      throw Exception('Failed to load post');
-    }
-  }
-
   @override
   void initState() {
     super.initState();
+    _me = fetchStudentsMe();
     _assignments = fetchAssignments();
-    _subjects = fetchSubjects();
   }
 
   Widget assignmentCard(
@@ -105,7 +106,7 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
               SizedBox(height: 20),
               Center(
                 child: Text(
-                  (snapshot.data[1] as List)
+                  (snapshot.data[1]['subjects'] as List)
                       .firstWhere((e) => e['_id'] == subjectId)['name'],
                   style: TextStyle(fontSize: 24),
                 ),
@@ -232,7 +233,7 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
             centerTitle: true,
           ),
           body: FutureBuilder(
-            future: Future.wait([_assignments, _subjects]),
+            future: Future.wait([_assignments, _me]),
             builder: (BuildContext context, AsyncSnapshot snapshot) {
               if (!snapshot.hasData) {
                 return Center(
@@ -246,6 +247,8 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
                       )
                     ]));
               }
+
+              final student = snapshot.data[1];
 
               return RefreshIndicator(
                 child: Container(
@@ -280,7 +283,8 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
                               controller:
                                   PageController(viewportFraction: 0.95),
                               onPageChanged: (index) {},
-                              children: (snapshot.data[1] as List)
+                              children: (student['subjects'] as List)
+                                  .where((e) => student['grade'] == 2)
                                   .map((e) => Padding(
                                       padding:
                                           EdgeInsets.symmetric(vertical: 5),
@@ -293,14 +297,14 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
                       )),
                 ),
                 onRefresh: () async {
-                  final fetchSubjectsFuture = fetchSubjects();
+                  final fetchStudentMeFuture = fetchStudentsMe();
                   final fetchAssignmentsFuture = fetchAssignments();
                   setState(() {
+                    _me = fetchStudentsMe();
                     _assignments = fetchAssignmentsFuture;
-                    _subjects = fetchSubjectsFuture;
                   });
                   await Future.wait(
-                      [fetchSubjectsFuture, fetchAssignmentsFuture]);
+                      [fetchAssignmentsFuture, fetchStudentMeFuture]);
                 },
               );
             },

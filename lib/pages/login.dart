@@ -140,9 +140,12 @@ class _LoginPageState extends State<LoginPage> {
 
       DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
       if (Platform.isAndroid) {
-        deviceName = (await deviceInfo.androidInfo).model;
+        final androidInfo = await deviceInfo.androidInfo;
+        deviceName =
+            '${androidInfo.brand} ${androidInfo.device} (${androidInfo.model})';
       } else if (Platform.isIOS) {
-        deviceName = (await deviceInfo.iosInfo).model;
+        final iosInfo = await deviceInfo.iosInfo;
+        deviceName = iosInfo.name;
       }
 
       if (deviceId == null || deviceId.isEmpty) {

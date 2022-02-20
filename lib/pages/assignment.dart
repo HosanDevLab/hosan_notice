@@ -1,8 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:localstorage/localstorage.dart';
+import 'package:http/http.dart' as http;
+
+import '../modules/refresh_token.dart';
 
 class AssignmentPage extends StatefulWidget {
   final String assignmentId;
@@ -15,41 +21,47 @@ class AssignmentPage extends StatefulWidget {
 
 class _AssignmentPageState extends State<AssignmentPage> {
   final user = FirebaseAuth.instance.currentUser!;
-  final firestore = FirebaseFirestore.instance;
   final refreshKey = GlobalKey<RefreshIndicatorState>();
+  final remoteConfig = RemoteConfig.instance;
+  final storage = new LocalStorage('auth.json');
 
-  late Future<DocumentSnapshot<Map<String, dynamic>>> _assignment;
-  late Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _subjects;
   bool? assignmentLoadDone;
 
-  Future<DocumentSnapshot<Map<String, dynamic>>> fetchAssignment() async {
-    assignmentLoadDone = false;
-    DocumentSnapshot<Map<String, dynamic>> data = await firestore
-        .collection('assignments')
-        .doc(widget.assignmentId)
-        .get();
-    return data;
-  }
+  late Future<Map<dynamic, dynamic>> _assignment;
 
-  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
-      fetchSubjects() async {
-    QuerySnapshot<Map<String, dynamic>> data =
-        await firestore.collection('subjects').orderBy('order').get();
-    final ls = data.docs.toList();
-    return ls;
+  Future<Map<dynamic, dynamic>> fetchAssignment() async {
+    var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+    var cfgs = jsonDecode(rawData!.asString());
+
+    final response = await http.get(
+        Uri.parse(
+            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/assignments/${widget.assignmentId}'),
+        headers: {
+          'ID-Token': await user.getIdToken(true),
+          'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+        });
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else if (response.statusCode == 401 &&
+        jsonDecode(response.body)['code'] == 40100) {
+      await refreshToken();
+      return await fetchAssignment();
+    } else {
+      throw Exception('Failed to load post');
+    }
   }
 
   @override
   void initState() {
     _assignment = fetchAssignment();
-    _subjects = fetchSubjects();
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-        future: Future.wait([_assignment, _subjects]),
+        future: _assignment,
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           if (!snapshot.hasData) {
             return Scaffold(
@@ -68,16 +80,18 @@ class _AssignmentPageState extends State<AssignmentPage> {
                     ])));
           }
 
-          final data = snapshot.data[0].data();
+          print('asdf');
+
+          final data = snapshot.data;
 
           Duration? timeDiff;
           String? timeDiffStr;
           if (data['deadline'] != null) {
-            timeDiff = (data['deadline'].toDate() as DateTime)
-                .difference(DateTime.now());
+            timeDiff =
+                DateTime.parse(data['deadline']).difference(DateTime.now());
             if (timeDiff.inSeconds <= 0) {
-              final timeDiffNagative = DateTime.now()
-                  .difference(data['deadline'].toDate() as DateTime);
+              final timeDiffNagative =
+                  DateTime.now().difference(DateTime.parse(data['deadline']));
               if (timeDiffNagative.inDays > 0)
                 timeDiffStr = '${timeDiffNagative.inDays}일 전 마감됨';
               else if (timeDiffNagative.inHours > 0)
@@ -106,7 +120,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                     Text(data['title']),
                     Text(
                         data['deadline'] != null
-                            ? '기한: ${data['deadline'].toDate().toLocal().toString().split('.')[0]} 까지'
+                            ? '기한: ${DateTime.parse(data['deadline']).toLocal().toString().split('.')[0]} 까지'
                             : '기한 없음',
                         style: Theme.of(context)
                             .textTheme
@@ -137,12 +151,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                                     horizontalTitleGap: 2,
                                     leading: Icon(Icons.subject, size: 28),
                                     title: Text(
-                                      data['subject'] is DocumentReference
-                                          ? (snapshot.data[1] as List)
-                                              .firstWhere((e) =>
-                                                  e.id ==
-                                                  data['subject'].id)['name']
-                                          : data['subject'],
+                                      data['subject']['name'],
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(fontSize: 16),
                                     ),

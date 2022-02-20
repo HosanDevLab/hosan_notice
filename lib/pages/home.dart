@@ -28,8 +28,6 @@ class _HomePageState extends State<HomePage> {
   final remoteConfig = RemoteConfig.instance;
   final storage = new LocalStorage('auth.json');
 
-  late Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _subjects;
-
   late Future<List<Map<dynamic, dynamic>>> _assignments;
   late Future<Map<dynamic, dynamic>> _me;
 
@@ -46,7 +44,7 @@ class _HomePageState extends State<HomePage> {
         });
 
     if (response.statusCode == 200) {
-      return json.decode(response.body);
+      return jsonDecode(response.body);
     } else if (response.statusCode == 401 &&
         jsonDecode(response.body)['code'] == 40100) {
       await refreshToken();
@@ -69,9 +67,8 @@ class _HomePageState extends State<HomePage> {
         });
 
     if (response.statusCode == 200) {
-      final data = json.decode(response.body);
+      final data = jsonDecode(response.body);
       data.sort((a, b) => a['deadline'] == null ? 1 : 0);
-      print(data);
       return List.from(data);
     } else if (response.statusCode == 401 &&
         jsonDecode(response.body)['code'] == 40100) {
@@ -80,14 +77,6 @@ class _HomePageState extends State<HomePage> {
     } else {
       throw Exception('Failed to load post');
     }
-  }
-
-  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
-      fetchSubjects() async {
-    QuerySnapshot<Map<String, dynamic>> data =
-        await firestore.collection('subjects').orderBy('order').get();
-    final ls = data.docs.toList();
-    return ls;
   }
 
   @override
@@ -106,7 +95,6 @@ class _HomePageState extends State<HomePage> {
     super.didChangeDependencies();
     _me = fetchStudentsMe();
     _assignments = fetchAssignments();
-    _subjects = fetchSubjects();
     precacheImage(AssetImage('assets/hosan.png'), context);
   }
 
@@ -115,16 +103,15 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  Widget assignmentCard(BuildContext context, AsyncSnapshot snapshot,
-      Map<String, dynamic> assignment) {
+  Widget assignmentCard(BuildContext context, Map<String, dynamic> assignment) {
     Duration? timeDiff;
     String? timeDiffStr;
     if (assignment['deadline'] != null) {
-      timeDiff = DateTime.parse(assignment['deadline'])
-          .difference(DateTime.now());
+      timeDiff =
+          DateTime.parse(assignment['deadline']).difference(DateTime.now());
       if (timeDiff.inSeconds <= 0) {
-        final timeDiffNagative = DateTime.now()
-            .difference(DateTime.parse(assignment['deadline']));
+        final timeDiffNagative =
+            DateTime.now().difference(DateTime.parse(assignment['deadline']));
         if (timeDiffNagative.inDays > 0)
           timeDiffStr = '${timeDiffNagative.inDays}일 전 마감됨';
         else if (timeDiffNagative.inHours > 0)
@@ -145,10 +132,7 @@ class _HomePageState extends State<HomePage> {
       }
     }
 
-    final subjectStr = assignment['subject'] is DocumentReference
-        ? (snapshot.data[1] as List)
-            .firstWhere((e) => e.id == assignment['subject'].id)['name']
-        : assignment['subject'];
+    final subjectStr = assignment['subject']['name'];
 
     return Card(
         margin: EdgeInsets.symmetric(vertical: 4),
@@ -258,14 +242,14 @@ class _HomePageState extends State<HomePage> {
                         ),
                         SizedBox(height: 5),
                         FutureBuilder(
-                          future: Future.wait([_assignments, _subjects]),
+                          future: _assignments,
                           builder:
                               (BuildContext context, AsyncSnapshot snapshot) {
                             if (!snapshot.hasData)
                               return CircularProgressIndicator();
 
-                            final recentAssignments = snapshot.data[0].where(
-                                (e) => e['deadline'] == null
+                            final recentAssignments = snapshot.data.where((e) =>
+                                e['deadline'] == null
                                     ? true
                                     : DateTime.parse(e['deadline'])
                                             .difference(DateTime.now())
@@ -284,7 +268,7 @@ class _HomePageState extends State<HomePage> {
 
                             return Column(
                               children: recentAssignments.map<Widget>((e) {
-                                return assignmentCard(context, snapshot, e);
+                                return assignmentCard(context, e);
                               }).toList(),
                             );
                           },
@@ -395,11 +379,9 @@ class _HomePageState extends State<HomePage> {
           ),
           onRefresh: () async {
             final fetchAssignmentsFuture = fetchAssignments();
-            final fetchSubjectsFuture = fetchSubjects();
             final fetchStudentsMeFuture = fetchStudentsMe();
             setState(() {
               _assignments = fetchAssignmentsFuture;
-              _subjects = fetchSubjectsFuture;
               _me = fetchStudentsMeFuture;
             });
             await Future.wait([fetchAssignmentsFuture]);

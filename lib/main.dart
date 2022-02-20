@@ -265,12 +265,12 @@ class App extends StatelessWidget {
       localizationsDelegates: [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate
       ],
       supportedLocales: [
         Locale('ko', 'KR'),
         // include country code too
       ],
-      locale: Locale('ko'),
     );
   }
 }

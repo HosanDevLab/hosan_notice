@@ -28,6 +28,17 @@
 ### 7. 급식 확인
 매번 급식표를 확인할 필요가 없습니다. 오늘은 물론 앞으로 며칠간의 급식까지도 매우 빠르고 쉽게 확인하세요! 원하신다면 급식 시간 전에 알림까지 보내 드립니다.
 
+## 스크린샷
+<div style="display: flex;">
+  <img src="./screenshots/assignments.jpg" height="500" />
+  <img src="./screenshots/attendance.jpg" height="500"/>
+  <img src="./screenshots/calendar.jpg" height="500"/>
+  <img src="./screenshots/meal.jpg" height="500"/>
+  <img src="./screenshots/navigation.jpg" height="500"/>
+  <img src="./screenshots/path_finding.jpg" height="500"/>
+</div>
+
+
 ## 개발자
 - 개발팀 HosanDevLab - 호산고 제3기 로봇공학반
 - [@ArpaAP](https://github.com/ArpaAP) - 앱 및 서버 설계, 개발

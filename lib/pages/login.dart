@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
@@ -60,7 +59,6 @@ final showLoginErrorDialog = (BuildContext context, http.Response response) {
 };
 
 class _LoginPageState extends State<LoginPage> {
-  final firestore = FirebaseFirestore.instance;
   final remoteConfig = RemoteConfig.instance;
   final storage = new LocalStorage('auth.json');
   bool isLoggingIn = false;
@@ -206,16 +204,60 @@ class _LoginPageState extends State<LoginPage> {
 
       // 로그인 최종 진행
       final continueLogin = () async {
-        CollectionReference students = firestore.collection('students');
+        final rsp = await http.get(
+            Uri.parse(
+                '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/students/me'),
+            headers: {
+              'ID-Token': await signInData.user!.getIdToken(true),
+              'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+            });
 
-        DocumentSnapshot me = await students.doc(signInData.user!.uid).get();
-
-        if (me.exists) {
+        if (rsp.statusCode == 200) {
           await Navigator.pushReplacement(
-              context, MaterialPageRoute(builder: (context) => HomePage()));
-        } else {
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  HomePage(),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                var begin = Offset(0.0, 1.0);
+                var end = Offset.zero;
+                var curve = Curves.ease;
+
+                var tween = Tween(begin: begin, end: end)
+                    .chain(CurveTween(curve: curve));
+
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            ),
+          );
+        } else if (rsp.statusCode == 404) {
           await Navigator.push(
-              context, MaterialPageRoute(builder: (context) => RegisterPage()));
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  RegisterPage(),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                var begin = Offset(0.0, 1.0);
+                var end = Offset.zero;
+                var curve = Curves.ease;
+
+                var tween = Tween(begin: begin, end: end)
+                    .chain(CurveTween(curve: curve));
+
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            ),
+          );
+        } else {
+          throw Exception('Failed to load post');
         }
       };
 
@@ -388,6 +430,8 @@ class _LoginPageState extends State<LoginPage> {
                         );
                       });
                   return;
+
+                  /*
                   try {
                     await FirebaseAuth.instance.signOut();
                     await GoogleSignIn().signOut();
@@ -461,6 +505,8 @@ class _LoginPageState extends State<LoginPage> {
                       });
                     }
                   }
+
+                   */
                 },
               )
             ],

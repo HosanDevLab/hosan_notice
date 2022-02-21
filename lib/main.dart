@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:isolate';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -12,6 +14,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hosan_notice/pages/home.dart';
 import 'package:hosan_notice/pages/login.dart';
 import 'package:localstorage/localstorage.dart';
+import 'package:http/http.dart' as http;
 
 import 'messages.dart';
 
@@ -218,6 +221,7 @@ class App extends StatelessWidget {
       title: '호산고등학교 알리미',
       theme: ThemeData(
         primarySwatch: Colors.deepPurple,
+          fontFamily: 'Pretendard'
       ),
       home: FutureBuilder(
         future: Future.wait([
@@ -233,6 +237,23 @@ class App extends StatelessWidget {
             final authToken = await storage.getItem('AUTH_TOKEN');
             final refreshToken = await storage.getItem('REFRESH_TOKEN');
             return [authToken, refreshToken];
+          }(),
+          () async {
+            await storage.ready;
+            final remoteConfig = RemoteConfig.instance;
+
+            var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+            var cfgs = jsonDecode(rawData!.asString());
+
+            final rsp = await http.get(
+                Uri.parse(
+                    '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/students/me'),
+                headers: {
+                  'ID-Token': await user!.getIdToken(true),
+                  'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+                });
+
+            return rsp.statusCode == 200;
           }()
         ]),
         builder: (BuildContext context, AsyncSnapshot snapshot) {
@@ -252,7 +273,8 @@ class App extends StatelessWidget {
 
           final isLoggedIn = user != null &&
               snapshot.data[0].exists &&
-              !(snapshot.data[1] as List).contains(null);
+              !(snapshot.data[1] as List).contains(null) &&
+              snapshot.data[2];
 
           if (isLoggedIn) {
             initAndBeginForeground();

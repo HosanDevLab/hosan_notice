@@ -1,8 +1,14 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
+
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:localstorage/localstorage.dart';
+import 'package:http/http.dart' as http;
 
+import '../modules/refresh_token.dart';
 import 'assignment.dart';
 
 class NewAssignmentPage extends StatefulWidget {
@@ -16,8 +22,9 @@ class NewAssignmentPage extends StatefulWidget {
 
 class _NewAssignmentPageState extends State<NewAssignmentPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final remoteConfig = RemoteConfig.instance;
   final user = FirebaseAuth.instance.currentUser!;
-  final firestore = FirebaseFirestore.instance;
+  final storage = new LocalStorage('auth.json');
   final refreshKey = GlobalKey<RefreshIndicatorState>();
 
   DateTime? deadline;
@@ -27,24 +34,99 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
   late String description;
   String type = 'assignment';
 
-  late Future<DocumentSnapshot<Map<String, dynamic>>> _subjects;
+  late Future<Map<dynamic, dynamic>> _subject;
 
-  Future<DocumentSnapshot<Map<String, dynamic>>> fetchSubjects() async {
-    DocumentSnapshot<Map<String, dynamic>> data =
-        await firestore.collection('subjects').doc(widget.subjectId).get();
-    return data;
+  Future<Map<dynamic, dynamic>> fetchSubject() async {
+    var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+    var cfgs = jsonDecode(rawData!.asString());
+
+    final response = await http.get(
+        Uri.parse(
+            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/subjects/${widget.subjectId}'),
+        headers: {
+          'ID-Token': await user.getIdToken(true),
+          'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+        });
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else if (response.statusCode == 401 &&
+        jsonDecode(response.body)['code'] == 40100) {
+      await refreshToken();
+      return await fetchSubject();
+    } else {
+      throw Exception('Failed to load post');
+    }
   }
 
   @override
   void initState() {
-    _subjects = fetchSubjects();
+    _subject = fetchSubject();
     super.initState();
+  }
+
+  Future postAssignment(BuildContext context, String assignmentId) async {
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+
+      setState(() {
+        isBeingAdded = true;
+      });
+
+      Future<Map<dynamic, dynamic>> postData() async {
+        var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+        var cfgs = jsonDecode(rawData!.asString());
+
+        final response = await http.post(
+            Uri.parse(
+                '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/assignments'),
+            body: jsonEncode({
+              'title': title,
+              'description': description,
+              'type': type,
+              'subject': widget.subjectId,
+              'teacher': teacher,
+              'deadline': deadline?.toIso8601String(),
+            }),
+            headers: {
+              'ID-Token': await user.getIdToken(true),
+              'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+              'Content-Type': 'application/json'
+            });
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          return data;
+        } else if (response.statusCode == 401 &&
+            jsonDecode(response.body)['code'] == 40100) {
+          await refreshToken();
+          return await postData();
+        } else {
+          throw Exception('Failed to load post');
+        }
+      }
+
+      final data = await postData();
+
+      setState(() {
+        isBeingAdded = false;
+      });
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AssignmentPage(
+            assignmentId: data['_id'],
+          ),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-        future: _subjects,
+        future: _subject,
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           if (!snapshot.hasData) {
             return Scaffold(
@@ -63,7 +145,7 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
                     ])));
           }
 
-          final data = snapshot.data.data();
+          final data = snapshot.data;
 
           return Scaffold(
             appBar: AppBar(
@@ -243,50 +325,20 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
                             padding: EdgeInsets.symmetric(horizontal: 20),
                             width: double.infinity,
                             child: ElevatedButton.icon(
-                              icon: Icon(Icons.done),
-                              label: Text('등록하기'),
-                              onPressed: () async {
-                                if (_formKey.currentState!.validate()) {
-                                  _formKey.currentState!.save();
-
-                                  setState(() {
-                                    isBeingAdded = true;
-                                  });
-
-                                  final DocumentReference<Map<String, dynamic>>
-                                      data = await firestore
-                                          .collection('assignments')
-                                          .add({
-                                    'title': title,
-                                    'description': description,
-                                    'subject': firestore
-                                        .collection('subjects')
-                                        .doc(widget.subjectId),
-                                    'createdAt': DateTime.now(),
-                                    'teacher': teacher,
-                                    'deadline': deadline,
-                                    'type': type,
-                                  });
-
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => AssignmentPage(
-                                        assignmentId: data.id,
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
-                            ),
+                                icon: Icon(Icons.done),
+                                label: Text(isBeingAdded ? '등록하는 중...': '등록하기'),
+                                onPressed: () async {
+                                  if (isBeingAdded) return;
+                                  await postAssignment(context, data['_id']);
+                                }),
                           )
                         ]),
                       )),
                 ),
                 onRefresh: () async {
-                  final fetchFuture = fetchSubjects();
+                  final fetchFuture = fetchSubject();
                   setState(() {
-                    _subjects = fetchFuture;
+                    _subject = fetchFuture;
                   });
                   await Future.wait([fetchFuture]);
                 }),

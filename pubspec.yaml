@@ -100,6 +100,28 @@ flutter:
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
 
+  fonts:
+    - family: Pretendard
+      fonts:
+        - asset: fonts/Pretendard-Black.otf
+          weight: 900
+        - asset: fonts/Pretendard-ExtraBold.otf
+          weight: 800
+        - asset: fonts/Pretendard-Bold.otf
+          weight: 700
+        - asset: fonts/Pretendard-SemiBold.otf
+          weight: 600
+        - asset: fonts/Pretendard-Medium.otf
+          weight: 500
+        - asset: fonts/Pretendard-Regular.otf
+          weight: 400
+        - asset: fonts/Pretendard-Light.otf
+          weight: 300
+        - asset: fonts/Pretendard-Light.otf
+          weight: 200
+        - asset: fonts/Pretendard-Thin.otf
+          weight: 100
+
 flutter_native_splash:
   color: "#EDE7F6"
   image: "assets/hosan.png"

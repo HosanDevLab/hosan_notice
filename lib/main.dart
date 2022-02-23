@@ -5,6 +5,7 @@ import 'dart:isolate';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -32,6 +33,18 @@ void main() async {
   );
   remoteConfig.fetchAndActivate();
 
+  final messaging = FirebaseMessaging.instance;
+
+  NotificationSettings settings = await messaging.requestPermission(
+    alert: true,
+    announcement: false,
+    badge: true,
+    carPlay: false,
+    criticalAlert: false,
+    provisional: false,
+    sound: true,
+  );
+
   await FlutterForegroundTask.init(
     androidNotificationOptions: AndroidNotificationOptions(
       channelId: 'foreground',
@@ -56,22 +69,64 @@ void main() async {
     // printDevLog: true,
   );
 
-  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
+  final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
-  const AndroidInitializationSettings initializationSettingsAndroid =
+  const initializationSettingsAndroid =
       AndroidInitializationSettings('ic_stat_app_icon');
-  final IOSInitializationSettings initializationSettingsIOS =
-      IOSInitializationSettings();
-  final MacOSInitializationSettings initializationSettingsMacOS =
-      MacOSInitializationSettings();
-  final InitializationSettings initializationSettings = InitializationSettings(
+  final initializationSettingsIOS = IOSInitializationSettings();
+  final initializationSettingsMacOS = MacOSInitializationSettings();
+  final initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
       iOS: initializationSettingsIOS,
       macOS: initializationSettingsMacOS);
   await flutterLocalNotificationsPlugin.initialize(initializationSettings,
       onSelectNotification: (payload) {
     print('noti payload $payload');
+  });
+
+  final channel = AndroidNotificationChannel(
+    'fcm',
+    '푸시 알림',
+    description: '호산고 알리미의 공지 사항, 기타 알림이 전송됩니다.',
+    importance: Importance.high,
+  );
+
+  await flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(channel);
+
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+    final notification = message.notification;
+    final android = message.notification?.android;
+
+    BigPictureStyleInformation? bigPictureStyleInformation;
+
+    if (android?.imageUrl != null) {
+      final response = await http.get(Uri.parse(android!.imageUrl!));
+
+      final bigPicture = ByteArrayAndroidBitmap(response.bodyBytes);
+
+      bigPictureStyleInformation = BigPictureStyleInformation(bigPicture);
+    }
+
+    if (notification != null && android != null) {
+      flutterLocalNotificationsPlugin.show(
+        notification.hashCode,
+        notification.title,
+        notification.body,
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            channel.id,
+            channel.name,
+            channelDescription: channel.description,
+            icon: 'ic_stat_app_icon',
+            importance: Importance.max,
+            styleInformation: bigPictureStyleInformation,
+          ),
+        ),
+      );
+    }
   });
 
   runApp(App());
@@ -219,10 +274,8 @@ class App extends StatelessWidget {
 
     return MaterialApp(
       title: '호산고등학교 알리미',
-      theme: ThemeData(
-        primarySwatch: Colors.deepPurple,
-          fontFamily: 'Pretendard'
-      ),
+      theme:
+          ThemeData(primarySwatch: Colors.deepPurple, fontFamily: 'Pretendard'),
       home: FutureBuilder(
         future: Future.wait([
           () async {

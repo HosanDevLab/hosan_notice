@@ -38,7 +38,8 @@ class _MyClassPageState extends State<MyClassPage> {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      (data['subjects'] as List).sort((a, b) => a['order'] - b['order']);
+      (data['subjects']['1st'] as List).sort((a, b) => a['order'] - b['order']);
+      (data['subjects']['2nd'] as List).sort((a, b) => a['order'] - b['order']);
       return data;
     } else if (response.statusCode == 401 &&
         jsonDecode(response.body)['code'] == 40100) {
@@ -58,68 +59,108 @@ class _MyClassPageState extends State<MyClassPage> {
   @override
   Widget build(BuildContext context) {
     return DoubleBack(
-        message: '뒤로가기를 한번 더 누르면 종료합니다.',
-        child: Scaffold(
-          appBar: AppBar(
-            title: Text('내 학반'),
-            centerTitle: true,
-          ),
-          body: FutureBuilder(
-            future: _me,
-            builder: (BuildContext context, AsyncSnapshot snapshot) {
-              if (!snapshot.hasData) {
-                return Center(
-                    child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                      CircularProgressIndicator(color: Colors.deepPurple),
-                      Padding(
-                        padding: EdgeInsets.only(top: 10),
-                        child: Text('불러오는 중', textAlign: TextAlign.center),
-                      )
-                    ]));
-              }
-
-              final student = snapshot.data;
-
-              return RefreshIndicator(
-                child: Container(
-                  height: double.infinity,
-                  child: SingleChildScrollView(
-                      physics: BouncingScrollPhysics(
-                          parent: AlwaysScrollableScrollPhysics()),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: double.infinity,
-                            padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text(
-                                  '${student['grade']}학년 ${student['classNum']}반',
-                                  style: TextStyle(fontSize: 30),
-                                ),
-                                SizedBox(height: 10),
-                                Divider(thickness: 1),
-                              ],
-                            ),
-                          ),
-                        ],
-                      )),
+      message: '뒤로가기를 한번 더 누르면 종료합니다.',
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('내 학반'),
+          centerTitle: true,
+        ),
+        body: FutureBuilder(
+          future: _me,
+          builder: (BuildContext context, AsyncSnapshot snapshot) {
+            if (!snapshot.hasData) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(color: Colors.deepPurple),
+                    Padding(
+                      padding: EdgeInsets.only(top: 10),
+                      child: Text('불러오는 중', textAlign: TextAlign.center),
+                    )
+                  ],
                 ),
-                onRefresh: () async {
-                  final fetchStudentMeFuture = fetchStudentsMe();
-                  setState(() {
-                    _me = fetchStudentsMe();
-                  });
-                  await fetchStudentMeFuture;
-                },
               );
-            },
-          ),
-          drawer: MainDrawer(parentContext: context),
-        ));
+            }
+
+            final student = snapshot.data;
+
+            return RefreshIndicator(
+              child: Container(
+                height: double.infinity,
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Card(
+                        semanticContainer: true,
+                        clipBehavior: Clip.antiAliasWithSaveLayer,
+                        child: Image.network(
+                          'https://placeimg.com/640/480/any',
+                          fit: BoxFit.fill,
+                        ),
+                        shape: RoundedRectangleBorder(),
+                        margin: EdgeInsets.zero,
+                        elevation: 6,
+                      ),
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              '${student['grade']}학년 ${student['classNum']}반',
+                              style: TextStyle(fontSize: 28),
+                            ),
+                            SizedBox(height: 10),
+                            Divider(thickness: 1),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '우리반 게시글',
+                              style: Theme.of(context).textTheme.subtitle1,
+                            ),
+                            SizedBox(height: 8),
+                            Card(
+                              child: ListTile(
+                                title: Text(
+                                  '테스트 게시글',
+                                  style: Theme.of(context).textTheme.bodyLarge,
+                                ),
+                                subtitle: Text(
+                                  '이종국 선생님',
+                                  style: Theme.of(context).textTheme.caption,
+                                ),
+                                dense: true,
+                                onTap: () {},
+                              ),
+                            )
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+              ),
+              onRefresh: () async {
+                final fetchStudentMeFuture = fetchStudentsMe();
+                setState(() {
+                  _me = fetchStudentsMe();
+                });
+                await fetchStudentMeFuture;
+              },
+            );
+          },
+        ),
+        drawer: MainDrawer(parentContext: context),
+      ),
+    );
   }
 }

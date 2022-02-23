@@ -273,7 +273,7 @@ class _MainDrawerState extends State<MainDrawer> {
                           height: 70,
                         ),
                       ),
-                      applicationVersion: packageInfo.version,
+                      applicationVersion: '${packageInfo.version} (빌드번호 ${packageInfo.buildNumber})',
                       applicationLegalese: '제8회 대한민국 SW 융합 해커톤 대회 우수상 수상작',
                       children: [
                         Padding(

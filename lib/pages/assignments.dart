@@ -40,7 +40,8 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      (data['subjects'] as List).sort((a, b) => a['order'] - b['order']);
+      (data['subjects']['1st'] as List).sort((a, b) => a['order'] - b['order']);
+      (data['subjects']['2nd'] as List).sort((a, b) => a['order'] - b['order']);
       return data;
     } else if (response.statusCode == 401 &&
         jsonDecode(response.body)['code'] == 40100) {
@@ -106,9 +107,12 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
               SizedBox(height: 20),
               Center(
                 child: Text(
-                  (snapshot.data[1]['subjects'] as List)
+                  (snapshot.data[1]['subjects']['1st'] as List)
                       .firstWhere((e) => e['_id'] == subjectId)['name'],
-                  style: TextStyle(fontSize: 24),
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
               SizedBox(height: 16),
@@ -251,11 +255,11 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
               final student = snapshot.data[1];
 
               return RefreshIndicator(
-                child: Container(
-                  height: double.infinity,
-                  child: SingleChildScrollView(
-                      physics: BouncingScrollPhysics(
-                          parent: AlwaysScrollableScrollPhysics()),
+                child: CustomScrollView(
+                  physics: BouncingScrollPhysics(
+                      parent: AlwaysScrollableScrollPhysics()),
+                  slivers: [
+                    SliverFillRemaining(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -267,23 +271,27 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
                                 Text('과목별 과제',
                                     style:
                                         Theme.of(context).textTheme.headline6),
-                                SizedBox(height: 4),
+                                SizedBox(height: 8),
                                 Text(
-                                    '수업에서 과제가 있다면 잊어버리지 않도록 누구나 자율적으로 등록해 친구들과 공유하세요!',
-                                    textAlign: TextAlign.start),
+                                  '수업에서 과제가 있다면 잊어버리지 않도록 누구나 자율적으로 등록해 친구들과 공유하세요!',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                  textAlign: TextAlign.start,
+                                ),
                                 Divider(),
-                                Text('아래 카드를 양쪽으로 밀어서 과목을 전환합니다.')
+                                Text(
+                                  '아래 카드를 양쪽으로 밀어서 과목을 전환합니다.',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                )
                               ],
                             ),
                           ),
-                          SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.66,
+                          Expanded(
                             child: PageView(
                               physics: BouncingScrollPhysics(),
                               controller:
                                   PageController(viewportFraction: 0.95),
                               onPageChanged: (index) {},
-                              children: (student['subjects'] as List)
+                              children: (student['subjects']['1st'] as List)
                                   .where((e) => student['grade'] == 2)
                                   .map((e) => Padding(
                                       padding:
@@ -292,9 +300,11 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
                                           context, snapshot, e['_id'])))
                                   .toList(),
                             ),
-                          )
+                          ),
                         ],
-                      )),
+                      ),
+                    )
+                  ],
                 ),
                 onRefresh: () async {
                   final fetchStudentMeFuture = fetchStudentsMe();

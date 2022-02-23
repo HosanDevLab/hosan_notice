@@ -22,6 +22,8 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final _scrollController1 = ScrollController();
+  final _scrollController2 = ScrollController();
   final remoteConfig = RemoteConfig.instance;
   final user = FirebaseAuth.instance.currentUser!;
   final storage = new LocalStorage('auth.json');
@@ -36,7 +38,7 @@ class _RegisterPageState extends State<RegisterPage> {
   late String name;
   late int _index = 0;
 
-  final _selectedSubjects = {};
+  final _selectedSubjects = [{}, {}];
 
   @override
   void dispose() {
@@ -71,16 +73,21 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
+  void resetScroll() {
+    _scrollController1.jumpTo(_scrollController1.position.maxScrollExtent);
+    _scrollController2.jumpTo(_scrollController2.position.maxScrollExtent);
+  }
+
   @override
   void initState() {
     super.initState();
     _subjects = fetchSubjects();
   }
 
-  Widget firstPage(BuildContext context) {
+  Widget studentInfoPage(BuildContext context) {
     return SingleChildScrollView(
         child: Container(
-      padding: EdgeInsets.symmetric(vertical: 22, horizontal: 20),
+      padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -249,11 +256,21 @@ class _RegisterPageState extends State<RegisterPage> {
       setState(() {
         _formKey.currentState!.save();
       });
-      final requiredSubjectKeys = (snapshot.data as List)
-          .where((e) => e['isRequired'] == true && e['grade'] == grade)
-          .map((e) => e['_id']);
-      requiredSubjectKeys.forEach((e) {
-        _selectedSubjects[e] = true;
+      final requiredSubjects = (snapshot.data as List)
+          .where((e) => e['isRequired'] == true && e['grade'] == grade);
+
+      requiredSubjects.forEach((e) {
+        switch (e['termType']) {
+          case 1:
+            _selectedSubjects[0][e['_id']] = true;
+            break;
+          case 2:
+            _selectedSubjects[1][e['_id']] = true;
+            break;
+          default:
+            _selectedSubjects[0][e['_id']] = true;
+            _selectedSubjects[1][e['_id']] = true;
+        }
       });
 
       Future<Map<dynamic, dynamic>> postData() async {
@@ -268,10 +285,18 @@ class _RegisterPageState extends State<RegisterPage> {
               'grade': grade,
               'classNum': classNum,
               'numberInClass': numberInClass,
-              'subjects': _selectedSubjects.entries
-                  .where((e) => e.value)
-                  .map((e) => e.key)
-                  .toList()
+              'subjects': {
+                '1st': _selectedSubjects[0]
+                    .entries
+                    .where((e) => e.value)
+                    .map((e) => e.key)
+                    .toList(),
+                '2nd': _selectedSubjects[1]
+                    .entries
+                    .where((e) => e.value)
+                    .map((e) => e.key)
+                    .toList()
+              }
             }),
             headers: {
               'ID-Token': await user.getIdToken(true),
@@ -321,28 +346,42 @@ class _RegisterPageState extends State<RegisterPage> {
       Navigator.pop(ctx!);
 
       setState(() {
-        _index = 2;
+        _index++;
       });
     }
   }
 
-  Widget secondPage(BuildContext context) {
+  Widget selectSubjectPage(BuildContext context, {int? term}) {
     return Container(
       height: double.infinity,
       child: SingleChildScrollView(
         physics: BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
         child: Container(
-          padding: EdgeInsets.symmetric(vertical: 22, horizontal: 20),
+          padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(
-                '올해 수강 과목을 선택합니다',
-                style: Theme.of(context).textTheme.subtitle1,
-              ),
+              term == null
+                  ? Text(
+                      '수강 과목을 선택합니다',
+                      style: Theme.of(context).textTheme.subtitle1,
+                    )
+                  : Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: '$term학기',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          TextSpan(text: ' 수강 과목을 선택합니다'),
+                        ],
+                        style: Theme.of(context).textTheme.subtitle1,
+                      ),
+                    ),
               SizedBox(height: 7),
               Text(
-                '올해($grade학년) 수강 과목만 선택하세요.\n나중에 언제든 변경할 수 있어요.',
+                '주의! 올해($grade학년${term == null ? '' : ' $term학기'}) 수강 과목만 선택하세요.\n'
+                '나중에 언제든 변경할 수 있어요.',
                 style: Theme.of(context)
                     .textTheme
                     .caption!
@@ -359,18 +398,42 @@ class _RegisterPageState extends State<RegisterPage> {
                       children: [
                         ListView(
                           physics: NeverScrollableScrollPhysics(),
+                          controller: term == 1
+                              ? _scrollController1
+                              : _scrollController2,
                           itemExtent: 40,
                           shrinkWrap: true,
                           children: (snapshot.data as List)
-                              .where((e) => e['grade'] == grade)
+                              .where((e) =>
+                                  e['grade'] == grade &&
+                                  [0, term].contains(e['termType']))
                               .map((e) {
                             return InkWell(
                               onTap: () {
                                 setState(() {
-                                  _selectedSubjects[e['_id']] =
-                                      _selectedSubjects[e['_id']] == true
-                                          ? false
-                                          : true;
+                                  switch (term) {
+                                    case 1:
+                                      _selectedSubjects[0][e['_id']] =
+                                          _selectedSubjects[0][e['_id']] == true
+                                              ? false
+                                              : true;
+                                      break;
+                                    case 2:
+                                      _selectedSubjects[1][e['_id']] =
+                                          _selectedSubjects[1][e['_id']] == true
+                                              ? false
+                                              : true;
+                                      break;
+                                    default:
+                                      _selectedSubjects[0][e['_id']] =
+                                          _selectedSubjects[0][e['_id']] == true
+                                              ? false
+                                              : true;
+                                      _selectedSubjects[1][e['_id']] =
+                                          _selectedSubjects[1][e['_id']] == true
+                                              ? false
+                                              : true;
+                                  }
                                 });
                               },
                               child: Row(
@@ -383,10 +446,15 @@ class _RegisterPageState extends State<RegisterPage> {
                                           borderRadius:
                                               BorderRadius.circular(4)),
                                       value: e['isRequired'] == true ||
-                                          _selectedSubjects[e['_id']] == true,
+                                          _selectedSubjects[term == null
+                                                  ? 0
+                                                  : term - 1][e['_id']] ==
+                                              true,
                                       onChanged: (value) {
                                         setState(() {
-                                          _selectedSubjects[e['_id']] = value;
+                                          _selectedSubjects[term == null
+                                              ? 0
+                                              : term - 1][e['_id']] = value;
                                         });
                                       },
                                     ),
@@ -414,8 +482,10 @@ class _RegisterPageState extends State<RegisterPage> {
                                         style: TextStyle(fontSize: 16)),
                                     onPressed: () {
                                       setState(() {
-                                        _index = 0;
+                                        _index = term == 1 ? 0 : 1;
                                       });
+
+                                      resetScroll();
                                     },
                                   ),
                                 )),
@@ -423,12 +493,38 @@ class _RegisterPageState extends State<RegisterPage> {
                                 Expanded(
                                     child: Container(
                                   height: 45,
-                                  child: ElevatedButton.icon(
-                                    icon: Icon(Icons.check),
-                                    label: Text('등록하기',
-                                        style: TextStyle(fontSize: 16)),
-                                    onPressed: () => doRegister(snapshot),
-                                  ),
+                                  child: term == 1
+                                      ? ElevatedButton(
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text('다음',
+                                                  style:
+                                                      TextStyle(fontSize: 16)),
+                                              SizedBox(width: 5),
+                                              Icon(Icons.arrow_forward),
+                                            ],
+                                          ),
+                                          onPressed: () {
+                                            if (_formKey.currentState!
+                                                .validate()) {
+                                              _formKey.currentState!.save();
+                                              FocusManager.instance.primaryFocus
+                                                  ?.unfocus();
+                                              setState(() {
+                                                _index = term == 1 ? 2 : 3;
+                                              });
+
+                                              resetScroll();
+                                            }
+                                          },
+                                        )
+                                      : ElevatedButton.icon(
+                                          icon: Icon(Icons.check),
+                                          label: Text('등록하기',
+                                              style: TextStyle(fontSize: 16)),
+                                          onPressed: () => doRegister(snapshot),
+                                        ),
                                 )),
                               ],
                             )),
@@ -442,13 +538,13 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  Widget thirdPage(BuildContext context) {
+  Widget permissionsAlertPage(BuildContext context) {
     return Container(
       height: double.infinity,
       child: SingleChildScrollView(
         physics: BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
         child: Container(
-          padding: EdgeInsets.symmetric(vertical: 22, horizontal: 20),
+          padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -470,9 +566,13 @@ class _RegisterPageState extends State<RegisterPage> {
                 contentPadding: EdgeInsets.symmetric(horizontal: 0),
               ),
               Divider(),
+              SizedBox(height: 5),
               Text(
                 '[호산고 알리미] 는 앱을 닫거나 직접 사용하지 않는 경우에도 자동 출결, 교내 내비게이션 기능을 사용하기 위해 위치 데이터에 접근합니다. 계속하면 이에 동의하는 것으로 간주합니다.',
-                style: Theme.of(context).textTheme.caption,
+                style: Theme.of(context)
+                    .textTheme
+                    .caption!
+                    .apply(fontSizeDelta: -1),
               ),
               SizedBox(height: 18),
               SizedBox(
@@ -504,23 +604,49 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    final pages = [
+      studentInfoPage(context),
+      ...(grade == 1
+          ? [selectSubjectPage(context)]
+          : [
+              selectSubjectPage(context, term: 1),
+              selectSubjectPage(context, term: 2),
+            ]),
+      permissionsAlertPage(context)
+    ];
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(_index == 2 ? "앱 권한 허용" : '학생 등록'),
+        title: Text(_index == pages.length - 1 ? "앱 권한 허용" : '학생 등록'),
       ),
       body: Form(
         key: _formKey,
         child: Container(
-          child: AnimatedIndexedStack(
-            duration: Duration(milliseconds: 250),
-            index: _index,
-            children: [
-              firstPage(context),
-              secondPage(context),
-              thirdPage(context)
-            ],
-          ),
-        ),
+            child: Column(
+          children: [
+            LinearProgressIndicator(
+              value: (_index + 1) / pages.length,
+              backgroundColor: Colors.transparent,
+              minHeight: 6,
+              color: Colors.deepPurple,
+            ),
+            Container(
+              padding: EdgeInsets.only(top: 7, bottom: 7),
+              child: Text(
+                '${_index + 1} / ${pages.length} 단계',
+                style: Theme.of(context).textTheme.caption,
+              ),
+            ),
+            Divider(height: 0),
+            Expanded(
+              child: AnimatedIndexedStack(
+                duration: Duration(milliseconds: 250),
+                index: _index,
+                children: pages,
+              ),
+            )
+          ],
+        )),
       ),
     );
   }

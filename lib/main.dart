@@ -17,11 +17,14 @@ import 'package:hosan_notice/pages/login.dart';
 import 'package:localstorage/localstorage.dart';
 import 'package:http/http.dart' as http;
 
+import 'firebase_options.dart';
 import 'messages.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   final remoteConfig = RemoteConfig.instance;
 

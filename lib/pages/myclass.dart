@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:math';
+import 'dart:ui';
 
 import 'package:double_back_to_close/double_back_to_close.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:hosan_notice/widgets/drawer.dart';
 import 'package:localstorage/localstorage.dart';
 import 'package:http/http.dart' as http;
+import 'package:quiver/iterables.dart';
 
 import '../modules/refresh_token.dart';
 
@@ -50,10 +53,21 @@ class _MyClassPageState extends State<MyClassPage> {
     }
   }
 
+  String url = 'https://placeimg.com/640/480/nature';
+  late Image image;
+  int timeTableMode = 0;
+
   @override
   void initState() {
     super.initState();
     _me = fetchStudentsMe();
+    image = Image.network(url, fit: BoxFit.fill, height: 300);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    precacheImage(image.image, context);
   }
 
   @override
@@ -61,10 +75,25 @@ class _MyClassPageState extends State<MyClassPage> {
     return DoubleBack(
       message: '뒤로가기를 한번 더 누르면 종료합니다.',
       child: Scaffold(
-        appBar: AppBar(
-          title: Text('내 학반'),
-          centerTitle: true,
+        appBar: PreferredSize(
+          child: Container(
+            child: ClipRRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+                child: AppBar(
+                  title: Text('내 학반'),
+                  centerTitle: true,
+                  backgroundColor: Colors.transparent,
+                ),
+              ),
+            ),
+          ),
+          preferredSize: Size(
+            MediaQuery.of(context).size.width,
+            AppBar().preferredSize.height,
+          ),
         ),
+        extendBodyBehindAppBar: true,
         body: FutureBuilder(
           future: _me,
           builder: (BuildContext context, AsyncSnapshot snapshot) {
@@ -86,19 +115,21 @@ class _MyClassPageState extends State<MyClassPage> {
             final student = snapshot.data;
 
             return RefreshIndicator(
+              edgeOffset: AppBar().preferredSize.height,
               child: Container(
                 height: double.infinity,
+                padding: EdgeInsets.only(bottom: 20),
                 child: SingleChildScrollView(
+                  physics: BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Card(
                         semanticContainer: true,
                         clipBehavior: Clip.antiAliasWithSaveLayer,
-                        child: Image.network(
-                          'https://placeimg.com/640/480/any',
-                          fit: BoxFit.fill,
-                        ),
+                        child: image,
                         shape: RoundedRectangleBorder(),
                         margin: EdgeInsets.zero,
                         elevation: 6,
@@ -111,10 +142,218 @@ class _MyClassPageState extends State<MyClassPage> {
                           children: [
                             Text(
                               '${student['grade']}학년 ${student['classNum']}반',
-                              style: TextStyle(fontSize: 28),
+                              style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                            SizedBox(height: 10),
+                            SizedBox(height: 6),
+                            Text(
+                              '담임선생님 국어 OOO',
+                              style: Theme.of(context).textTheme.caption,
+                            ),
+                            SizedBox(height: 8),
                             Divider(thickness: 1),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  '시간표',
+                                  style: Theme.of(context).textTheme.subtitle1,
+                                ),
+                                SizedBox(width: 10),
+                                Text(
+                                  '현재 2교시',
+                                  style: Theme.of(context).textTheme.caption,
+                                ),
+                                Expanded(child: Container()),
+                                ToggleButtons(
+                                  children: [
+                                    Text('오늘'),
+                                    Text('전체'),
+                                  ],
+                                  onPressed: (val) {
+                                    setState(() {
+                                      timeTableMode = val;
+                                    });
+                                  },
+                                  isSelected: [
+                                    timeTableMode == 0,
+                                    timeTableMode == 1
+                                  ],
+                                  borderRadius: BorderRadius.circular(10),
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                  constraints: BoxConstraints(
+                                    minHeight: 30,
+                                    minWidth: 50,
+                                  ),
+                                  textStyle: TextStyle(fontSize: 13),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 12),
+                            timeTableMode == 0
+                                ? Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      TextButton(
+                                        onPressed: () {},
+                                        child: Text(
+                                          '자율',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .caption,
+                                        ),
+                                        style: TextButton.styleFrom(
+                                          minimumSize: Size.zero,
+                                          tapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                        ),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {},
+                                        child: Text(
+                                          '미적',
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        style: TextButton.styleFrom(
+                                          minimumSize: Size.zero,
+                                          tapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                        ),
+                                      ),
+                                      ...['택A', '택A', '스생', '독서', '영2'].map(
+                                        (a) => TextButton(
+                                          onPressed: () {},
+                                          child: Text(
+                                            a,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .caption,
+                                          ),
+                                          style: TextButton.styleFrom(
+                                            minimumSize: Size.zero,
+                                            tapTargetSize: MaterialTapTargetSize
+                                                .shrinkWrap,
+                                          ),
+                                        ),
+                                      )
+                                    ],
+                                  )
+                                : Table(
+                                    border: TableBorder.all(
+                                        borderRadius: BorderRadius.circular(5),
+                                        color: Colors.black12,
+                                        width: 0.5),
+                                    children: [
+                                      TableRow(children: [
+                                        ...['월', '화', '수', '목', '금'].map(
+                                          (e) => TableCell(
+                                            child: Container(
+                                              padding: EdgeInsets.symmetric(
+                                                  vertical: 5),
+                                              child: Text(
+                                                e,
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      ]),
+                                      ...zip([
+                                        [
+                                          "자율",
+                                          "미적",
+                                          '택A',
+                                          '택A',
+                                          '스생',
+                                          '독서',
+                                          '영2'
+                                        ],
+                                        [
+                                          '영2',
+                                          '독서',
+                                          '택A',
+                                          '택A',
+                                          '심국',
+                                          '미적',
+                                          ' 일어'
+                                        ],
+                                        [
+                                          '심국',
+                                          '일어',
+                                          '독서',
+                                          '진로',
+                                          '미적',
+                                          '동아',
+                                          ''
+                                        ],
+                                        [
+                                          '영2',
+                                          '일어',
+                                          '택B',
+                                          '택B',
+                                          '음미',
+                                          '미적',
+                                          '심국'
+                                        ],
+                                        [
+                                          '일어',
+                                          '영2',
+                                          '택B',
+                                          '택B',
+                                          '독서',
+                                          '심국',
+                                          '음미'
+                                        ]
+                                      ]).map((e) {
+                                        return TableRow(
+                                          children: e
+                                              .map(
+                                                (f) => TableCell(
+                                                  child: InkWell(
+                                                    child: Container(
+                                                      padding:
+                                                          EdgeInsets.symmetric(
+                                                        vertical: 8,
+                                                      ),
+                                                      child: Text(
+                                                        f,
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                        style: TextStyle(
+                                                          fontSize: 14,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    onTap: () {},
+                                                  ),
+                                                ),
+                                              )
+                                              .toList(),
+                                        );
+                                      })
+                                    ],
+                                  ),
+                            Divider(height: 30),
                           ],
                         ),
                       ),
@@ -141,6 +380,34 @@ class _MyClassPageState extends State<MyClassPage> {
                                 dense: true,
                                 onTap: () {},
                               ),
+                            ),
+                            Divider(height: 30),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '다가오는 생일',
+                              style: Theme.of(context).textTheme.subtitle1,
+                            ),
+                            SizedBox(height: 8),
+                            Card(
+                              child: ListTile(
+                                title: Text(
+                                  '이승민',
+                                  style: Theme.of(context).textTheme.bodyLarge,
+                                ),
+                                subtitle: Text(
+                                  '3월 18일, D${DateTime.now().difference(new DateTime(2022, 3, 18)).inDays}',
+                                  style: Theme.of(context).textTheme.caption,
+                                ),
+                                dense: true,
+                                onTap: () {},
+                              ),
                             )
                           ],
                         ),
@@ -160,6 +427,17 @@ class _MyClassPageState extends State<MyClassPage> {
           },
         ),
         drawer: MainDrawer(parentContext: context),
+        floatingActionButton: FloatingActionButton(
+          child: Icon(Icons.refresh),
+          tooltip: '이미지 새로고침',
+          onPressed: () {
+            setState(() {
+              url =
+                  'https://placeimg.com/640/480/nature#${Random().nextInt(2147483890)}';
+              image = Image.network(url, fit: BoxFit.fill, height: 300);
+            });
+          },
+        ),
       ),
     );
   }

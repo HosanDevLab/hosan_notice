@@ -36,6 +36,7 @@
   <img src="./screenshots/meal.jpg" height="500"/>
   <img src="./screenshots/navigation.jpg" height="500"/>
   <img src="./screenshots/path_finding.jpg" height="500"/>
+  <img src="./screenshots/myclass.jpg" height="500"/>
 </div>
 
 

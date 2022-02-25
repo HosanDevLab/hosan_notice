@@ -13,8 +13,13 @@ import 'package:http/http.dart' as http;
 import 'package:quiver/iterables.dart';
 
 import '../modules/refresh_token.dart';
+import 'classes.dart';
 
 class MyClassPage extends StatefulWidget {
+  final String? classId;
+
+  MyClassPage({Key? key, this.classId}) : super(key: key);
+
   _MyClassPageState createState() => _MyClassPageState();
 }
 
@@ -137,8 +142,9 @@ class _MyClassPageState extends State<MyClassPage> {
                         onTap: () {
                           setState(() {
                             url =
-                            'https://placeimg.com/640/480/nature#${Random().nextInt(2147483890)}';
-                            image = Image.network(url, fit: BoxFit.fill, height: 300);
+                                'https://placeimg.com/640/480/nature#${Random().nextInt(2147483890)}';
+                            image = Image.network(url,
+                                fit: BoxFit.fill, height: 300);
                           });
                         },
                       ),
@@ -440,7 +446,28 @@ class _MyClassPageState extends State<MyClassPage> {
           child: Icon(Icons.format_list_bulleted),
           tooltip: '다른 반으로 이동',
           onPressed: () {
+            Navigator.push(
+              context,
+              PageRouteBuilder(
+                opaque: false,
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                    ClassesPage(context: context),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  var begin = Offset(0.0, 1.0);
+                  var end = Offset.zero;
+                  var curve = Curves.ease;
 
+                  var tween = Tween(begin: begin, end: end)
+                      .chain(CurveTween(curve: curve));
+
+                  return SlideTransition(
+                    position: animation.drive(tween),
+                    child: child,
+                  );
+                },
+              ),
+            );
           },
         ),
       ),

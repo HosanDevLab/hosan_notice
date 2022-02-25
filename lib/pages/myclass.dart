@@ -118,7 +118,6 @@ class _MyClassPageState extends State<MyClassPage> {
               edgeOffset: AppBar().preferredSize.height,
               child: Container(
                 height: double.infinity,
-                padding: EdgeInsets.only(bottom: 20),
                 child: SingleChildScrollView(
                   physics: BouncingScrollPhysics(
                     parent: AlwaysScrollableScrollPhysics(),
@@ -126,13 +125,22 @@ class _MyClassPageState extends State<MyClassPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Card(
-                        semanticContainer: true,
-                        clipBehavior: Clip.antiAliasWithSaveLayer,
-                        child: image,
-                        shape: RoundedRectangleBorder(),
-                        margin: EdgeInsets.zero,
-                        elevation: 6,
+                      InkWell(
+                        child: Card(
+                          semanticContainer: true,
+                          clipBehavior: Clip.antiAliasWithSaveLayer,
+                          child: image,
+                          shape: RoundedRectangleBorder(),
+                          margin: EdgeInsets.zero,
+                          elevation: 6,
+                        ),
+                        onTap: () {
+                          setState(() {
+                            url =
+                            'https://placeimg.com/640/480/nature#${Random().nextInt(2147483890)}';
+                            image = Image.network(url, fit: BoxFit.fill, height: 300);
+                          });
+                        },
                       ),
                       Container(
                         width: double.infinity,
@@ -374,7 +382,7 @@ class _MyClassPageState extends State<MyClassPage> {
                                   style: Theme.of(context).textTheme.bodyLarge,
                                 ),
                                 subtitle: Text(
-                                  '이종국 선생님',
+                                  'OOO 선생님',
                                   style: Theme.of(context).textTheme.caption,
                                 ),
                                 dense: true,
@@ -398,7 +406,7 @@ class _MyClassPageState extends State<MyClassPage> {
                             Card(
                               child: ListTile(
                                 title: Text(
-                                  '이승민',
+                                  '김호산',
                                   style: Theme.of(context).textTheme.bodyLarge,
                                 ),
                                 subtitle: Text(
@@ -411,7 +419,8 @@ class _MyClassPageState extends State<MyClassPage> {
                             )
                           ],
                         ),
-                      )
+                      ),
+                      SizedBox(height: 20),
                     ],
                   ),
                 ),
@@ -428,14 +437,10 @@ class _MyClassPageState extends State<MyClassPage> {
         ),
         drawer: MainDrawer(parentContext: context),
         floatingActionButton: FloatingActionButton(
-          child: Icon(Icons.refresh),
-          tooltip: '이미지 새로고침',
+          child: Icon(Icons.format_list_bulleted),
+          tooltip: '다른 반으로 이동',
           onPressed: () {
-            setState(() {
-              url =
-                  'https://placeimg.com/640/480/nature#${Random().nextInt(2147483890)}';
-              image = Image.network(url, fit: BoxFit.fill, height: 300);
-            });
+
           },
         ),
       ),

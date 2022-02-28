@@ -15,6 +15,7 @@ import 'package:hosan_notice/pages/meal_info.dart';
 import 'package:hosan_notice/pages/my_attend.dart';
 import 'package:hosan_notice/pages/myclass.dart';
 import 'package:hosan_notice/pages/navigation.dart';
+import 'package:hosan_notice/pages/teachers.dart';
 import 'package:localstorage/localstorage.dart';
 import 'package:package_info/package_info.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -175,6 +176,21 @@ class _MainDrawerState extends State<MainDrawer> {
                     widget.parentContext,
                     MaterialPageRoute(
                       builder: (context) => MealInfoPage(),
+                    ),
+                  );
+                },
+              ),
+              Divider(height: 0),
+              ListTile(
+                title: Text('선생님 찾기'),
+                dense: true,
+                leading: Icon(Icons.person_search),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushReplacement(
+                    widget.parentContext,
+                    MaterialPageRoute(
+                      builder: (context) => TeachersPage(),
                     ),
                   );
                 },

@@ -29,8 +29,8 @@ class _MyClassPageState extends State<MyClassPage> {
   final remoteConfig = RemoteConfig.instance;
   final storage = new LocalStorage('auth.json');
 
-  late Future<List<Map<dynamic, dynamic>>> _assignments;
-  late Future<Map<dynamic, dynamic>> _me;
+  late Future<List<Map<dynamic, dynamic>>> _assignments, _classes;
+  late Future<Map<dynamic, dynamic>> _me, _class, _timetable;
 
   Future<Map<dynamic, dynamic>> fetchStudentsMe() async {
     var rawData = remoteConfig.getAll()['BACKEND_HOST'];
@@ -58,6 +58,79 @@ class _MyClassPageState extends State<MyClassPage> {
     }
   }
 
+  Future<List<Map<dynamic, dynamic>>> fetchClasses() async {
+    var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+    var cfgs = jsonDecode(rawData!.asString());
+
+    final response = await http.get(
+        Uri.parse(
+            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/classes/all'),
+        headers: {
+          'ID-Token': await user.getIdToken(true),
+          'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+        });
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return List.from(data);
+    } else if (response.statusCode == 401 &&
+        jsonDecode(response.body)['code'] == 40100) {
+      await refreshToken();
+      return await fetchClasses();
+    } else {
+      throw Exception('Failed to load post');
+    }
+  }
+
+  Future<Map<dynamic, dynamic>> fetchClass() async {
+    var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+    var cfgs = jsonDecode(rawData!.asString());
+
+    final response = await http.get(
+        Uri.parse(
+            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/classes/${widget.classId ?? 'me'}'),
+        headers: {
+          'ID-Token': await user.getIdToken(true),
+          'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+        });
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data;
+    } else if (response.statusCode == 401 &&
+        jsonDecode(response.body)['code'] == 40100) {
+      await refreshToken();
+      return await fetchClass();
+    } else {
+      throw Exception('Failed to load post');
+    }
+  }
+
+  Future<Map<dynamic, dynamic>> fetchTimetable() async {
+    var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+    var cfgs = jsonDecode(rawData!.asString());
+
+    final addr = widget.classId != null ? 'classes/${widget.classId}/timetables' : 'timetables/me';
+    final response = await http.get(
+        Uri.parse(
+            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/${addr}'),
+        headers: {
+          'ID-Token': await user.getIdToken(true),
+          'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+        });
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data;
+    } else if (response.statusCode == 401 &&
+        jsonDecode(response.body)['code'] == 40100) {
+      await refreshToken();
+      return await fetchTimetable();
+    } else {
+      throw Exception('Failed to load post');
+    }
+  }
+
   String url = 'https://placeimg.com/640/480/nature';
   late Image image;
   int timeTableMode = 0;
@@ -66,6 +139,9 @@ class _MyClassPageState extends State<MyClassPage> {
   void initState() {
     super.initState();
     _me = fetchStudentsMe();
+    _class = fetchClass();
+    _classes = fetchClasses();
+    _timetable = fetchTimetable();
     image = Image.network(url, fit: BoxFit.fill, height: 300);
   }
 
@@ -100,7 +176,7 @@ class _MyClassPageState extends State<MyClassPage> {
         ),
         extendBodyBehindAppBar: true,
         body: FutureBuilder(
-          future: _me,
+          future: Future.wait([_me, _class, _timetable]),
           builder: (BuildContext context, AsyncSnapshot snapshot) {
             if (!snapshot.hasData) {
               return Center(
@@ -117,7 +193,11 @@ class _MyClassPageState extends State<MyClassPage> {
               );
             }
 
-            final student = snapshot.data;
+            final student = snapshot.data[0];
+            final classroom = snapshot.data[1] as Map;
+            final timetable = snapshot.data[2] as Map;
+
+            final dow = DateTime.now().weekday;
 
             return RefreshIndicator(
               edgeOffset: AppBar().preferredSize.height,
@@ -155,17 +235,25 @@ class _MyClassPageState extends State<MyClassPage> {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Text(
-                              '${student['grade']}학년 ${student['classNum']}반',
+                              '${classroom['grade']}학년 ${classroom['classNum']}반',
                               style: TextStyle(
                                 fontSize: 28,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            SizedBox(height: 6),
-                            Text(
-                              '담임선생님 국어 OOO',
+                            SizedBox(height: 8),
+                            Text.rich(TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: classroom['teacher']['name'],
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                TextSpan(text: ' 선생님 담임'),
+                              ],
                               style: Theme.of(context).textTheme.caption,
-                            ),
+                            )),
                             SizedBox(height: 8),
                             Divider(thickness: 1),
                           ],
@@ -184,7 +272,7 @@ class _MyClassPageState extends State<MyClassPage> {
                                 ),
                                 SizedBox(width: 10),
                                 Text(
-                                  '현재 2교시',
+                                  '현재 일과시간 끝',
                                   style: Theme.of(context).textTheme.caption,
                                 ),
                                 Expanded(child: Container()),
@@ -221,40 +309,17 @@ class _MyClassPageState extends State<MyClassPage> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.center,
                                     children: [
-                                      TextButton(
-                                        onPressed: () {},
-                                        child: Text(
-                                          '자율',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .caption,
-                                        ),
-                                        style: TextButton.styleFrom(
-                                          minimumSize: Size.zero,
-                                          tapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
-                                        ),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {},
-                                        child: Text(
-                                          '미적',
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                        style: TextButton.styleFrom(
-                                          minimumSize: Size.zero,
-                                          tapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
-                                        ),
-                                      ),
-                                      ...['택A', '택A', '스생', '독서', '영2'].map(
+                                      ...((timetable['table'] as List)
+                                              .where((e) => e['dow'] == dow)
+                                              .toList()
+                                            ..sort((a, b) =>
+                                                a['period'] - b['period']))
+                                          .map(
                                         (a) => TextButton(
                                           onPressed: () {},
                                           child: Text(
-                                            a,
+                                            a['subject']?['short_name'] ??
+                                                a['subject']?['name'] ?? '',
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .caption,
@@ -292,55 +357,17 @@ class _MyClassPageState extends State<MyClassPage> {
                                           ),
                                         )
                                       ]),
-                                      ...zip([
-                                        [
-                                          "자율",
-                                          "미적",
-                                          '택A',
-                                          '택A',
-                                          '스생',
-                                          '독서',
-                                          '영2'
-                                        ],
-                                        [
-                                          '영2',
-                                          '독서',
-                                          '택A',
-                                          '택A',
-                                          '심국',
-                                          '미적',
-                                          ' 일어'
-                                        ],
-                                        [
-                                          '심국',
-                                          '일어',
-                                          '독서',
-                                          '진로',
-                                          '미적',
-                                          '동아',
-                                          ''
-                                        ],
-                                        [
-                                          '영2',
-                                          '일어',
-                                          '택B',
-                                          '택B',
-                                          '음미',
-                                          '미적',
-                                          '심국'
-                                        ],
-                                        [
-                                          '일어',
-                                          '영2',
-                                          '택B',
-                                          '택B',
-                                          '독서',
-                                          '심국',
-                                          '음미'
-                                        ]
-                                      ]).map((e) {
+                                      ...List.generate(7, (i) => i + 1,
+                                              growable: true)
+                                          .map((e) {
                                         return TableRow(
-                                          children: e
+                                          children: ((timetable['table']
+                                                      as List)
+                                                  .where(
+                                                      (r) => r['period'] == e)
+                                                  .toList()
+                                                ..sort((a, b) =>
+                                                    a['dow'] - b['dow']))
                                               .map(
                                                 (f) => TableCell(
                                                   child: InkWell(
@@ -350,7 +377,11 @@ class _MyClassPageState extends State<MyClassPage> {
                                                         vertical: 8,
                                                       ),
                                                       child: Text(
-                                                        f,
+                                                        f['subject']?[
+                                                                'short_name'] ??
+                                                            f['subject']
+                                                                ?['name'] ??
+                                                            '',
                                                         textAlign:
                                                             TextAlign.center,
                                                         style: TextStyle(
@@ -412,7 +443,7 @@ class _MyClassPageState extends State<MyClassPage> {
                             Card(
                               child: ListTile(
                                 title: Text(
-                                  '김호산',
+                                  '이승민',
                                   style: Theme.of(context).textTheme.bodyLarge,
                                 ),
                                 subtitle: Text(
@@ -433,10 +464,23 @@ class _MyClassPageState extends State<MyClassPage> {
               ),
               onRefresh: () async {
                 final fetchStudentMeFuture = fetchStudentsMe();
+                final fetchClassFuture = fetchClass();
+                final fetchClassesFuture = fetchClasses();
+                final fetchTimetableFuture = fetchTimetable();
+
                 setState(() {
-                  _me = fetchStudentsMe();
+                  _me = fetchStudentMeFuture;
+                  _class = fetchClassFuture;
+                  _classes = fetchClassesFuture;
+                  _timetable = fetchTimetableFuture;
                 });
-                await fetchStudentMeFuture;
+
+                await Future.wait([
+                  fetchStudentMeFuture,
+                  fetchClassFuture,
+                  fetchClassesFuture,
+                  fetchTimetableFuture
+                ]);
               },
             );
           },
@@ -445,13 +489,15 @@ class _MyClassPageState extends State<MyClassPage> {
         floatingActionButton: FloatingActionButton(
           child: Icon(Icons.format_list_bulleted),
           tooltip: '다른 반으로 이동',
-          onPressed: () {
+          onPressed: () async {
+            final classes = await _classes;
+            print(classes);
             Navigator.push(
               context,
               PageRouteBuilder(
                 opaque: false,
                 pageBuilder: (context, animation, secondaryAnimation) =>
-                    ClassesPage(context: context),
+                    ClassesPage(context, classes: classes),
                 transitionsBuilder:
                     (context, animation, secondaryAnimation, child) {
                   var begin = Offset(0.0, 1.0);

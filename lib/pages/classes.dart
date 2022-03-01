@@ -5,8 +5,10 @@ import 'package:hosan_notice/pages/myclass.dart';
 
 class ClassesPage extends StatefulWidget {
   final BuildContext context;
+  final List<Map> classes;
 
-  ClassesPage({Key? key, required this.context}) : super(key: key);
+  ClassesPage(this.context, {Key? key, required this.classes})
+      : super(key: key);
 
   @override
   _ClassesPageState createState() => _ClassesPageState();
@@ -15,10 +17,16 @@ class ClassesPage extends StatefulWidget {
 class _ClassesPageState extends State<ClassesPage> {
   @override
   Widget build(BuildContext context) {
+    widget.classes.sort((a, b) => a['classNum'] - b['classNum']);
+
+    final firstGrades = widget.classes.where((e) => e['grade'] == 1);
+    final secondGrades = widget.classes.where((e) => e['grade'] == 2);
+    final thirdGrades = widget.classes.where((e) => e['grade'] == 3);
+
     return Scaffold(
       backgroundColor: Colors.white.withOpacity(0),
       appBar: AppBar(
-        title: Text('전체 학반'),
+        title: Text('다른 학반으로 이동'),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 1,
@@ -66,20 +74,19 @@ class _ClassesPageState extends State<ClassesPage> {
                         ],
                       ),
                     ),
-                    ...List.generate(
-                      8,
-                      (i) {
+                    ...firstGrades.map(
+                      (o) {
                         return Card(
                           child: ListTile(
                             title: Row(
                               children: [
                                 Text(
-                                  '1학년 ${i + 1}반',
+                                  '1학년 ${o['classNum']}반',
                                   style: TextStyle(fontSize: 16),
                                 ),
                                 Expanded(child: Container()),
                                 Text(
-                                  '국어 OOO 담임',
+                                  '${o['teacher']['name']} 담임',
                                   style: Theme.of(context).textTheme.caption,
                                 ),
                               ],
@@ -89,7 +96,8 @@ class _ClassesPageState extends State<ClassesPage> {
                               Navigator.pushReplacement(
                                 widget.context,
                                 MaterialPageRoute(
-                                  builder: (context) => MyClassPage(),
+                                  builder: (context) =>
+                                      MyClassPage(classId: o['_id']),
                                 ),
                               );
                             },
@@ -97,7 +105,6 @@ class _ClassesPageState extends State<ClassesPage> {
                           ),
                         );
                       },
-                      growable: true,
                     ),
                     SizedBox(height: 10),
                     Container(
@@ -127,30 +134,97 @@ class _ClassesPageState extends State<ClassesPage> {
                         ],
                       ),
                     ),
-                    ...List.generate(
-                      9,
-                      (i) {
+                    ...secondGrades.map(
+                      (o) {
                         return Card(
                           child: ListTile(
                             title: Row(
                               children: [
                                 Text(
-                                  '2학년 ${i + 1}반',
+                                  '2학년 ${o['classNum']}반',
                                   style: TextStyle(fontSize: 16),
                                 ),
                                 Expanded(child: Container()),
                                 Text(
-                                  '국어 OOO 담임',
+                                  '${o['teacher']['name']} 담임',
                                   style: Theme.of(context).textTheme.caption,
                                 ),
                               ],
                             ),
-                            onTap: () {},
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.pushReplacement(
+                                widget.context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      MyClassPage(classId: o['_id']),
+                                ),
+                              );
+                            },
                             dense: true,
                           ),
                         );
                       },
-                      growable: true,
+                    ),
+                    SizedBox(height: 10),
+                    Container(
+                      padding:
+                          EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Divider(
+                              color: Colors.white,
+                              thickness: 0.8,
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          Text(
+                            '3학년',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Divider(
+                              color: Colors.white,
+                              thickness: 0.8,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    ...thirdGrades.map(
+                      (o) {
+                        return Card(
+                          child: ListTile(
+                            title: Row(
+                              children: [
+                                Text(
+                                  '3학년 ${o['classNum']}반',
+                                  style: TextStyle(fontSize: 16),
+                                ),
+                                Expanded(child: Container()),
+                                Text(
+                                  '${o['teacher']['name']} 담임',
+                                  style: Theme.of(context).textTheme.caption,
+                                ),
+                              ],
+                            ),
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.pushReplacement(
+                                widget.context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      MyClassPage(classId: o['_id']),
+                                ),
+                              );
+                            },
+                            dense: true,
+                          ),
+                        );
+                      },
                     ),
                     SizedBox(height: 10),
                   ],

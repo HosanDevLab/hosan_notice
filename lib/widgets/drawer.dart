@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -122,21 +123,6 @@ class _MainDrawerState extends State<MainDrawer> {
               ),
               Divider(height: 0),
               ListTile(
-                title: Text('내 출결 및 활동'),
-                dense: true,
-                leading: Icon(Icons.fact_check),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacement(
-                    widget.parentContext,
-                    MaterialPageRoute(
-                      builder: (context) => MyAttendancePage(),
-                    ),
-                  );
-                },
-              ),
-              Divider(height: 0),
-              ListTile(
                 title: Text('한눈에 보는 일정표'),
                 dense: true,
                 leading: Icon(Icons.event_note),
@@ -146,21 +132,6 @@ class _MainDrawerState extends State<MainDrawer> {
                     widget.parentContext,
                     MaterialPageRoute(
                       builder: (context) => CalendarPage(),
-                    ),
-                  );
-                },
-              ),
-              Divider(height: 0),
-              ListTile(
-                title: Text('교내 내비게이션'),
-                dense: true,
-                leading: Icon(Icons.room),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacement(
-                    widget.parentContext,
-                    MaterialPageRoute(
-                      builder: (context) => NavigationPage(),
                     ),
                   );
                 },
@@ -191,6 +162,38 @@ class _MainDrawerState extends State<MainDrawer> {
                     widget.parentContext,
                     MaterialPageRoute(
                       builder: (context) => TeachersPage(),
+                    ),
+                  );
+                },
+              ),
+              Divider(height: 0),
+              ListTile(
+                title: Text('내 출결 및 활동 (개발중)'),
+                enabled: kDebugMode || isDev,
+                dense: true,
+                leading: Icon(Icons.fact_check),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushReplacement(
+                    widget.parentContext,
+                    MaterialPageRoute(
+                      builder: (context) => MyAttendancePage(),
+                    ),
+                  );
+                },
+              ),
+              Divider(height: 0),
+              ListTile(
+                title: Text('교내 내비게이션 (개발중)'),
+                enabled: kDebugMode || isDev,
+                dense: true,
+                leading: Icon(Icons.room),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushReplacement(
+                    widget.parentContext,
+                    MaterialPageRoute(
+                      builder: (context) => NavigationPage(),
                     ),
                   );
                 },

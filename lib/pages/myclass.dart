@@ -110,10 +110,11 @@ class _MyClassPageState extends State<MyClassPage> {
     var rawData = remoteConfig.getAll()['BACKEND_HOST'];
     var cfgs = jsonDecode(rawData!.asString());
 
-    final addr = widget.classId != null ? 'classes/${widget.classId}/timetables' : 'timetables/me';
+    final addr = widget.classId != null
+        ? 'classes/${widget.classId}/timetables'
+        : 'timetables/me';
     final response = await http.get(
-        Uri.parse(
-            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/${addr}'),
+        Uri.parse('${kReleaseMode ? cfgs['release'] : cfgs['debug']}/${addr}'),
         headers: {
           'ID-Token': await user.getIdToken(true),
           'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
@@ -199,6 +200,40 @@ class _MyClassPageState extends State<MyClassPage> {
 
             final dow = DateTime.now().weekday;
 
+            final tod = TimeOfDay.now();
+            final inMin = tod.hour * 60 + tod.minute;
+
+            late String currentPeriod;
+            int period = 0;
+            if (inMin < 8 * 60 + 20) {
+              currentPeriod = '일과시간 전';
+            } else if (8 * 60 + 20 <= inMin && inMin < 9 * 60 + 20) {
+              period = 1;
+              currentPeriod = '1교시';
+            } else if (9 * 60 + 20 <= inMin && inMin < 10 * 60 + 20) {
+              period = 2;
+              currentPeriod = '2교시';
+            } else if (10 * 60 + 20 <= inMin && inMin < 11 * 60 + 20) {
+              period = 3;
+              currentPeriod = '3교시';
+            } else if (11 * 60 + 20 <= inMin && inMin < 12 * 60 + 20) {
+              period = 4;
+              currentPeriod = '4교시';
+            } else if (12 * 60 + 20 <= inMin && inMin < 13 * 60 + 20) {
+              currentPeriod = '점심시간';
+            } else if (13 * 60 + 20 <= inMin && inMin < 14 * 60 + 20) {
+              period = 5;
+              currentPeriod = '5교시';
+            } else if (14 * 60 + 20 <= inMin && inMin < 15 * 60 + 20) {
+              period = 6;
+              currentPeriod = '6교시';
+            } else if (15 * 60 + 20 <= inMin && inMin < 16 * 60 + 20) {
+              period = 7;
+              currentPeriod = '7교시';
+            } else {
+              currentPeriod = '일과시간 끝';
+            }
+
             return RefreshIndicator(
               edgeOffset: AppBar().preferredSize.height,
               child: Container(
@@ -272,7 +307,7 @@ class _MyClassPageState extends State<MyClassPage> {
                                 ),
                                 SizedBox(width: 10),
                                 Text(
-                                  '현재 일과시간 끝',
+                                  '현재 ${currentPeriod}',
                                   style: Theme.of(context).textTheme.caption,
                                 ),
                                 Expanded(child: Container()),
@@ -319,10 +354,17 @@ class _MyClassPageState extends State<MyClassPage> {
                                           onPressed: () {},
                                           child: Text(
                                             a['subject']?['short_name'] ??
-                                                a['subject']?['name'] ?? '',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .caption,
+                                                a['subject']?['name'] ??
+                                                '',
+                                            style: period == a['period']
+                                                ? TextStyle(
+                                                    fontSize: 18,
+                                                    fontWeight: FontWeight.bold,
+                                                  )
+                                                : Theme.of(context)
+                                                    .textTheme
+                                                    .caption,
+                                            textAlign: TextAlign.center,
                                           ),
                                           style: TextButton.styleFrom(
                                             minimumSize: Size.zero,

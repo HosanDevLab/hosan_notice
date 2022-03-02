@@ -50,139 +50,138 @@ class _CalendarPageState extends State<CalendarPage> {
 
   @override
   Widget build(BuildContext context) {
-    return DoubleBack(
-      message: '뒤로가기를 한번 더 누르면 종료합니다.',
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text('한눈에 보는 일정표'),
-          centerTitle: true,
-        ),
-        body: Container(
-          height: double.infinity,
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 5),
-            child: FutureBuilder(
-              future: Future.wait([_assignments, _subjects]),
-              builder: (BuildContext context, AsyncSnapshot snapshot) {
-                if (!snapshot.hasData) {
-                  return Center(
-                      child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                        CircularProgressIndicator(color: Colors.deepPurple),
-                        Padding(
-                          padding: EdgeInsets.only(top: 10),
-                          child: Text('불러오는 중', textAlign: TextAlign.center),
-                        )
-                      ]));
-                }
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('한눈에 보는 일정표'),
+        centerTitle: true,
+      ),
+      body: Container(
+        height: double.infinity,
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 5),
+          child: FutureBuilder(
+            future: Future.wait([_assignments, _subjects]),
+            builder: (BuildContext context, AsyncSnapshot snapshot) {
+              if (!snapshot.hasData) {
+                return Center(
+                    child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                      CircularProgressIndicator(color: Colors.deepPurple),
+                      Padding(
+                        padding: EdgeInsets.only(top: 10),
+                        child: Text('불러오는 중', textAlign: TextAlign.center),
+                      )
+                    ]));
+              }
 
-                Iterable<QueryDocumentSnapshot<Map<String, dynamic>>>
-                    _getEventsDay(DateTime day) {
-                  return snapshot.data[0].where((e) {
-                    if (e.data()['deadline'] == null) return false;
+              Iterable<QueryDocumentSnapshot<Map<String, dynamic>>>
+                  _getEventsDay(DateTime day) {
+                return snapshot.data[0].where((e) {
+                  if (e.data()['deadline'] == null) return false;
 
-                    DateTime deadline = e.data()['deadline'].toDate();
+                  DateTime deadline = e.data()['deadline'].toDate();
 
-                    return deadline.year == day.year &&
-                        deadline.month == day.month &&
-                        deadline.day == day.day;
-                  });
-                }
+                  return deadline.year == day.year &&
+                      deadline.month == day.month &&
+                      deadline.day == day.day;
+                });
+              }
 
-                final eventsDay = _getEventsDay(_selectedDay);
+              final eventsDay = _getEventsDay(_selectedDay);
 
-                return Column(
-                  children: <Widget>[
-                    SizedBox(
-                      height: 350,
-                      child: TableCalendar(
-                        headerStyle: HeaderStyle(formatButtonVisible: false),
-                        calendarStyle: CalendarStyle(
-                          outsideDaysVisible: true,
-                          weekendTextStyle:
-                              TextStyle().copyWith(color: Colors.red),
-                          holidayTextStyle:
-                              TextStyle().copyWith(color: Colors.blue[800]),
-                        ),
-                        eventLoader: (day) {
-                          return _getEventsDay(day).toList();
-                        },
-                        shouldFillViewport: true,
-                        locale: 'ko_KR',
-                        focusedDay: _focusedDay,
-                        firstDay: DateTime(2010),
-                        lastDay: DateTime(2050),
-                        selectedDayPredicate: (day) =>
-                            isSameDay(day, _selectedDay),
-                        onDaySelected: (selectedDay, focusedDay) {
-                          setState(() {
-                            _selectedDay = selectedDay;
-                            _focusedDay = focusedDay;
-                          });
-                        },
+              return Column(
+                children: <Widget>[
+                  SizedBox(
+                    height: 350,
+                    child: TableCalendar(
+                      headerStyle: HeaderStyle(formatButtonVisible: false),
+                      calendarStyle: CalendarStyle(
+                        outsideDaysVisible: true,
+                        weekendTextStyle:
+                            TextStyle().copyWith(color: Colors.red),
+                        holidayTextStyle:
+                            TextStyle().copyWith(color: Colors.blue[800]),
                       ),
+                      eventLoader: (day) {
+                        return _getEventsDay(day).toList();
+                      },
+                      shouldFillViewport: true,
+                      locale: 'ko_KR',
+                      focusedDay: _focusedDay,
+                      firstDay: DateTime(2010),
+                      lastDay: DateTime(2050),
+                      selectedDayPredicate: (day) =>
+                          isSameDay(day, _selectedDay),
+                      onDaySelected: (selectedDay, focusedDay) {
+                        setState(() {
+                          _selectedDay = selectedDay;
+                          _focusedDay = focusedDay;
+                        });
+                      },
                     ),
-                    Divider(),
-                    Expanded(
-                      child: eventsDay.length > 0
-                          ? ListView(
-                              shrinkWrap: true,
-                              physics: BouncingScrollPhysics(
-                                  parent: AlwaysScrollableScrollPhysics()),
-                              children: eventsDay.map((e) {
-                                final data = e.data();
-                                final DateTime? deadline =
-                                    data['deadline'] == null
-                                        ? null
-                                        : data['deadline'].toDate();
+                  ),
+                  Divider(),
+                  Expanded(
+                    child: eventsDay.length > 0
+                        ? ListView(
+                            shrinkWrap: true,
+                            physics: BouncingScrollPhysics(
+                                parent: AlwaysScrollableScrollPhysics()),
+                            children: eventsDay.map((e) {
+                              final data = e.data();
+                              final DateTime? deadline =
+                                  data['deadline'] == null
+                                      ? null
+                                      : data['deadline'].toDate();
 
-                                final deadlineStr = deadline == null
-                                    ? '기한 없음'
-                                    : DateFormat('a hh:mm 까지')
-                                        .format(deadline)
-                                        .replaceAll('AM', '오전')
-                                        .replaceAll('PM', '오후');
+                              final deadlineStr = deadline == null
+                                  ? '기한 없음'
+                                  : DateFormat('a hh:mm 까지')
+                                      .format(deadline)
+                                      .replaceAll('AM', '오전')
+                                      .replaceAll('PM', '오후');
 
-                                return Card(
-                                  child: ListTile(
-                                    title: Text(data['title']),
-                                    subtitle: Text((snapshot.data[1] as List)
-                                            .firstWhere((e) =>
-                                                data['subject'].id ==
-                                                e.id)['name'] +
-                                        ' ${data['teacher'] ?? ''} | ' +
-                                        deadlineStr),
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => AssignmentPage(
-                                              assignmentId: e.id),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                );
-                              }).toList(),
-                            )
-                          : Align(
-                              alignment: Alignment.center,
-                              child: Container(
-                                  padding: EdgeInsets.only(bottom: 20),
-                                  child: Text('이날 마감되는 과제가 없습니다!',
-                                      style:
-                                          TextStyle(color: Colors.grey[700]))),
+                              return Card(
+                                child: ListTile(
+                                  title: Text(data['title']),
+                                  subtitle: Text((snapshot.data[1] as List)
+                                          .firstWhere((e) =>
+                                              data['subject'].id ==
+                                              e.id)['name'] +
+                                      ' ${data['teacher'] ?? ''} | ' +
+                                      deadlineStr),
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            AssignmentPage(assignmentId: e.id),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              );
+                            }).toList(),
+                          )
+                        : Align(
+                            alignment: Alignment.center,
+                            child: Container(
+                              padding: EdgeInsets.only(bottom: 20),
+                              child: Text(
+                                '이날 마감되는 과제가 없습니다!',
+                                style: TextStyle(color: Colors.grey[700]),
+                              ),
                             ),
-                    )
-                  ],
-                );
-              },
-            ),
+                          ),
+                  )
+                ],
+              );
+            },
           ),
         ),
-        drawer: MainDrawer(parentContext: context),
       ),
+      drawer: MainDrawer(parentContext: context),
     );
   }
 }

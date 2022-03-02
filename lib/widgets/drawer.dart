@@ -98,11 +98,12 @@ class _MainDrawerState extends State<MainDrawer> {
                 leading: Icon(Icons.assignment),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.pushReplacement(
+                  Navigator.pushAndRemoveUntil(
                     widget.parentContext,
                     MaterialPageRoute(
                       builder: (context) => AssignmentsPage(),
                     ),
+                    (route) => route.isFirst,
                   );
                 },
               ),
@@ -113,11 +114,12 @@ class _MainDrawerState extends State<MainDrawer> {
                 leading: Icon(Icons.school),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.pushReplacement(
+                  Navigator.pushAndRemoveUntil(
                     widget.parentContext,
                     MaterialPageRoute(
                       builder: (context) => MyClassPage(),
                     ),
+                    (route) => route.isFirst,
                   );
                 },
               ),
@@ -128,11 +130,12 @@ class _MainDrawerState extends State<MainDrawer> {
                 leading: Icon(Icons.event_note),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.pushReplacement(
+                  Navigator.pushAndRemoveUntil(
                     widget.parentContext,
                     MaterialPageRoute(
                       builder: (context) => CalendarPage(),
                     ),
+                    (route) => route.isFirst,
                   );
                 },
               ),
@@ -143,11 +146,12 @@ class _MainDrawerState extends State<MainDrawer> {
                 leading: Icon(Icons.dining),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.pushReplacement(
+                  Navigator.pushAndRemoveUntil(
                     widget.parentContext,
                     MaterialPageRoute(
                       builder: (context) => MealInfoPage(),
                     ),
+                    (route) => route.isFirst,
                   );
                 },
               ),
@@ -158,11 +162,12 @@ class _MainDrawerState extends State<MainDrawer> {
                 leading: Icon(Icons.person_search),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.pushReplacement(
+                  Navigator.pushAndRemoveUntil(
                     widget.parentContext,
                     MaterialPageRoute(
                       builder: (context) => TeachersPage(),
                     ),
+                    (route) => route.isFirst,
                   );
                 },
               ),
@@ -174,11 +179,12 @@ class _MainDrawerState extends State<MainDrawer> {
                 leading: Icon(Icons.fact_check),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.pushReplacement(
+                  Navigator.pushAndRemoveUntil(
                     widget.parentContext,
                     MaterialPageRoute(
                       builder: (context) => MyAttendancePage(),
                     ),
+                    (route) => route.isFirst,
                   );
                 },
               ),
@@ -190,11 +196,12 @@ class _MainDrawerState extends State<MainDrawer> {
                 leading: Icon(Icons.room),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.pushReplacement(
+                  Navigator.pushAndRemoveUntil(
                     widget.parentContext,
                     MaterialPageRoute(
                       builder: (context) => NavigationPage(),
                     ),
+                    (route) => route.isFirst,
                   );
                 },
               ),
@@ -202,18 +209,20 @@ class _MainDrawerState extends State<MainDrawer> {
                   ? [
                       Divider(height: 0),
                       ListTile(
-                          title: Text('개발자 옵션'),
-                          dense: true,
-                          leading: Icon(Icons.adb),
-                          onTap: () {
-                            Navigator.pop(context);
-                            Navigator.pushReplacement(
-                              widget.parentContext,
-                              MaterialPageRoute(
-                                builder: (context) => DevtoolsPage(),
-                              ),
-                            );
-                          })
+                        title: Text('개발자 옵션'),
+                        dense: true,
+                        leading: Icon(Icons.adb),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.pushAndRemoveUntil(
+                            widget.parentContext,
+                            MaterialPageRoute(
+                              builder: (context) => DevtoolsPage(),
+                            ),
+                            (route) => route.isFirst,
+                          );
+                        },
+                      )
                     ]
                   : []),
               Divider(height: 0),
@@ -238,11 +247,13 @@ class _MainDrawerState extends State<MainDrawer> {
                                 await storage.deleteItem('AUTH_TOKEN');
                                 await storage.deleteItem('REFRESH_TOKEN');
 
-                                Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => LoginPage(),
-                                        fullscreenDialog: true));
+                                Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => LoginPage(),
+                                      fullscreenDialog: true),
+                                  (route) => route.isFirst,
+                                );
                               },
                             ),
                             TextButton(
@@ -292,7 +303,8 @@ class _MainDrawerState extends State<MainDrawer> {
                           height: 70,
                         ),
                       ),
-                      applicationVersion: '${packageInfo.version} (빌드번호 ${packageInfo.buildNumber})',
+                      applicationVersion:
+                          '${packageInfo.version} (빌드번호 ${packageInfo.buildNumber})',
                       applicationLegalese: '제8회 대한민국 SW 융합 해커톤 대회 우수상 수상작',
                       children: [
                         Padding(

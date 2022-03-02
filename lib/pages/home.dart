@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:hosan_notice/modules/refresh_token.dart';
 import 'package:hosan_notice/widgets/drawer.dart';
 import 'package:localstorage/localstorage.dart';
@@ -27,6 +28,8 @@ class _HomePageState extends State<HomePage> {
   final refreshKey = GlobalKey<RefreshIndicatorState>();
   final remoteConfig = RemoteConfig.instance;
   final storage = new LocalStorage('auth.json');
+
+  int _counter = 0;
 
   late Future<List<Map<dynamic, dynamic>>> _assignments;
   late Future<Map<dynamic, dynamic>> _me;
@@ -88,6 +91,32 @@ class _HomePageState extends State<HomePage> {
       await intent.launch();
       await Permission.location.request();
     }();
+    HomeWidget.widgetClicked.listen((uri) => loadData());
+    loadData(); // This will load data from widget every time app is opened
+  }
+
+  void loadData() async {
+    await HomeWidget.getWidgetData<int>('_counter', defaultValue: 0).then((value) {
+      _counter = value ?? 0;
+    });
+    setState(() {});
+  }
+
+  Future<void> updateAppWidget() async {
+    await HomeWidget.saveWidgetData<int>('_counter', _counter);
+    await HomeWidget.updateWidget(name: 'AppWidgetProvider', iOSName: 'AppWidgetProvider');
+  }
+
+  void _incrementCounter() {
+    setState(() {
+      // This call to setState tells the Flutter framework that something has
+      // changed in this State, which causes it to rerun the build method below
+      // so that the display can reflect the updated values. If we changed
+      // _counter without calling setState(), then the build method would not be
+      // called again, and so nothing would appear to happen.
+      _counter++;
+    });
+    updateAppWidget();
   }
 
   @override
@@ -285,7 +314,9 @@ class _HomePageState extends State<HomePage> {
                                 style: Theme.of(context).textTheme.headline6),
                             TextButton(
                               child: Text('더보기'),
-                              onPressed: () {},
+                              onPressed: () {
+                                _incrementCounter();
+                              },
                             ),
                           ],
                         ),

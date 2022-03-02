@@ -137,157 +137,154 @@ class _MealInfoPageState extends State<MealInfoPage> {
 
   @override
   Widget build(BuildContext context) {
-    return DoubleBack(
-      message: '뒤로가기를 한번 더 누르면 종료합니다.',
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text('급식 메뉴'),
-          centerTitle: true,
-        ),
-        body: Container(
-          height: double.infinity,
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 5),
-            child: FutureBuilder(
-              future: _mealInfo,
-              builder: (BuildContext context, AsyncSnapshot snapshot) {
-                if (!snapshot.hasData) {
-                  return Center(
-                      child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                        CircularProgressIndicator(color: Colors.deepPurple),
-                        Padding(
-                          padding: EdgeInsets.only(top: 10),
-                          child: Text('불러오는 중', textAlign: TextAlign.center),
-                        )
-                      ]));
-                }
-
-                final mealRows =
-                    snapshot.data['mealServiceDietInfo'][1]['row'] as List;
-                final selectableDtsList = mealRows.map((e) {
-                  final String rawDt = e['MLSV_YMD'];
-                  final dt = DateTime(
-                      int.parse(rawDt.substring(0, 4)),
-                      int.parse(rawDt.substring(4, 6)),
-                      int.parse(rawDt.substring(6, 8)));
-                  return dt;
-                }).toList();
-                final selectableDts = selectableDtsList.toSet();
-
-                final mainWidget = Column(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.fromLTRB(12, 10, 12, 0),
-                      child: Row(
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('급식 메뉴'),
+        centerTitle: true,
+      ),
+      body: Container(
+        height: double.infinity,
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 5),
+          child: FutureBuilder(
+            future: _mealInfo,
+            builder: (BuildContext context, AsyncSnapshot snapshot) {
+              if (!snapshot.hasData) {
+                return Center(
+                    child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          ElevatedButton.icon(
-                              onPressed: () {
-                                _pageController.animateToPage(0,
-                                    duration: Duration(seconds: 1),
-                                    curve: Curves.easeOutExpo);
-                              },
-                              icon: Icon(Icons.restore),
-                              label: Text('최근으로')),
-                          SizedBox(width: 10),
-                          OutlinedButton(
-                              style: TextButton.styleFrom(
-                                  minimumSize: Size(0, 35)),
-                              onPressed: () async {
-                                final date = await showDatePicker(
-                                    context: context,
-                                    initialDate: selectableDts.first,
-                                    firstDate: DateTime.now(),
-                                    lastDate: DateTime(2050),
-                                    selectableDayPredicate: (datetime) =>
-                                        selectableDts
-                                            .where((e) => datetime == e)
-                                            .length >
-                                        0);
+                      CircularProgressIndicator(color: Colors.deepPurple),
+                      Padding(
+                        padding: EdgeInsets.only(top: 10),
+                        child: Text('불러오는 중', textAlign: TextAlign.center),
+                      )
+                    ]));
+              }
 
-                                if (date == null) return;
+              final mealRows =
+                  snapshot.data['mealServiceDietInfo'][1]['row'] as List;
+              final selectableDtsList = mealRows.map((e) {
+                final String rawDt = e['MLSV_YMD'];
+                final dt = DateTime(
+                    int.parse(rawDt.substring(0, 4)),
+                    int.parse(rawDt.substring(4, 6)),
+                    int.parse(rawDt.substring(6, 8)));
+                return dt;
+              }).toList();
+              final selectableDts = selectableDtsList.toSet();
 
-                                _pageController.animateToPage(
-                                    selectableDtsList
-                                        .indexWhere((e) => date == e),
-                                    duration: Duration(seconds: 1),
-                                    curve: Curves.easeOutExpo);
-                              },
-                              child: Icon(Icons.event_note)),
-                          Expanded(
-                            child: Container(),
-                          ),
-                          TextButton(
-                              style:
-                                  TextButton.styleFrom(minimumSize: Size(0, 0)),
-                              onPressed: () {
-                                if (_pageController.page! < 0.5) return;
-                                _pageController.previousPage(
-                                    duration: Duration(seconds: 1),
-                                    curve: Curves.easeOutExpo);
-                              },
-                              child: Icon(Icons.arrow_back)),
-                          TextButton(
-                              style:
-                                  TextButton.styleFrom(minimumSize: Size(0, 0)),
-                              onPressed: () {
-                                if (_pageController.page! >
-                                    mealRows.length - 1.5) return;
-                                _pageController.nextPage(
-                                    duration: Duration(seconds: 1),
-                                    curve: Curves.easeOutExpo);
-                              },
-                              child: Icon(Icons.arrow_forward))
-                        ],
-                      ),
+              final mainWidget = Column(
+                children: [
+                  Container(
+                    padding: EdgeInsets.fromLTRB(12, 10, 12, 0),
+                    child: Row(
+                      children: [
+                        ElevatedButton.icon(
+                            onPressed: () {
+                              _pageController.animateToPage(0,
+                                  duration: Duration(seconds: 1),
+                                  curve: Curves.easeOutExpo);
+                            },
+                            icon: Icon(Icons.restore),
+                            label: Text('최근으로')),
+                        SizedBox(width: 10),
+                        OutlinedButton(
+                            style:
+                                TextButton.styleFrom(minimumSize: Size(0, 35)),
+                            onPressed: () async {
+                              final date = await showDatePicker(
+                                  context: context,
+                                  initialDate: selectableDts.first,
+                                  firstDate: DateTime.now(),
+                                  lastDate: DateTime(2050),
+                                  selectableDayPredicate: (datetime) =>
+                                      selectableDts
+                                          .where((e) => datetime == e)
+                                          .length >
+                                      0);
+
+                              if (date == null) return;
+
+                              _pageController.animateToPage(
+                                  selectableDtsList
+                                      .indexWhere((e) => date == e),
+                                  duration: Duration(seconds: 1),
+                                  curve: Curves.easeOutExpo);
+                            },
+                            child: Icon(Icons.event_note)),
+                        Expanded(
+                          child: Container(),
+                        ),
+                        TextButton(
+                            style:
+                                TextButton.styleFrom(minimumSize: Size(0, 0)),
+                            onPressed: () {
+                              if (_pageController.page! < 0.5) return;
+                              _pageController.previousPage(
+                                  duration: Duration(seconds: 1),
+                                  curve: Curves.easeOutExpo);
+                            },
+                            child: Icon(Icons.arrow_back)),
+                        TextButton(
+                            style:
+                                TextButton.styleFrom(minimumSize: Size(0, 0)),
+                            onPressed: () {
+                              if (_pageController.page! > mealRows.length - 1.5)
+                                return;
+                              _pageController.nextPage(
+                                  duration: Duration(seconds: 1),
+                                  curve: Curves.easeOutExpo);
+                            },
+                            child: Icon(Icons.arrow_forward))
+                      ],
                     ),
-                    Expanded(
-                      child: PageView(
-                        physics: BouncingScrollPhysics(),
-                        controller: _pageController,
-                        onPageChanged: (index) {},
-                        children: mealRows
-                            .map((e) => Padding(
-                                padding: EdgeInsets.symmetric(vertical: 5),
-                                child: mealCard(context, e)))
-                            .toList(),
-                      ),
-                    )
-                  ],
-                );
-
-                return RefreshIndicator(
-                    child: Container(
-                      height: MediaQuery.of(context).size.height,
-                      child: LayoutBuilder(
-                        builder:
-                            (BuildContext context, BoxConstraints constraints) {
-                          return SingleChildScrollView(
-                            controller: _scrollController,
-                            physics: BouncingScrollPhysics(
-                                parent: AlwaysScrollableScrollPhysics()),
-                            child: ConstrainedBox(
-                                constraints: BoxConstraints.tightFor(
-                                    height: max(500, constraints.maxHeight)),
-                                child: mainWidget),
-                          );
-                        },
-                      ),
+                  ),
+                  Expanded(
+                    child: PageView(
+                      physics: BouncingScrollPhysics(),
+                      controller: _pageController,
+                      onPageChanged: (index) {},
+                      children: mealRows
+                          .map((e) => Padding(
+                              padding: EdgeInsets.symmetric(vertical: 5),
+                              child: mealCard(context, e)))
+                          .toList(),
                     ),
-                    onRefresh: () async {
-                      final fetchMealInfoFuture = fetchMealInfo();
-                      setState(() {
-                        _mealInfo = fetchMealInfoFuture;
-                      });
-                      await _mealInfo;
+                  )
+                ],
+              );
+
+              return RefreshIndicator(
+                  child: Container(
+                    height: MediaQuery.of(context).size.height,
+                    child: LayoutBuilder(
+                      builder:
+                          (BuildContext context, BoxConstraints constraints) {
+                        return SingleChildScrollView(
+                          controller: _scrollController,
+                          physics: BouncingScrollPhysics(
+                              parent: AlwaysScrollableScrollPhysics()),
+                          child: ConstrainedBox(
+                              constraints: BoxConstraints.tightFor(
+                                  height: max(500, constraints.maxHeight)),
+                              child: mainWidget),
+                        );
+                      },
+                    ),
+                  ),
+                  onRefresh: () async {
+                    final fetchMealInfoFuture = fetchMealInfo();
+                    setState(() {
+                      _mealInfo = fetchMealInfoFuture;
                     });
-              },
-            ),
+                    await _mealInfo;
+                  });
+            },
           ),
         ),
-        drawer: MainDrawer(parentContext: context),
       ),
+      drawer: MainDrawer(parentContext: context),
     );
   }
 }

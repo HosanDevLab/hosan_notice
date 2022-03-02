@@ -229,97 +229,91 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return DoubleBack(
-        message: '뒤로가기를 한번 더 누르면 종료합니다.',
-        child: Scaffold(
-          appBar: AppBar(
-            title: Text('과제 및 수행평가'),
-            centerTitle: true,
-          ),
-          body: FutureBuilder(
-            future: Future.wait([_assignments, _me]),
-            builder: (BuildContext context, AsyncSnapshot snapshot) {
-              if (!snapshot.hasData) {
-                return Center(
-                    child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                      CircularProgressIndicator(color: Colors.deepPurple),
-                      Padding(
-                        padding: EdgeInsets.only(top: 10),
-                        child: Text('불러오는 중', textAlign: TextAlign.center),
-                      )
-                    ]));
-              }
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('과제 및 수행평가'),
+        centerTitle: true,
+      ),
+      body: FutureBuilder(
+        future: Future.wait([_assignments, _me]),
+        builder: (BuildContext context, AsyncSnapshot snapshot) {
+          if (!snapshot.hasData) {
+            return Center(
+                child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                  CircularProgressIndicator(color: Colors.deepPurple),
+                  Padding(
+                    padding: EdgeInsets.only(top: 10),
+                    child: Text('불러오는 중', textAlign: TextAlign.center),
+                  )
+                ]));
+          }
 
-              final student = snapshot.data[1];
+          final student = snapshot.data[1];
 
-              return RefreshIndicator(
-                child: CustomScrollView(
-                  physics: BouncingScrollPhysics(
-                      parent: AlwaysScrollableScrollPhysics()),
-                  slivers: [
-                    SliverFillRemaining(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('과목별 과제',
-                                    style:
-                                        Theme.of(context).textTheme.headline6),
-                                SizedBox(height: 8),
-                                Text(
-                                  '수업에서 과제가 있다면 잊어버리지 않도록 누구나 자율적으로 등록해 친구들과 공유하세요!',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                  textAlign: TextAlign.start,
-                                ),
-                                Divider(),
-                                Text(
-                                  '아래 카드를 양쪽으로 밀어서 과목을 전환합니다.',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                )
-                              ],
+          return RefreshIndicator(
+            child: CustomScrollView(
+              physics: BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics()),
+              slivers: [
+                SliverFillRemaining(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('과목별 과제',
+                                style: Theme.of(context).textTheme.headline6),
+                            SizedBox(height: 8),
+                            Text(
+                              '수업에서 과제가 있다면 잊어버리지 않도록 누구나 자율적으로 등록해 친구들과 공유하세요!',
+                              style: Theme.of(context).textTheme.bodySmall,
+                              textAlign: TextAlign.start,
                             ),
-                          ),
-                          Expanded(
-                            child: PageView(
-                              physics: BouncingScrollPhysics(),
-                              controller:
-                                  PageController(viewportFraction: 0.95),
-                              onPageChanged: (index) {},
-                              children: (student['subjects']['1st'] as List)
-                                  .where((e) => student['grade'] == 2)
-                                  .map((e) => Padding(
-                                      padding:
-                                          EdgeInsets.symmetric(vertical: 5),
-                                      child: assignmentCard(
-                                          context, snapshot, e['_id'])))
-                                  .toList(),
-                            ),
-                          ),
-                        ],
+                            Divider(),
+                            Text(
+                              '아래 카드를 양쪽으로 밀어서 과목을 전환합니다.',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            )
+                          ],
+                        ),
                       ),
-                    )
-                  ],
-                ),
-                onRefresh: () async {
-                  final fetchStudentMeFuture = fetchStudentsMe();
-                  final fetchAssignmentsFuture = fetchAssignments();
-                  setState(() {
-                    _me = fetchStudentsMe();
-                    _assignments = fetchAssignmentsFuture;
-                  });
-                  await Future.wait(
-                      [fetchAssignmentsFuture, fetchStudentMeFuture]);
-                },
-              );
+                      Expanded(
+                        child: PageView(
+                          physics: BouncingScrollPhysics(),
+                          controller: PageController(viewportFraction: 0.95),
+                          onPageChanged: (index) {},
+                          children: (student['subjects']['1st'] as List)
+                              .where((e) => student['grade'] == 2)
+                              .map((e) => Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 5),
+                                  child: assignmentCard(
+                                      context, snapshot, e['_id'])))
+                              .toList(),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              ],
+            ),
+            onRefresh: () async {
+              final fetchStudentMeFuture = fetchStudentsMe();
+              final fetchAssignmentsFuture = fetchAssignments();
+              setState(() {
+                _me = fetchStudentsMe();
+                _assignments = fetchAssignmentsFuture;
+              });
+              await Future.wait([fetchAssignmentsFuture, fetchStudentMeFuture]);
             },
-          ),
-          drawer: MainDrawer(parentContext: context),
-        ));
+          );
+        },
+      ),
+      drawer: MainDrawer(parentContext: context),
+    );
   }
 }

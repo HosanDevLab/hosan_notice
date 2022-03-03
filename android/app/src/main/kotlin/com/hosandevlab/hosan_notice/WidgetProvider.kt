@@ -1,5 +1,6 @@
 package com.hosandevlab.hosan_notice
 
+import android.annotation.SuppressLint
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.SharedPreferences
@@ -10,6 +11,7 @@ import es.antonborri.home_widget.HomeWidgetLaunchIntent
 import es.antonborri.home_widget.HomeWidgetProvider
 
 class WidgetProvider : HomeWidgetProvider() {
+    @SuppressLint("RemoteViewLayout")
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray, widgetData: SharedPreferences) {
         appWidgetIds.forEach { widgetId ->
             val views = RemoteViews(context.packageName, R.layout.widget_layout).apply {
@@ -20,23 +22,23 @@ class WidgetProvider : HomeWidgetProvider() {
                 setOnClickPendingIntent(R.id.widget_container, pendingIntent)
 
                 // Swap Title Text by calling Dart Code in the Background
-                setTextViewText(R.id.widget_title, widgetData.getString("title", null)
+                setTextViewText(R.id.d1p1, widgetData.getString("title", null)
                         ?: "No Title Set")
                 val backgroundIntent = HomeWidgetBackgroundIntent.getBroadcast(
                         context,
                         Uri.parse("homeWidget://titleClicked")
                 )
-                setOnClickPendingIntent(R.id.widget_title, backgroundIntent)
+                setOnClickPendingIntent(R.id.d1p1, backgroundIntent)
 
                 val message = widgetData.getString("message", null)
-                setTextViewText(R.id.widget_message, message
+                setTextViewText(R.id.d1p2, message
                         ?: "No Message Set")
                 // Detect App opened via Click inside Flutter
                 val pendingIntentWithData = HomeWidgetLaunchIntent.getActivity(
                         context,
                         MainActivity::class.java,
                         Uri.parse("homeWidget://message?message=$message"))
-                setOnClickPendingIntent(R.id.widget_message, pendingIntentWithData)
+                setOnClickPendingIntent(R.id.d1p2, pendingIntentWithData)
             }
 
             appWidgetManager.updateAppWidget(widgetId, views)

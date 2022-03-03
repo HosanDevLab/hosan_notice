@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:isolate';
+import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -12,16 +13,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:hosan_notice/pages/home.dart';
 import 'package:hosan_notice/pages/login.dart';
 import 'package:localstorage/localstorage.dart';
 import 'package:http/http.dart' as http;
+import 'package:workmanager/workmanager.dart';
 
 import 'firebase_options.dart';
 import 'messages.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  Workmanager().initialize(callbackDispatcher, isInDebugMode: kDebugMode);
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -133,6 +138,39 @@ void main() async {
   });
 
   runApp(App());
+}
+
+void callbackDispatcher() {
+  Workmanager().executeTask((taskName, inputData) {
+    final now = DateTime.now();
+    return Future.wait<bool?>([
+      HomeWidget.saveWidgetData(
+        'title',
+        'Updated from Background',
+      ),
+      HomeWidget.saveWidgetData(
+        'message',
+        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
+      ),
+      HomeWidget.updateWidget(
+        name: 'WidgetProvider',
+        iOSName: 'homeWidget',
+      ),
+    ]).then((value) {
+      return !value.contains(false);
+    });
+  });
+}
+
+/// Called when Doing Background Work initiated from Widget
+void backgroundCallback(Uri data) async {
+  print(data);
+
+  if (data.host == 'titleclicked') {
+    await HomeWidget.saveWidgetData<String>('title', '안녕하세요');
+    await HomeWidget.updateWidget(
+        name: 'WidgetProvider', iOSName: 'homeWidget');
+  }
 }
 
 void startCallback() {
@@ -269,7 +307,20 @@ void initAndBeginForeground() async {
   });
 }
 
-class App extends StatelessWidget {
+class App extends StatefulWidget {
+  @override
+  _AppState createState() => _AppState();
+}
+
+class _AppState extends State<App> {
+  @override
+  void initState() {
+    super.initState();
+    HomeWidget.setAppGroupId('YOUR_GROUP_ID');
+    HomeWidget.registerBackgroundCallback((uri) => backgroundCallback(
+        uri ?? Uri.parse("homeWidget://message?message=asdf")));
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;

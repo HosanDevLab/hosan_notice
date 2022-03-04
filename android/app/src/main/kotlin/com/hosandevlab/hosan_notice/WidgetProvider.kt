@@ -22,23 +22,23 @@ class WidgetProvider : HomeWidgetProvider() {
                 setOnClickPendingIntent(R.id.widget_container, pendingIntent)
 
                 // Swap Title Text by calling Dart Code in the Background
-                setTextViewText(R.id.d1p1, widgetData.getString("title", null)
+                setTextViewText(R.id.p1, widgetData.getString("title", null)
                         ?: "No Title Set")
                 val backgroundIntent = HomeWidgetBackgroundIntent.getBroadcast(
                         context,
                         Uri.parse("homeWidget://titleClicked")
                 )
-                setOnClickPendingIntent(R.id.d1p1, backgroundIntent)
+                setOnClickPendingIntent(R.id.p1, backgroundIntent)
 
                 val message = widgetData.getString("message", null)
-                setTextViewText(R.id.d1p2, message
-                        ?: "No Message Set")
+                setTextViewText(R.id.p1, message
+                        ?: "영1")
                 // Detect App opened via Click inside Flutter
                 val pendingIntentWithData = HomeWidgetLaunchIntent.getActivity(
                         context,
                         MainActivity::class.java,
                         Uri.parse("homeWidget://message?message=$message"))
-                setOnClickPendingIntent(R.id.d1p2, pendingIntentWithData)
+                setOnClickPendingIntent(R.id.p1, pendingIntentWithData)
             }
 
             appWidgetManager.updateAppWidget(widgetId, views)

@@ -307,7 +307,7 @@ class _DevtoolsPageState extends State<DevtoolsPage> {
                   }
 
                   final filteredTable = (timetable['table'] as List)
-                      .where((e) => e['dow'] == 1)
+                      .where((e) => e['dow'] == dow)
                       .toList();
                   filteredTable.sort((a, b) => a['period'] - b['period']);
 
@@ -329,9 +329,14 @@ class _DevtoolsPageState extends State<DevtoolsPage> {
                               'a',
                         );
                       }),
-                      HomeWidget.saveWidgetData<bool>('visibility', true),
+                      ...(filteredTable.isNotEmpty ? [
+                        HomeWidget.saveWidgetData<bool>('visibility', true)
+                      ] : [
+                        HomeWidget.saveWidgetData<String>('centerMessage', '시간표 정보가 없습니다.'),
+                        HomeWidget.saveWidgetData<bool>('visibility', false)
+                      ]),
                       HomeWidget.saveWidgetData<int>('currentDow', dow),
-                      HomeWidget.saveWidgetData<int>('currentPeriod', 7)
+                      HomeWidget.saveWidgetData<int>('currentPeriod', period)
                     ]);
                     HomeWidget.updateWidget(
                       name: 'TimetableWidgetProvider',

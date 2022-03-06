@@ -34,11 +34,16 @@ class TimetableWidgetProvider : HomeWidgetProvider() {
                     context.resources.getIdentifier("p${currentPeriod}", "id", context.packageName)
 
                 val visibility = widgetData.getBoolean("visibility", false)
+                val centerMessage = widgetData.getString("centerMessage", null)
 
                 if (visibility) {
                     setViewVisibility(R.id.center_message, View.GONE)
                 } else {
                     setViewVisibility(R.id.center_message, View.VISIBLE)
+                }
+
+                if (!centerMessage.isNullOrEmpty()) {
+                    setTextViewText(R.id.center_message, centerMessage)
                 }
 
                 // Swap Title Text by calling Dart Code in the Background
@@ -54,11 +59,11 @@ class TimetableWidgetProvider : HomeWidgetProvider() {
                     }
 
                     if (currentPeriodResId == vid) {
-                        s.setSpan(StyleSpan(Typeface.BOLD), 0, 2, 0)
+                        s.setSpan(StyleSpan(Typeface.BOLD), 0, dataStr?.length ?: 0, 0)
                         setTextColor(vid, 0xFF673AB7.toInt())
                         setTextViewTextSize(currentPeriodResId, TypedValue.COMPLEX_UNIT_DIP, 20F)
                     } else {
-                        s.setSpan(StyleSpan(Typeface.NORMAL), 0, 2, 0)
+                        s.setSpan(StyleSpan(Typeface.NORMAL), 0, dataStr?.length ?: 0, 0)
                         setTextColor(vid, 0xFF000000.toInt())
                         setTextViewTextSize(currentPeriodResId, TypedValue.COMPLEX_UNIT_DIP, 17F)
                     }

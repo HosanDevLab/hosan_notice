@@ -40,7 +40,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:text="이곳을 클릭해 위젯을 설정해주세요."
+                android:text="로그인하면 시간표가 표시돼요. 이곳을 클릭하세요!"
                 android:textSize="12sp"
                 android:typeface="normal" />
 

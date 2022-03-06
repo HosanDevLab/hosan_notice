@@ -28,8 +28,6 @@ class _HomePageState extends State<HomePage> {
   final remoteConfig = RemoteConfig.instance;
   final storage = new LocalStorage('auth.json');
 
-  int _counter = 0;
-
   late Future<List<Map<dynamic, dynamic>>> _assignments;
   late Future<Map<dynamic, dynamic>> _me;
 

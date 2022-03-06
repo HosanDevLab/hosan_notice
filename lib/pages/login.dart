@@ -12,6 +12,7 @@ import 'package:http/http.dart' as http;
 import 'package:localstorage/localstorage.dart';
 import 'package:package_info/package_info.dart';
 
+import '../modules/update_timetable_widget.dart';
 import 'home.dart';
 import 'register.dart';
 
@@ -345,8 +346,10 @@ class _LoginPageState extends State<LoginPage> {
                     final respToken = await getToken();
 
                     final data = json.decode(respToken.body);
-                    storage.setItem('AUTH_TOKEN', data['token']);
-                    storage.setItem('REFRESH_TOKEN', data['refreshToken']);
+                    await storage.setItem('AUTH_TOKEN', data['token']);
+                    await storage.setItem('REFRESH_TOKEN', data['refreshToken']);
+
+                    fetchAndUpdateTimetableWidget();
 
                     continueLogin();
                   },

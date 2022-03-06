@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:isolate';
-import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,7 +9,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -24,6 +22,7 @@ import 'package:workmanager/workmanager.dart';
 import 'firebase_options.dart';
 import 'messages.dart';
 import 'modules/refresh_token.dart';
+import 'modules/update_timetable_widget.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -84,7 +83,7 @@ void main() async {
   final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
   const initializationSettingsAndroid =
-  AndroidInitializationSettings('ic_stat_app_icon');
+      AndroidInitializationSettings('ic_stat_app_icon');
   final initializationSettingsIOS = IOSInitializationSettings();
   final initializationSettingsMacOS = MacOSInitializationSettings();
   final initializationSettings = InitializationSettings(
@@ -93,8 +92,8 @@ void main() async {
       macOS: initializationSettingsMacOS);
   await flutterLocalNotificationsPlugin.initialize(initializationSettings,
       onSelectNotification: (payload) {
-        print('noti payload $payload');
-      });
+    print('noti payload $payload');
+  });
 
   final channel = AndroidNotificationChannel(
     'fcm',
@@ -105,7 +104,7 @@ void main() async {
 
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
-      AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin>()
       ?.createNotificationChannel(channel);
 
   FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
@@ -148,98 +147,7 @@ void callbackDispatcher() {
   Workmanager().executeTask((taskName, inputData) async {
     await Firebase.initializeApp();
     try {
-      final user = FirebaseAuth.instance.currentUser;
-      final remoteConfig = RemoteConfig.instance;
-      final storage = new LocalStorage('auth.json');
-
-      Future<Map<dynamic, dynamic>> fetchTimetable() async {
-        var rawData = remoteConfig.getAll()['BACKEND_HOST'];
-        var cfgs = jsonDecode(rawData!.asString());
-
-        final response = await http.get(
-            Uri.parse(
-                '${kReleaseMode
-                    ? cfgs['release']
-                    : cfgs['debug']}/timetables/me'),
-            headers: {
-              'ID-Token': await user?.getIdToken(true) ?? '',
-              'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
-            });
-
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          return data;
-        } else if (response.statusCode == 401 &&
-            jsonDecode(response.body)['code'] == 40100) {
-          await refreshToken();
-          return await fetchTimetable();
-        } else {
-          throw Exception('Failed to load post');
-        }
-      }
-
-      return () async {
-        await storage.ready;
-        final timetable = await fetchTimetable();
-
-        final dow = DateTime
-            .now()
-            .weekday;
-        final tod = TimeOfDay.now();
-        final inMin = tod.hour * 60 + tod.minute;
-
-        int period = 0;
-        if (inMin < 8 * 60 + 20) {
-          period = 0;
-        } else if (8 * 60 + 20 <= inMin && inMin < 9 * 60 + 20) {
-          period = 1;
-        } else if (9 * 60 + 20 <= inMin && inMin < 10 * 60 + 20) {
-          period = 2;
-        } else if (10 * 60 + 20 <= inMin && inMin < 11 * 60 + 20) {
-          period = 3;
-        } else if (11 * 60 + 20 <= inMin && inMin < 12 * 60 + 20) {
-          period = 4;
-        } else if (12 * 60 + 20 <= inMin && inMin < 13 * 60 + 20) {
-          period = 0;
-        } else if (13 * 60 + 20 <= inMin && inMin < 14 * 60 + 20) {
-          period = 5;
-        } else if (14 * 60 + 20 <= inMin && inMin < 15 * 60 + 20) {
-          period = 6;
-        } else if (15 * 60 + 20 <= inMin && inMin < 16 * 60 + 20) {
-          period = 7;
-        }
-
-        final filteredTable =
-        (timetable['table'] as List).where((e) => e['dow'] == dow).toList();
-        filteredTable.sort((a, b) => a['period'] - b['period']);
-
-        return Future.wait([
-          ...List.generate(7, (i) => i + 1).map((e) {
-            final data = filteredTable.firstWhere(
-                  (o) => o['period'] == e,
-              orElse: () => null,
-            );
-
-            return HomeWidget.saveWidgetData<String>(
-              'p${e}',
-              data?['subject']['short_name'] ?? data?['subject']['name'] ?? '',
-            );
-          }),
-          ...(filteredTable.isNotEmpty ? [
-            HomeWidget.saveWidgetData<bool>('visibility', true)
-          ] : [
-            HomeWidget.saveWidgetData<String>('centerMessage', '시간표 정보가 없습니다.'),
-            HomeWidget.saveWidgetData<bool>('visibility', false)
-          ]),
-          HomeWidget.saveWidgetData<int>('currentDow', dow),
-          HomeWidget.saveWidgetData<int>('currentPeriod', period),
-          HomeWidget.updateWidget(
-            name: 'TimetableWidgetProvider',
-            iOSName: 'homeWidget',
-          )
-        ]);
-      }()
-          .then((value) {
+      return await fetchAndUpdateTimetableWidget().then((value) {
         return !value.contains(false);
       });
     } catch (e) {
@@ -321,9 +229,9 @@ void initAndBeginForeground() async {
       final attendAny = await firestore
           .collection('attendance')
           .where(
-        'attendedAt',
-        isGreaterThanOrEqualTo: DateTime(now.year, now.month, now.day),
-      )
+            'attendedAt',
+            isGreaterThanOrEqualTo: DateTime(now.year, now.month, now.day),
+          )
           .limit(1)
           .get();
 
@@ -340,13 +248,13 @@ void initAndBeginForeground() async {
             priority: Priority.low);
 
         final iosPlatformChannelSpecifics =
-        IOSNotificationDetails(sound: 'slow_spring.board.aiff');
+            IOSNotificationDetails(sound: 'slow_spring.board.aiff');
         var platformChannelSpecifics = NotificationDetails(
             android: androidPlatformChannelSpecifics,
             iOS: iosPlatformChannelSpecifics);
 
         final flutterLocalNotificationsPlugin =
-        FlutterLocalNotificationsPlugin();
+            FlutterLocalNotificationsPlugin();
 
         await flutterLocalNotificationsPlugin.show(
           0,
@@ -360,11 +268,11 @@ void initAndBeginForeground() async {
     // 실시간 위치 기록
     final beaconUUIDs = beacons.map((e) => e.id);
     final currentBeacons =
-    scannedBeacons.where((e) => beaconUUIDs.contains(e!.uuid)).toList();
+        scannedBeacons.where((e) => beaconUUIDs.contains(e!.uuid)).toList();
     currentBeacons.sort((a, b) => a!.rssi! - b!.rssi!);
 
     final currentBeacon =
-    currentBeacons.isNotEmpty ? currentBeacons.first : null;
+        currentBeacons.isNotEmpty ? currentBeacons.first : null;
 
     final currentBeaconFBData = currentBeacons.isNotEmpty
         ? beacons.firstWhere((e) => e.id == currentBeacon!.uuid)
@@ -408,77 +316,14 @@ class _AppState extends State<App> {
   void initState() {
     super.initState();
     HomeWidget.setAppGroupId('YOUR_GROUP_ID');
-    HomeWidget.registerBackgroundCallback((uri) =>
-        backgroundCallback(
-            uri ??
-                Uri.parse("TimetableWidgetProvider://message?message=asdf")));
+    HomeWidget.registerBackgroundCallback((uri) => backgroundCallback(
+        uri ?? Uri.parse("TimetableWidgetProvider://message?message=asdf")));
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
-        () async {
-      await storage.ready;
-      final timetable = await fetchTimetable();
-
-      final dow = DateTime
-          .now()
-          .weekday;
-      final tod = TimeOfDay.now();
-      final inMin = tod.hour * 60 + tod.minute;
-
-      int period = 0;
-      if (inMin < 8 * 60 + 20) {
-        period = 0;
-      } else if (8 * 60 + 20 <= inMin && inMin < 9 * 60 + 20) {
-        period = 1;
-      } else if (9 * 60 + 20 <= inMin && inMin < 10 * 60 + 20) {
-        period = 2;
-      } else if (10 * 60 + 20 <= inMin && inMin < 11 * 60 + 20) {
-        period = 3;
-      } else if (11 * 60 + 20 <= inMin && inMin < 12 * 60 + 20) {
-        period = 4;
-      } else if (12 * 60 + 20 <= inMin && inMin < 13 * 60 + 20) {
-        period = 0;
-      } else if (13 * 60 + 20 <= inMin && inMin < 14 * 60 + 20) {
-        period = 5;
-      } else if (14 * 60 + 20 <= inMin && inMin < 15 * 60 + 20) {
-        period = 6;
-      } else if (15 * 60 + 20 <= inMin && inMin < 16 * 60 + 20) {
-        period = 7;
-      }
-
-      final filteredTable =
-      (timetable['table'] as List).where((e) => e['dow'] == dow).toList();
-      filteredTable.sort((a, b) => a['period'] - b['period']);
-
-      await Future.wait([
-        ...List.generate(7, (i) => i + 1).map((e) {
-          final data = filteredTable.firstWhere(
-                (o) => o['period'] == e,
-            orElse: () => null,
-          );
-
-          return HomeWidget.saveWidgetData<String>(
-            'p${e}',
-            data?['subject']['short_name'] ?? data?['subject']['name'] ?? '',
-          );
-        }),
-        ...(filteredTable.isNotEmpty ? [
-          HomeWidget.saveWidgetData<bool>('visibility', true)
-        ] : [
-          HomeWidget.saveWidgetData<String>('centerMessage', '시간표 정보가 없습니다.'),
-          HomeWidget.saveWidgetData<bool>('visibility', false)
-        ]),
-        HomeWidget.saveWidgetData<int>('currentDow', dow),
-        HomeWidget.saveWidgetData<int>('currentPeriod', period),
-        HomeWidget.updateWidget(
-          name: 'TimetableWidgetProvider',
-          iOSName: 'homeWidget',
-        )
-      ]);
-    }();
+    fetchAndUpdateTimetableWidget();
   }
 
   Future<Map<dynamic, dynamic>> fetchStudentsMe() async {
@@ -504,30 +349,6 @@ class _AppState extends State<App> {
     }
   }
 
-  Future<Map<dynamic, dynamic>> fetchTimetable() async {
-    var rawData = remoteConfig.getAll()['BACKEND_HOST'];
-    var cfgs = jsonDecode(rawData!.asString());
-
-    final response = await http.get(
-        Uri.parse(
-            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/timetables/me'),
-        headers: {
-          'ID-Token': await user?.getIdToken(true) ?? '',
-          'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
-        });
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return data;
-    } else if (response.statusCode == 401 &&
-        jsonDecode(response.body)['code'] == 40100) {
-      await refreshToken();
-      return await fetchTimetable();
-    } else {
-      throw Exception('Failed to load post');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
@@ -535,23 +356,23 @@ class _AppState extends State<App> {
     return MaterialApp(
       title: '호산고등학교 알리미',
       theme:
-      ThemeData(primarySwatch: Colors.deepPurple, fontFamily: 'Pretendard'),
+          ThemeData(primarySwatch: Colors.deepPurple, fontFamily: 'Pretendard'),
       home: FutureBuilder(
         future: Future.wait([
-              () async {
+          () async {
             if (user == null) return null;
             CollectionReference students =
-            FirebaseFirestore.instance.collection('students');
+                FirebaseFirestore.instance.collection('students');
 
             return await students.doc(user.uid).get();
           }(),
-              () async {
+          () async {
             await storage.ready;
             final authToken = await storage.getItem('AUTH_TOKEN');
             final refreshToken = await storage.getItem('REFRESH_TOKEN');
             return [authToken, refreshToken];
           }(),
-              () async {
+          () async {
             await storage.ready;
 
             try {
@@ -569,12 +390,12 @@ class _AppState extends State<App> {
                     child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          CircularProgressIndicator(color: Colors.deepPurple),
-                          Padding(
-                            padding: EdgeInsets.only(top: 10),
-                            child: Text('불러오는 중', textAlign: TextAlign.center),
-                          )
-                        ])));
+                  CircularProgressIndicator(color: Colors.deepPurple),
+                  Padding(
+                    padding: EdgeInsets.only(top: 10),
+                    child: Text('불러오는 중', textAlign: TextAlign.center),
+                  )
+                ])));
           }
 
           final isLoggedIn = user != null &&

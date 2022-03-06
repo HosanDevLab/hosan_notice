@@ -13,6 +13,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:http/http.dart' as http;
 
 import '../modules/refresh_token.dart';
+import '../modules/update_timetable_widget.dart';
 import 'home.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -341,6 +342,8 @@ class _RegisterPageState extends State<RegisterPage> {
           );
         },
       );
+
+      fetchAndUpdateTimetableWidget();
 
       await postData();
       Navigator.pop(ctx!);

@@ -288,7 +288,9 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
                           controller: PageController(viewportFraction: 0.95),
                           onPageChanged: (index) {},
                           children: (student['subjects']['1st'] as List)
-                              .where((e) => student['grade'] == 2)
+                              .where((e) =>
+                                  student['grade'] == e['grade'] &&
+                                  e['hidden'] != true)
                               .map((e) => Padding(
                                   padding: EdgeInsets.symmetric(vertical: 5),
                                   child: assignmentCard(

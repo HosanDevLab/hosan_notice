@@ -405,6 +405,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           shrinkWrap: true,
                           children: (snapshot.data as List)
                               .where((e) =>
+                                  e['hidden'] != true &&
                                   e['grade'] == grade &&
                                   [0, term].contains(e['termType']))
                               .map((e) {

@@ -5,6 +5,6 @@
     android:previewImage="@drawable/widget_timetable_preview"
     android:updatePeriodMillis="86400000"
     android:initialLayout="@layout/widget_layout"
-    android:resizeMode="horizontal|vertical"
+    android:resizeMode="horizontal"
     android:widgetCategory="home_screen">
 </appwidget-provider>

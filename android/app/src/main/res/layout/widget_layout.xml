@@ -35,6 +35,16 @@
             android:paddingBottom="10dp">
 
             <TextView
+                android:id="@+id/center_message"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="이곳을 클릭해 위젯을 설정해주세요."
+                android:textSize="12sp"
+                android:typeface="normal" />
+
+            <TextView
                 android:id="@+id/p1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -46,7 +56,8 @@
                 android:paddingBottom="5dp"
                 android:text="영1"
                 android:textAlignment="center"
-                android:textColor="#000000" />
+                android:textColor="#000000"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/p2"
@@ -60,7 +71,8 @@
                 android:paddingBottom="5dp"
                 android:text="2A"
                 android:textAlignment="center"
-                android:textColor="#000000" />
+                android:textColor="#000000"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/p3"
@@ -74,7 +86,8 @@
                 android:paddingBottom="5dp"
                 android:text="2A"
                 android:textAlignment="center"
-                android:textColor="#000000" />
+                android:textColor="#000000"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/p4"
@@ -88,7 +101,8 @@
                 android:paddingBottom="5dp"
                 android:text="수1"
                 android:textAlignment="center"
-                android:textColor="#000000" />
+                android:textColor="#000000"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/p5"
@@ -102,9 +116,9 @@
                 android:paddingBottom="5dp"
                 android:text="문학"
                 android:textAlignment="center"
-                android:textColor="#673AB7"
-                android:textSize="18sp"
-                android:textStyle="bold" />
+                android:textColor="#000000"
+                android:textSize="14sp"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/p6"
@@ -118,7 +132,8 @@
                 android:paddingBottom="5dp"
                 android:text="전기"
                 android:textAlignment="center"
-                android:textColor="#000000" />
+                android:textColor="#000000"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/p7"
@@ -132,7 +147,8 @@
                 android:paddingBottom="5dp"
                 android:text="수2"
                 android:textAlignment="center"
-                android:textColor="#000000" />
+                android:textColor="#000000"
+                android:visibility="gone" />
         </LinearLayout>
     </LinearLayout>
 

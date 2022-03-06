@@ -10,6 +10,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -22,10 +23,13 @@ import 'package:workmanager/workmanager.dart';
 
 import 'firebase_options.dart';
 import 'messages.dart';
+import 'modules/refresh_token.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Workmanager().initialize(callbackDispatcher, isInDebugMode: kDebugMode);
+  Workmanager().registerPeriodicTask('1', 'widgetBackgroundUpdate',
+      frequency: Duration(minutes: 15));
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -142,21 +146,87 @@ void main() async {
 
 void callbackDispatcher() {
   Workmanager().executeTask((taskName, inputData) {
-    final now = DateTime.now();
-    return Future.wait<bool?>([
-      HomeWidget.saveWidgetData(
-        'title',
-        'Updated from Background',
-      ),
-      HomeWidget.saveWidgetData(
-        'message',
-        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
-      ),
-      HomeWidget.updateWidget(
-        name: 'WidgetProvider',
-        iOSName: 'homeWidget',
-      ),
-    ]).then((value) {
+    final user = FirebaseAuth.instance.currentUser;
+    final remoteConfig = RemoteConfig.instance;
+    final storage = new LocalStorage('auth.json');
+
+    Future<Map<dynamic, dynamic>> fetchTimetable() async {
+      var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+      var cfgs = jsonDecode(rawData!.asString());
+
+      final response = await http.get(
+          Uri.parse(
+              '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/timetables/me'),
+          headers: {
+            'ID-Token': await user?.getIdToken(true) ?? '',
+            'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+          });
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data;
+      } else if (response.statusCode == 401 &&
+          jsonDecode(response.body)['code'] == 40100) {
+        await refreshToken();
+        return await fetchTimetable();
+      } else {
+        throw Exception('Failed to load post');
+      }
+    }
+
+    return () async {
+      final timetable = await fetchTimetable();
+
+      final dow = DateTime.now().weekday;
+      final tod = TimeOfDay.now();
+      final inMin = tod.hour * 60 + tod.minute;
+
+      int period = 0;
+      if (inMin < 8 * 60 + 20) {
+        period = 0;
+      } else if (8 * 60 + 20 <= inMin && inMin < 9 * 60 + 20) {
+        period = 1;
+      } else if (9 * 60 + 20 <= inMin && inMin < 10 * 60 + 20) {
+        period = 2;
+      } else if (10 * 60 + 20 <= inMin && inMin < 11 * 60 + 20) {
+        period = 3;
+      } else if (11 * 60 + 20 <= inMin && inMin < 12 * 60 + 20) {
+        period = 4;
+      } else if (12 * 60 + 20 <= inMin && inMin < 13 * 60 + 20) {
+        period = 0;
+      } else if (13 * 60 + 20 <= inMin && inMin < 14 * 60 + 20) {
+        period = 5;
+      } else if (14 * 60 + 20 <= inMin && inMin < 15 * 60 + 20) {
+        period = 6;
+      } else if (15 * 60 + 20 <= inMin && inMin < 16 * 60 + 20) {
+        period = 7;
+      }
+
+      final filteredTable =
+          (timetable['table'] as List).where((e) => e['dow'] == 1).toList();
+      filteredTable.sort((a, b) => a['period'] - b['period']);
+
+      return Future.wait([
+        ...List.generate(7, (i) => i + 1).map((e) {
+          final data = filteredTable.firstWhere(
+            (o) => o['period'] == e,
+            orElse: () => null,
+          );
+
+          return HomeWidget.saveWidgetData<String>(
+            'p${e}',
+            data?['subject']['short_name'] ?? data?['subject']['name'] ?? '',
+          );
+        }),
+        HomeWidget.saveWidgetData<int>('currentDow', dow),
+        HomeWidget.saveWidgetData<int>('currentPeriod', 2),
+        HomeWidget.updateWidget(
+          name: 'TimetableWidgetProvider',
+          iOSName: 'homeWidget',
+        )
+      ]);
+    }()
+        .then((value) {
       return !value.contains(false);
     });
   });
@@ -167,9 +237,9 @@ void backgroundCallback(Uri data) async {
   print(data);
 
   if (data.host == 'titleclicked') {
-    await HomeWidget.saveWidgetData<String>('title', '안녕하세요');
+    await HomeWidget.saveWidgetData<String>('p1', '안녕하세요');
     await HomeWidget.updateWidget(
-        name: 'WidgetProvider', iOSName: 'homeWidget');
+        name: 'TimetableWidgetProvider', iOSName: 'homeWidget');
   }
 }
 
@@ -313,18 +383,44 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
+  final remoteConfig = RemoteConfig.instance;
+  final storage = new LocalStorage('auth.json');
+
   @override
   void initState() {
     super.initState();
     HomeWidget.setAppGroupId('YOUR_GROUP_ID');
     HomeWidget.registerBackgroundCallback((uri) => backgroundCallback(
-        uri ?? Uri.parse("homeWidget://message?message=asdf")));
+        uri ?? Uri.parse("TimetableWidgetProvider://message?message=asdf")));
+  }
+
+  Future<Map<dynamic, dynamic>> fetchStudentsMe() async {
+    final user = FirebaseAuth.instance.currentUser;
+    var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+    var cfgs = jsonDecode(rawData!.asString());
+
+    final response = await http.get(
+        Uri.parse(
+            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/students/me'),
+        headers: {
+          'ID-Token': await user?.getIdToken(true) ?? '',
+          'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+        });
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else if (response.statusCode == 401 &&
+        jsonDecode(response.body)['code'] == 40100) {
+      await refreshToken();
+      return await fetchStudentsMe();
+    } else {
+      throw Exception('Failed to load post');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-    final storage = new LocalStorage('auth.json');
 
     return MaterialApp(
       title: '호산고등학교 알리미',
@@ -347,20 +443,13 @@ class _AppState extends State<App> {
           }(),
           () async {
             await storage.ready;
-            final remoteConfig = RemoteConfig.instance;
 
-            var rawData = remoteConfig.getAll()['BACKEND_HOST'];
-            var cfgs = jsonDecode(rawData!.asString());
-
-            final rsp = await http.get(
-                Uri.parse(
-                    '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/students/me'),
-                headers: {
-                  'ID-Token': await user!.getIdToken(true),
-                  'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
-                });
-
-            return rsp.statusCode == 200;
+            try {
+              await fetchStudentsMe();
+              return true;
+            } catch (e) {
+              return false;
+            }
           }()
         ]),
         builder: (BuildContext context, AsyncSnapshot snapshot) {

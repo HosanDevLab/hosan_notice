@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:ui';
@@ -10,7 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:hosan_notice/widgets/drawer.dart';
 import 'package:localstorage/localstorage.dart';
 import 'package:http/http.dart' as http;
-import 'package:quiver/iterables.dart';
 
 import '../modules/refresh_token.dart';
 import 'classes.dart';
@@ -31,6 +31,8 @@ class _MyClassPageState extends State<MyClassPage> {
 
   late Future<List<Map<dynamic, dynamic>>> _assignments, _classes;
   late Future<Map<dynamic, dynamic>> _me, _class, _timetable;
+
+  late Timer _timer;
 
   Future<Map<dynamic, dynamic>> fetchStudentsMe() async {
     var rawData = remoteConfig.getAll()['BACKEND_HOST'];
@@ -143,6 +145,11 @@ class _MyClassPageState extends State<MyClassPage> {
     _class = fetchClass();
     _classes = fetchClasses();
     _timetable = fetchTimetable();
+
+    _timer = Timer.periodic(Duration(seconds: 3), (timer) {
+      setState(() {});
+    });
+
     image = Image.network(url, fit: BoxFit.fill, height: 300);
   }
 
@@ -150,6 +157,12 @@ class _MyClassPageState extends State<MyClassPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     precacheImage(image.image, context);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _timer.cancel();
   }
 
   @override
@@ -207,30 +220,38 @@ class _MyClassPageState extends State<MyClassPage> {
             currentPeriod = '일과시간 전';
           } else if (8 * 60 + 20 <= inMin && inMin < 9 * 60 + 20) {
             period = 1;
-            currentPeriod = '1교시';
+            currentPeriod = '현재 1교시';
           } else if (9 * 60 + 20 <= inMin && inMin < 10 * 60 + 20) {
             period = 2;
-            currentPeriod = '2교시';
+            currentPeriod = '현재 2교시';
           } else if (10 * 60 + 20 <= inMin && inMin < 11 * 60 + 20) {
             period = 3;
-            currentPeriod = '3교시';
+            currentPeriod = '현재 3교시';
           } else if (11 * 60 + 20 <= inMin && inMin < 12 * 60 + 20) {
             period = 4;
-            currentPeriod = '4교시';
+            currentPeriod = '현재 4교시';
           } else if (12 * 60 + 20 <= inMin && inMin < 13 * 60 + 20) {
             currentPeriod = '점심시간';
           } else if (13 * 60 + 20 <= inMin && inMin < 14 * 60 + 20) {
             period = 5;
-            currentPeriod = '5교시';
+            currentPeriod = '현재 5교시';
           } else if (14 * 60 + 20 <= inMin && inMin < 15 * 60 + 20) {
             period = 6;
-            currentPeriod = '6교시';
+            currentPeriod = '현재 6교시';
           } else if (15 * 60 + 20 <= inMin && inMin < 16 * 60 + 20) {
             period = 7;
-            currentPeriod = '7교시';
+            currentPeriod = '현재 7교시';
           } else {
-            currentPeriod = '일과시간 끝';
+            if (dow == 6 || dow == 7) {
+              currentPeriod = '';
+            } else {
+              currentPeriod = '일과시간 끝';
+            }
           }
+
+          final filteredTable = (timetable['table'] as List)
+              .where((e) => e['dow'] == dow)
+              .toList();
 
           return RefreshIndicator(
             edgeOffset: AppBar().preferredSize.height,
@@ -305,7 +326,7 @@ class _MyClassPageState extends State<MyClassPage> {
                               ),
                               SizedBox(width: 10),
                               Text(
-                                '현재 ${currentPeriod}',
+                                currentPeriod,
                                 style: Theme.of(context).textTheme.caption,
                               ),
                               Expanded(child: Container()),
@@ -335,42 +356,51 @@ class _MyClassPageState extends State<MyClassPage> {
                           ),
                           SizedBox(height: 12),
                           timeTableMode == 0
-                              ? Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    ...((timetable['table'] as List)
-                                            .where((e) => e['dow'] == dow)
-                                            .toList()
-                                          ..sort((a, b) =>
-                                              a['period'] - b['period']))
-                                        .map(
-                                      (a) => TextButton(
-                                        onPressed: () {},
-                                        child: Text(
-                                          a['subject']?['short_name'] ??
-                                              a['subject']?['name'] ??
-                                              '',
-                                          style: period == a['period']
-                                              ? TextStyle(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.bold,
-                                                )
-                                              : Theme.of(context)
-                                                  .textTheme
-                                                  .caption,
-                                          textAlign: TextAlign.center,
-                                        ),
-                                        style: TextButton.styleFrom(
-                                          minimumSize: Size.zero,
-                                          tapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
-                                        ),
+                              ? filteredTable.isNotEmpty
+                                  ? Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        ...(filteredTable
+                                              ..sort((a, b) =>
+                                                  a['period'] - b['period']))
+                                            .map(
+                                          (a) => TextButton(
+                                            onPressed: () {},
+                                            child: Text(
+                                              a['subject']?['short_name'] ??
+                                                  a['subject']?['name'] ??
+                                                  '',
+                                              style: period == a['period']
+                                                  ? TextStyle(
+                                                      fontSize: 18,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    )
+                                                  : Theme.of(context)
+                                                      .textTheme
+                                                      .caption,
+                                              textAlign: TextAlign.center,
+                                            ),
+                                            style: TextButton.styleFrom(
+                                              minimumSize: Size.zero,
+                                              tapTargetSize:
+                                                  MaterialTapTargetSize
+                                                      .shrinkWrap,
+                                            ),
+                                          ),
+                                        )
+                                      ],
+                                    )
+                                  : Center(
+                                      child: Text(
+                                        '오늘 시간표 정보 없음',
+                                        style:
+                                            Theme.of(context).textTheme.caption,
                                       ),
                                     )
-                                  ],
-                                )
                               : Table(
                                   border: TableBorder.all(
                                       borderRadius: BorderRadius.circular(5),

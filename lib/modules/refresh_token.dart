@@ -8,10 +8,10 @@ import 'package:localstorage/localstorage.dart';
 
 import 'get_device_id.dart';
 
-final storage = new LocalStorage('auth.json');
-final remoteConfig = RemoteConfig.instance;
+Future refreshToken() async {
+  final storage = new LocalStorage('auth.json');
+  final remoteConfig = RemoteConfig.instance;
 
-final refreshToken = () async {
   final user = FirebaseAuth.instance.currentUser!;
   var rawData = remoteConfig.getAll()['BACKEND_HOST'];
   var cfgs = jsonDecode(rawData!.asString());
@@ -26,11 +26,14 @@ final refreshToken = () async {
         'Device-ID': await getDeviceId() ?? ''
       });
 
+  final data = json.decode(response.body);
+
   if (response.statusCode == 200) {
-    final data = json.decode(response.body);
     await storage.setItem('AUTH_TOKEN', data['token']);
     await storage.setItem('REFRESH_TOKEN', data['refreshToken']);
+  } else if (response.statusCode == 400 && data['code'] == 40000) {
+    return;
   } else {
     throw Exception('Failed to refresh token');
   }
-};
+}

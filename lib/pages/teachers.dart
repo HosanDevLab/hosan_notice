@@ -112,7 +112,14 @@ class _TeachersPageState extends State<TeachersPage> {
           final teachers = snapshot.data[1] as List;
 
           final filteredTeachers = teachers.where((e) {
-            final searched = (e['name'] as String).contains(search);
+            final searched = (e['name'] as String).contains(search) ||
+                (e['subjects'] as List)
+                    .map((o) => subjects
+                        .where((s) =>
+                            s['_id'] == o &&
+                            (s['name'] as String).contains(search))
+                        .isNotEmpty)
+                    .any((o) => o == true);
 
             bool inGroup = true;
             switch (filterType) {
@@ -142,11 +149,13 @@ class _TeachersPageState extends State<TeachersPage> {
                       children: [
                         DropdownButton<int>(
                           onChanged: (e) {
-                            _scrollController.animateTo(
-                              0,
-                              duration: Duration(milliseconds: 500),
-                              curve: Curves.fastOutSlowIn,
-                            );
+                            if (_scrollController.hasClients) {
+                              _scrollController.animateTo(
+                                0,
+                                duration: Duration(milliseconds: 500),
+                                curve: Curves.fastOutSlowIn,
+                              );
+                            }
                             setState(() {
                               filterType = e!;
                             });
@@ -167,17 +176,20 @@ class _TeachersPageState extends State<TeachersPage> {
                           child: TextField(
                             style: TextStyle(fontSize: 15),
                             onChanged: (e) {
-                              _scrollController.animateTo(
-                                0,
-                                duration: Duration(milliseconds: 500),
-                                curve: Curves.fastOutSlowIn,
-                              );
+                              if (_scrollController.hasClients) {
+                                _scrollController.animateTo(
+                                  0,
+                                  duration: Duration(milliseconds: 500),
+                                  curve: Curves.fastOutSlowIn,
+                                );
+                              }
                               setState(() {
                                 search = e;
                               });
                             },
                             decoration: InputDecoration(
-                              labelText: '선생님 검색...',
+                              hintText: '선생님 또는 과목 검색...',
+                              hintStyle: TextStyle(fontSize: 14),
                               focusedBorder: OutlineInputBorder(
                                 borderSide:
                                     BorderSide(color: Colors.deepPurple),

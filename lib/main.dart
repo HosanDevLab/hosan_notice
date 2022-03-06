@@ -145,10 +145,10 @@ void main() async {
 
 void callbackDispatcher() {
   Workmanager().executeTask((taskName, inputData) async {
-    await Firebase.initializeApp();
     try {
+      await Firebase.initializeApp();
       return await fetchAndUpdateTimetableWidget().then((value) {
-        return !value.contains(false);
+        return Future.value(true);
       });
     } catch (e) {
       print(e);

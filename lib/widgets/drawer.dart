@@ -247,12 +247,11 @@ class _MainDrawerState extends State<MainDrawer> {
                                 await storage.deleteItem('AUTH_TOKEN');
                                 await storage.deleteItem('REFRESH_TOKEN');
 
-                                Navigator.pushAndRemoveUntil(
+                                Navigator.pushReplacement(
                                   context,
                                   MaterialPageRoute(
                                       builder: (context) => LoginPage(),
                                       fullscreenDialog: true),
-                                  (route) => route.isFirst,
                                 );
                               },
                             ),

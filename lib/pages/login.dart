@@ -268,7 +268,7 @@ class _LoginPageState extends State<LoginPage> {
         storage.setItem('AUTH_TOKEN', data['token']);
         storage.setItem('REFRESH_TOKEN', data['refreshToken']);
 
-        await fetchAndUpdateTimetableWidget();
+        await fetchAndUpdateTimetableWidget(storage.getItem('AUTH_TOKEN'));
         continueLogin();
       } else if (response.statusCode == 403 && data['code'] == 40300) {
         showDialog(
@@ -351,7 +351,7 @@ class _LoginPageState extends State<LoginPage> {
                     await storage.setItem('AUTH_TOKEN', data['token']);
                     await storage.setItem('REFRESH_TOKEN', data['refreshToken']);
 
-                    await fetchAndUpdateTimetableWidget();
+                    await fetchAndUpdateTimetableWidget(storage.getItem('AUTH_TOKEN'));
 
                     continueLogin();
                   },

@@ -6,15 +6,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:hosan_notice/modules/refresh_token.dart';
-import 'package:localstorage/localstorage.dart';
 import 'package:http/http.dart' as http;
 
-Future fetchAndUpdateTimetableWidget() async {
+Future fetchAndUpdateTimetableWidget(String authToken) async {
   final remoteConfig = RemoteConfig.instance;
   final user = FirebaseAuth.instance.currentUser;
-  final storage = new LocalStorage('auth.json');
 
-  await storage.ready;
+  print(await user?.getIdToken(true));
+  print(authToken);
 
   Future<Map<dynamic, dynamic>> fetchTimetable() async {
     var rawData = remoteConfig.getAll()['BACKEND_HOST'];
@@ -25,7 +24,7 @@ Future fetchAndUpdateTimetableWidget() async {
             '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/timetables/me'),
         headers: {
           'ID-Token': await user?.getIdToken(true) ?? '',
-          'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+          'Authorization': 'Bearer ${authToken}',
         });
 
     if (response.statusCode == 200) {
@@ -36,6 +35,8 @@ Future fetchAndUpdateTimetableWidget() async {
       await refreshToken();
       return await fetchTimetable();
     } else {
+      print(response.statusCode);
+      print(response.body);
       throw Exception('Failed to load post');
     }
   }

@@ -343,7 +343,7 @@ class _RegisterPageState extends State<RegisterPage> {
         },
       );
 
-      fetchAndUpdateTimetableWidget();
+      fetchAndUpdateTimetableWidget(storage.getItem('AUTH_TOKEN'));
 
       await postData();
       Navigator.pop(ctx!);

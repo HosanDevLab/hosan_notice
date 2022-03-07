@@ -24,15 +24,23 @@ import 'messages.dart';
 import 'modules/refresh_token.dart';
 import 'modules/update_timetable_widget.dart';
 
+final storage = new LocalStorage('auth.json');
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Workmanager().initialize(callbackDispatcher, isInDebugMode: kDebugMode);
-  Workmanager().registerPeriodicTask('1', 'widgetBackgroundUpdate',
-      frequency: Duration(minutes: 15));
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  await storage.ready;
+
+  Workmanager().initialize(
+    () => callbackDispatcher(storage.getItem('AUTH_TOKEN')),
+    isInDebugMode: kDebugMode,
+  );
+  Workmanager().registerPeriodicTask('1', 'widgetBackgroundUpdate',
+      frequency: Duration(minutes: 15));
 
   final remoteConfig = RemoteConfig.instance;
 
@@ -143,11 +151,10 @@ void main() async {
   runApp(App());
 }
 
-void callbackDispatcher() {
+void callbackDispatcher(String authToken) {
   Workmanager().executeTask((taskName, inputData) async {
     try {
-      await Firebase.initializeApp();
-      return await fetchAndUpdateTimetableWidget().then((value) {
+      return await fetchAndUpdateTimetableWidget(authToken).then((value) {
         return Future.value(true);
       });
     } catch (e) {
@@ -323,7 +330,7 @@ class _AppState extends State<App> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    fetchAndUpdateTimetableWidget();
+    fetchAndUpdateTimetableWidget(storage.getItem('AUTH_TOKEN'));
   }
 
   Future<Map<dynamic, dynamic>> fetchStudentsMe() async {

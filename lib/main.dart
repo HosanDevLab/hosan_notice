@@ -36,12 +36,12 @@ void main() async {
 
   await storage.ready;
 
-  Workmanager().initialize(
+  await Workmanager().initialize(
     callbackDispatcher,
     isInDebugMode: kDebugMode,
   );
-  Workmanager().cancelByUniqueName('1');
-  Workmanager().registerPeriodicTask(
+  await Workmanager().cancelByUniqueName('1');
+  await Workmanager().registerPeriodicTask(
     '1',
     'widgetBackgroundUpdate',
     inputData: {
@@ -49,7 +49,6 @@ void main() async {
       'refreshToken': storage.getItem('REFRESH_TOKEN') ?? ''
     },
     frequency: Duration(minutes: 15),
-    constraints: Constraints(networkType: NetworkType.connected),
   );
 
   final remoteConfig = RemoteConfig.instance;
@@ -73,7 +72,7 @@ void main() async {
     provisional: false,
     sound: true,
   );
-  
+
   await messaging.subscribeToTopic('assignmentPosted');
 
   await FlutterForegroundTask.init(
@@ -358,8 +357,7 @@ class _AppState extends State<App> {
         storage.getItem('REFRESH_TOKEN'),
       );
 
-      Workmanager().cancelByUniqueName('1');
-      Workmanager().registerPeriodicTask(
+      await Workmanager().registerPeriodicTask(
         '1',
         'widgetBackgroundUpdate',
         inputData: {
@@ -367,7 +365,6 @@ class _AppState extends State<App> {
           'refreshToken': storage.getItem('REFRESH_TOKEN') ?? ''
         },
         frequency: Duration(minutes: 15),
-        constraints: Constraints(networkType: NetworkType.connected),
       );
     }();
   }

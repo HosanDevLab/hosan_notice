@@ -274,8 +274,7 @@ class _LoginPageState extends State<LoginPage> {
           storage.getItem('REFRESH_TOKEN'),
         );
 
-        Workmanager().cancelByUniqueName('1');
-        Workmanager().registerPeriodicTask(
+        await Workmanager().registerPeriodicTask(
           '1',
           'widgetBackgroundUpdate',
           inputData: {
@@ -283,7 +282,6 @@ class _LoginPageState extends State<LoginPage> {
             'refreshToken': storage.getItem('REFRESH_TOKEN') ?? '',
           },
           frequency: Duration(minutes: 15),
-          constraints: Constraints(networkType: NetworkType.connected),
         );
 
         continueLogin();
@@ -374,8 +372,7 @@ class _LoginPageState extends State<LoginPage> {
                       storage.getItem('REFRESH_TOKEN'),
                     );
 
-                    Workmanager().cancelByUniqueName('1');
-                    Workmanager().registerPeriodicTask(
+                    await Workmanager().registerPeriodicTask(
                       '1',
                       'widgetBackgroundUpdate',
                       inputData: {
@@ -383,8 +380,6 @@ class _LoginPageState extends State<LoginPage> {
                         'refreshToken': storage.getItem('REFRESH_TOKEN') ?? '',
                       },
                       frequency: Duration(minutes: 15),
-                      constraints:
-                          Constraints(networkType: NetworkType.connected),
                     );
 
                     continueLogin();

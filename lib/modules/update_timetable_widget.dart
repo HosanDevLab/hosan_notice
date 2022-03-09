@@ -9,7 +9,8 @@ import 'package:hosan_notice/modules/refresh_token.dart' as r;
 import 'package:http/http.dart' as http;
 import 'package:workmanager/workmanager.dart';
 
-Future fetchAndUpdateTimetableWidget(String authToken, String refreshToken) async {
+Future fetchAndUpdateTimetableWidget(
+    String authToken, String refreshToken) async {
   final remoteConfig = RemoteConfig.instance;
   final user = FirebaseAuth.instance.currentUser;
 
@@ -34,22 +35,17 @@ Future fetchAndUpdateTimetableWidget(String authToken, String refreshToken) asyn
       return data;
     } else if (response.statusCode == 401 &&
         jsonDecode(response.body)['code'] == 40100) {
-      final re = await r.refreshToken(authToken: authToken, refreshToken: refreshToken);
+      final re = await r.refreshToken(
+          authToken: authToken, refreshToken: refreshToken);
 
-      Workmanager().cancelByUniqueName('1');
-      Workmanager().registerPeriodicTask(
+      await Workmanager().registerPeriodicTask(
         '1',
         'widgetBackgroundUpdate',
-        inputData: {
-          'authToken': re[0],
-          'refreshToken': re[1]
-        },
+        inputData: {'authToken': re[0], 'refreshToken': re[1]},
         frequency: Duration(minutes: 15),
-        constraints: Constraints(networkType: NetworkType.connected),
       );
 
       return null;
-
     } else {
       print(response.statusCode);
       print(response.body);

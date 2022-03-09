@@ -38,6 +38,7 @@ Future fetchAndUpdateTimetableWidget(
       final re = await r.refreshToken(
           authToken: authToken, refreshToken: refreshToken);
 
+      await Workmanager().cancelByUniqueName('1');
       await Workmanager().registerPeriodicTask(
         '1',
         'widgetBackgroundUpdate',

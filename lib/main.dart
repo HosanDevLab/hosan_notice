@@ -13,7 +13,6 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:home_widget/home_widget.dart';
-import 'package:home_widget/home_widget_callback_dispatcher.dart';
 import 'package:hosan_notice/pages/home.dart';
 import 'package:hosan_notice/pages/login.dart';
 import 'package:localstorage/localstorage.dart';

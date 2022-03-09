@@ -13,6 +13,7 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:home_widget/home_widget.dart';
+import 'package:home_widget/home_widget_callback_dispatcher.dart';
 import 'package:hosan_notice/pages/home.dart';
 import 'package:hosan_notice/pages/login.dart';
 import 'package:localstorage/localstorage.dart';
@@ -36,11 +37,20 @@ void main() async {
   await storage.ready;
 
   Workmanager().initialize(
-    () => callbackDispatcher(storage.getItem('AUTH_TOKEN')),
+    callbackDispatcher,
     isInDebugMode: kDebugMode,
   );
-  Workmanager().registerPeriodicTask('1', 'widgetBackgroundUpdate',
-      frequency: Duration(minutes: 15));
+  Workmanager().cancelByUniqueName('1');
+  Workmanager().registerPeriodicTask(
+    '1',
+    'widgetBackgroundUpdate',
+    inputData: {
+      'authToken': storage.getItem('AUTH_TOKEN') ?? '',
+      'refreshToken': storage.getItem('REFRESH_TOKEN') ?? ''
+    },
+    frequency: Duration(minutes: 15),
+    constraints: Constraints(networkType: NetworkType.connected),
+  );
 
   final remoteConfig = RemoteConfig.instance;
 
@@ -63,6 +73,8 @@ void main() async {
     provisional: false,
     sound: true,
   );
+  
+  await messaging.subscribeToTopic('assignmentPosted');
 
   await FlutterForegroundTask.init(
     androidNotificationOptions: AndroidNotificationOptions(
@@ -151,10 +163,19 @@ void main() async {
   runApp(App());
 }
 
-void callbackDispatcher(String authToken) {
+void callbackDispatcher() {
   Workmanager().executeTask((taskName, inputData) async {
+    if ((inputData?['authToken'] ?? '') == '') {
+      throw Exception('authToken not provided');
+    }
+
+    await Firebase.initializeApp();
+
     try {
-      return await fetchAndUpdateTimetableWidget(authToken).then((value) {
+      return await fetchAndUpdateTimetableWidget(
+        inputData!['authToken'],
+        inputData['refreshToken'],
+      ).then((value) {
         return Future.value(true);
       });
     } catch (e) {
@@ -330,7 +351,25 @@ class _AppState extends State<App> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    fetchAndUpdateTimetableWidget(storage.getItem('AUTH_TOKEN'));
+    () async {
+      await storage.ready;
+      await fetchAndUpdateTimetableWidget(
+        storage.getItem('AUTH_TOKEN'),
+        storage.getItem('REFRESH_TOKEN'),
+      );
+
+      Workmanager().cancelByUniqueName('1');
+      Workmanager().registerPeriodicTask(
+        '1',
+        'widgetBackgroundUpdate',
+        inputData: {
+          'authToken': storage.getItem('AUTH_TOKEN') ?? '',
+          'refreshToken': storage.getItem('REFRESH_TOKEN') ?? ''
+        },
+        frequency: Duration(minutes: 15),
+        constraints: Constraints(networkType: NetworkType.connected),
+      );
+    }();
   }
 
   Future<Map<dynamic, dynamic>> fetchStudentsMe() async {

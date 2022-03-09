@@ -146,7 +146,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                             Expanded(
                               flex: 4,
                               child: Card(
-                                  margin: EdgeInsets.fromLTRB(20, 20, 6, 0),
+                                  margin: EdgeInsets.fromLTRB(10, 10, 6, 0),
                                   child: ListTile(
                                     horizontalTitleGap: 2,
                                     leading: Icon(Icons.subject, size: 28),
@@ -163,7 +163,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                                     flex: 3,
                                     child: Card(
                                         margin:
-                                            EdgeInsets.fromLTRB(6, 20, 20, 0),
+                                            EdgeInsets.fromLTRB(6, 10, 10, 0),
                                         child: ListTile(
                                           horizontalTitleGap: 2,
                                           leading: Icon(Icons.person, size: 28),
@@ -182,11 +182,11 @@ class _AssignmentPageState extends State<AssignmentPage> {
                                           onTap: () {},
                                         )),
                                   )
-                                : SizedBox(width: 14))
+                                : SizedBox(width: 4))
                           ],
                         ),
                         Card(
-                            margin: EdgeInsets.fromLTRB(20, 12, 20, 0),
+                            margin: EdgeInsets.fromLTRB(10, 12, 10, 0),
                             child: ListTile(
                               leading: Icon(Icons.timer, size: 28),
                               title: Text(data['deadline'] == null
@@ -197,10 +197,10 @@ class _AssignmentPageState extends State<AssignmentPage> {
                         SizedBox(
                           width: double.infinity,
                           child: Card(
-                              margin: EdgeInsets.fromLTRB(20, 12, 20, 20),
+                              margin: EdgeInsets.fromLTRB(10, 12, 10, 10),
                               child: Container(
                                 padding: EdgeInsets.symmetric(
-                                    vertical: 16, horizontal: 20),
+                                    vertical: 16, horizontal: 10),
                                 child: SelectableText(
                                     (data['description'] as String).isNotEmpty
                                         ? data['description']

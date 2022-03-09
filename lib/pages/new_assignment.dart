@@ -131,7 +131,7 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
           if (!snapshot.hasData) {
             return Scaffold(
                 appBar: AppBar(
-                  title: Text('과제 불러오는 중...'),
+                  title: Text('불러오는 중...'),
                 ),
                 body: Center(
                     child: Column(
@@ -172,7 +172,7 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
                         key: _formKey,
                         child: Column(children: [
                           Card(
-                              margin: EdgeInsets.fromLTRB(20, 12, 20, 0),
+                              margin: EdgeInsets.fromLTRB(10, 12, 10, 0),
                               child: ListTile(
                                 horizontalTitleGap: 2,
                                 leading: Icon(Icons.subject, size: 28),
@@ -181,7 +181,7 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
                                 onTap: () {},
                               )),
                           Card(
-                              margin: EdgeInsets.fromLTRB(20, 10, 20, 0),
+                              margin: EdgeInsets.fromLTRB(10, 10, 10, 0),
                               child: ListTile(
                                 horizontalTitleGap: 2,
                                 leading: Icon(Icons.person, size: 28),
@@ -218,7 +218,7 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
                                 onTap: () {},
                               )),
                           Card(
-                              margin: EdgeInsets.fromLTRB(20, 12, 20, 0),
+                              margin: EdgeInsets.fromLTRB(10, 12, 10, 0),
                               child: Row(
                                 children: [
                                   Expanded(
@@ -244,7 +244,7 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
                                 ],
                               )),
                           Card(
-                              margin: EdgeInsets.fromLTRB(20, 10, 20, 0),
+                              margin: EdgeInsets.fromLTRB(10, 10, 10, 0),
                               child: ListTile(
                                 leading: Icon(Icons.timer, size: 28),
                                 title: Column(
@@ -286,9 +286,9 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
                           SizedBox(
                             width: double.infinity,
                             child: Card(
-                                margin: EdgeInsets.fromLTRB(20, 12, 20, 0),
+                                margin: EdgeInsets.fromLTRB(10, 12, 10, 0),
                                 child: Container(
-                                    padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
+                                    padding: EdgeInsets.fromLTRB(10, 0, 10, 0),
                                     child: TextFormField(
                                       validator: (value) =>
                                           value == null ? "제목을 입력하세요." : null,
@@ -305,9 +305,9 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
                           SizedBox(
                             width: double.infinity,
                             child: Card(
-                                margin: EdgeInsets.fromLTRB(20, 12, 20, 8),
+                                margin: EdgeInsets.fromLTRB(10, 12, 10, 8),
                                 child: Container(
-                                    padding: EdgeInsets.fromLTRB(20, 5, 20, 15),
+                                    padding: EdgeInsets.fromLTRB(10, 5, 10, 15),
                                     child: TextFormField(
                                       validator: (value) =>
                                           value == null ? "내용을 입력하세요." : null,
@@ -320,9 +320,9 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
                                       maxLines: null,
                                     ))),
                           ),
-                          Divider(indent: 20, endIndent: 20),
+                          Divider(indent: 10, endIndent: 10),
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 20),
+                            padding: EdgeInsets.symmetric(horizontal: 10),
                             width: double.infinity,
                             child: ElevatedButton.icon(
                                 icon: Icon(Icons.done),

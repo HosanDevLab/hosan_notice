@@ -11,6 +11,7 @@ import 'package:localstorage/localstorage.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:workmanager/workmanager.dart';
 
 import '../modules/refresh_token.dart';
 import '../modules/update_timetable_widget.dart';
@@ -343,7 +344,23 @@ class _RegisterPageState extends State<RegisterPage> {
         },
       );
 
-      fetchAndUpdateTimetableWidget(storage.getItem('AUTH_TOKEN'));
+      fetchAndUpdateTimetableWidget(
+        storage.getItem('AUTH_TOKEN'),
+        storage.getItem('REFRESH_TOKEN'),
+      );
+
+      Workmanager().cancelByUniqueName('1');
+      Workmanager().registerPeriodicTask(
+        '1',
+        'widgetBackgroundUpdate',
+        inputData: {
+          'authToken': storage.getItem('AUTH_TOKEN') ?? '',
+          'refreshToken': storage.getItem('REFRESH_TOKEN') ?? '',
+        },
+        frequency: Duration(minutes: 15),
+        constraints:
+        Constraints(networkType: NetworkType.connected),
+      );
 
       await postData();
       Navigator.pop(ctx!);

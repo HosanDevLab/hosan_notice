@@ -5,17 +5,19 @@ import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
-import 'package:hosan_notice/modules/refresh_token.dart';
+import 'package:hosan_notice/modules/refresh_token.dart' as r;
 import 'package:http/http.dart' as http;
+import 'package:workmanager/workmanager.dart';
 
-Future fetchAndUpdateTimetableWidget(String authToken) async {
+Future fetchAndUpdateTimetableWidget(String authToken, String refreshToken) async {
   final remoteConfig = RemoteConfig.instance;
   final user = FirebaseAuth.instance.currentUser;
 
+  print('asdf');
   print(await user?.getIdToken(true));
   print(authToken);
 
-  Future<Map<dynamic, dynamic>> fetchTimetable() async {
+  Future<Map<dynamic, dynamic>?> fetchTimetable() async {
     var rawData = remoteConfig.getAll()['BACKEND_HOST'];
     var cfgs = jsonDecode(rawData!.asString());
 
@@ -32,8 +34,22 @@ Future fetchAndUpdateTimetableWidget(String authToken) async {
       return data;
     } else if (response.statusCode == 401 &&
         jsonDecode(response.body)['code'] == 40100) {
-      await refreshToken();
-      return await fetchTimetable();
+      final re = await r.refreshToken(authToken: authToken, refreshToken: refreshToken);
+
+      Workmanager().cancelByUniqueName('1');
+      Workmanager().registerPeriodicTask(
+        '1',
+        'widgetBackgroundUpdate',
+        inputData: {
+          'authToken': re[0],
+          'refreshToken': re[1]
+        },
+        frequency: Duration(minutes: 15),
+        constraints: Constraints(networkType: NetworkType.connected),
+      );
+
+      return null;
+
     } else {
       print(response.statusCode);
       print(response.body);
@@ -42,6 +58,8 @@ Future fetchAndUpdateTimetableWidget(String authToken) async {
   }
 
   final timetable = await fetchTimetable();
+
+  if (timetable == null) return;
 
   final dow = DateTime.now().weekday;
   final tod = TimeOfDay.now();
@@ -69,28 +87,31 @@ Future fetchAndUpdateTimetableWidget(String authToken) async {
   }
 
   final filteredTable =
-  (timetable['table'] as List).where((e) => e['dow'] == dow).toList();
+      (timetable['table'] as List).where((e) => e['dow'] == dow).toList();
   filteredTable.sort((a, b) => a['period'] - b['period']);
 
   await Future.wait([
-    ...List.generate(7, (i) => i + 1).map((e) {
-      final data = filteredTable.firstWhere(
-            (o) => o['period'] == e,
-        orElse: () => null,
-      );
-
-      return HomeWidget.saveWidgetData<String>(
-        'p${e}',
-        data?['subject']['short_name'] ?? data?['subject']['name'] ?? '',
-      );
-    }),
     ...(filteredTable.isNotEmpty
-        ? [HomeWidget.saveWidgetData<bool>('visibility', true)]
+        ? [
+            ...List.generate(7, (i) => i + 1).map((e) {
+              final data = filteredTable.firstWhere(
+                (o) => o['period'] == e,
+                orElse: () => null,
+              );
+
+              return HomeWidget.saveWidgetData<String>(
+                'p${e}',
+                data?['subject']?['short_name'] ??
+                    data?['subject']?['name'] ??
+                    '',
+              );
+            }),
+            HomeWidget.saveWidgetData<bool>('visibility', true)
+          ]
         : [
-      HomeWidget.saveWidgetData<String>(
-          'centerMessage', '시간표 정보가 없습니다.'),
-      HomeWidget.saveWidgetData<bool>('visibility', false)
-    ]),
+            HomeWidget.saveWidgetData<String>('centerMessage', '시간표 정보가 없습니다.'),
+            HomeWidget.saveWidgetData<bool>('visibility', false)
+          ]),
     HomeWidget.saveWidgetData<int>('currentDow', dow),
     HomeWidget.saveWidgetData<int>('currentPeriod', period),
     HomeWidget.updateWidget(

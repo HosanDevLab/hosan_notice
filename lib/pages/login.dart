@@ -11,6 +11,7 @@ import 'package:hosan_notice/modules/get_device_id.dart';
 import 'package:http/http.dart' as http;
 import 'package:localstorage/localstorage.dart';
 import 'package:package_info/package_info.dart';
+import 'package:workmanager/workmanager.dart';
 
 import '../modules/update_timetable_widget.dart';
 import 'home.dart';
@@ -268,7 +269,23 @@ class _LoginPageState extends State<LoginPage> {
         storage.setItem('AUTH_TOKEN', data['token']);
         storage.setItem('REFRESH_TOKEN', data['refreshToken']);
 
-        await fetchAndUpdateTimetableWidget(storage.getItem('AUTH_TOKEN'));
+        await fetchAndUpdateTimetableWidget(
+          storage.getItem('AUTH_TOKEN'),
+          storage.getItem('REFRESH_TOKEN'),
+        );
+
+        Workmanager().cancelByUniqueName('1');
+        Workmanager().registerPeriodicTask(
+          '1',
+          'widgetBackgroundUpdate',
+          inputData: {
+            'authToken': storage.getItem('AUTH_TOKEN') ?? '',
+            'refreshToken': storage.getItem('REFRESH_TOKEN') ?? '',
+          },
+          frequency: Duration(minutes: 15),
+          constraints: Constraints(networkType: NetworkType.connected),
+        );
+
         continueLogin();
       } else if (response.statusCode == 403 && data['code'] == 40300) {
         showDialog(
@@ -349,9 +366,26 @@ class _LoginPageState extends State<LoginPage> {
 
                     final data = json.decode(respToken.body);
                     await storage.setItem('AUTH_TOKEN', data['token']);
-                    await storage.setItem('REFRESH_TOKEN', data['refreshToken']);
+                    await storage.setItem(
+                        'REFRESH_TOKEN', data['refreshToken']);
 
-                    await fetchAndUpdateTimetableWidget(storage.getItem('AUTH_TOKEN'));
+                    await fetchAndUpdateTimetableWidget(
+                      storage.getItem('AUTH_TOKEN'),
+                      storage.getItem('REFRESH_TOKEN'),
+                    );
+
+                    Workmanager().cancelByUniqueName('1');
+                    Workmanager().registerPeriodicTask(
+                      '1',
+                      'widgetBackgroundUpdate',
+                      inputData: {
+                        'authToken': storage.getItem('AUTH_TOKEN') ?? '',
+                        'refreshToken': storage.getItem('REFRESH_TOKEN') ?? '',
+                      },
+                      frequency: Duration(minutes: 15),
+                      constraints:
+                          Constraints(networkType: NetworkType.connected),
+                    );
 
                     continueLogin();
                   },

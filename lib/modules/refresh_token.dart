@@ -8,7 +8,7 @@ import 'package:localstorage/localstorage.dart';
 
 import 'get_device_id.dart';
 
-Future refreshToken() async {
+Future refreshToken({String? authToken, String? refreshToken}) async {
   final storage = new LocalStorage('auth.json');
   final remoteConfig = RemoteConfig.instance;
 
@@ -21,8 +21,8 @@ Future refreshToken() async {
           '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/auth/refresh'),
       headers: {
         'ID-Token': await user.getIdToken(true),
-        'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
-        'Refresh-Token': storage.getItem('REFRESH_TOKEN') ?? '',
+        'Authorization': 'Bearer ${authToken ?? storage.getItem('AUTH_TOKEN')}',
+        'Refresh-Token': refreshToken ?? storage.getItem('REFRESH_TOKEN') ?? '',
         'Device-ID': await getDeviceId() ?? ''
       });
 
@@ -31,6 +31,7 @@ Future refreshToken() async {
   if (response.statusCode == 200) {
     await storage.setItem('AUTH_TOKEN', data['token']);
     await storage.setItem('REFRESH_TOKEN', data['refreshToken']);
+    return [data['token'], data['refreshToken']];
   } else if (response.statusCode == 400 && data['code'] == 40000) {
     return;
   } else {

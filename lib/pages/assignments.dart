@@ -284,6 +284,7 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
                       Expanded(
                         child: PageView(
                           physics: BouncingScrollPhysics(),
+
                           controller: PageController(viewportFraction: 0.95),
                           onPageChanged: (index) {},
                           children: (student['subjects']['1st'] as List)

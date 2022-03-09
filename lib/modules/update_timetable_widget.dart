@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:hosan_notice/modules/refresh_token.dart' as r;
 import 'package:http/http.dart' as http;
+import 'package:localstorage/localstorage.dart';
 import 'package:workmanager/workmanager.dart';
 
 Future fetchAndUpdateTimetableWidget(
@@ -21,6 +22,9 @@ Future fetchAndUpdateTimetableWidget(
   Future<Map<dynamic, dynamic>?> fetchTimetable() async {
     var rawData = remoteConfig.getAll()['BACKEND_HOST'];
     var cfgs = jsonDecode(rawData!.asString());
+    final storage = new LocalStorage('auth.json');
+
+    await storage.ready;
 
     final response = await http.get(
         Uri.parse(
@@ -37,6 +41,9 @@ Future fetchAndUpdateTimetableWidget(
         jsonDecode(response.body)['code'] == 40100) {
       final re = await r.refreshToken(
           authToken: authToken, refreshToken: refreshToken);
+
+      await storage.setItem('AUTH_TOKEN', re[0]);
+      await storage.setItem('REFRESH_TOKEN', re[1]);
 
       await Workmanager().cancelByUniqueName('1');
       await Workmanager().registerPeriodicTask(

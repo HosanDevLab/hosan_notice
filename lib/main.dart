@@ -168,11 +168,12 @@ void callbackDispatcher() {
     }
 
     await Firebase.initializeApp();
+    await storage.ready;
 
     try {
       return await fetchAndUpdateTimetableWidget(
-        inputData!['authToken'],
-        inputData['refreshToken'],
+        storage.getItem('AUTH_TOKEN') ?? inputData!['authToken'],
+        storage.getItem('REFRESH_TOKEN') ?? inputData!['refreshToken'],
       ).then((value) {
         return Future.value(true);
       });

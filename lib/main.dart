@@ -72,7 +72,7 @@ void main() async {
     sound: true,
   );
 
-  await messaging.subscribeToTopic('assignmentPosted');
+  await messaging.subscribeToTopic(kDebugMode ? 'debugNotification' : 'releaseNotification');
 
   await FlutterForegroundTask.init(
     androidNotificationOptions: AndroidNotificationOptions(

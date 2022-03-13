@@ -81,4 +81,5 @@ dependencies {
     implementation 'com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava'
     implementation fileTree(dir: '../libs', include: ['*.jar'])
     implementation 'com.google.firebase:firebase-perf-ktx'
+    implementation "androidx.work:work-runtime-ktx:2.7.1"
 }

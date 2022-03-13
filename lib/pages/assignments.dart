@@ -238,15 +238,17 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           if (!snapshot.hasData) {
             return Center(
-                child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
                   CircularProgressIndicator(color: Colors.deepPurple),
                   Padding(
                     padding: EdgeInsets.only(top: 10),
                     child: Text('불러오는 중', textAlign: TextAlign.center),
                   )
-                ]));
+                ],
+              ),
+            );
           }
 
           final student = snapshot.data[1];
@@ -284,7 +286,6 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
                       Expanded(
                         child: PageView(
                           physics: BouncingScrollPhysics(),
-
                           controller: PageController(viewportFraction: 0.95),
                           onPageChanged: (index) {},
                           children: (student['subjects']['1st'] as List)

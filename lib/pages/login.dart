@@ -415,6 +415,8 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('호산고 알리미 로그인'),
+        centerTitle: true,
+        elevation: 5,
       ),
       body: Center(
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [

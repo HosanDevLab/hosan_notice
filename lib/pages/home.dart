@@ -29,7 +29,7 @@ class _HomePageState extends State<HomePage> {
   final storage = new LocalStorage('auth.json');
 
   late Future<List<Map<dynamic, dynamic>>> _assignments;
-  late Future<Map<dynamic, dynamic>> _me;
+  late Future<Map<dynamic, dynamic>> _me, _timetable;
 
   Future<Map<dynamic, dynamic>> fetchStudentsMe() async {
     var rawData = remoteConfig.getAll()['BACKEND_HOST'];
@@ -79,6 +79,30 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<Map<dynamic, dynamic>> fetchTimetable() async {
+    var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+    var cfgs = jsonDecode(rawData!.asString());
+
+    final response = await http.get(
+        Uri.parse(
+            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/timetables/me'),
+        headers: {
+          'ID-Token': await user.getIdToken(true),
+          'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+        });
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data;
+    } else if (response.statusCode == 401 &&
+        jsonDecode(response.body)['code'] == 40100) {
+      await refreshToken();
+      return await fetchTimetable();
+    } else {
+      throw Exception('Failed to load post');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -95,6 +119,7 @@ class _HomePageState extends State<HomePage> {
     super.didChangeDependencies();
     _me = fetchStudentsMe();
     _assignments = fetchAssignments();
+    _timetable = fetchTimetable();
     precacheImage(AssetImage('assets/hosan.png'), context);
   }
 
@@ -183,30 +208,52 @@ class _HomePageState extends State<HomePage> {
           title: Text('메인'),
           centerTitle: true,
         ),
-        body: RefreshIndicator(
-          child: Container(
-            height: double.infinity,
-            child: SingleChildScrollView(
-              physics: BouncingScrollPhysics(
-                  parent: AlwaysScrollableScrollPhysics()),
-              child: Container(
-                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+        body: FutureBuilder(
+          future: Future.wait([_me, _assignments, _timetable]),
+          builder: (BuildContext context, AsyncSnapshot snapshot) {
+            if (!snapshot.hasData) {
+              return Center(
                 child: Column(
-                  children: <Widget>[
-                    FutureBuilder(
-                      future: _me,
-                      builder: (BuildContext context,
-                          AsyncSnapshot<Map<dynamic, dynamic>> snapshot) {
-                        if (!snapshot.hasData) {
-                          return Container();
-                        }
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(color: Colors.deepPurple),
+                    Padding(
+                      padding: EdgeInsets.only(top: 10),
+                      child: Text('불러오는 중', textAlign: TextAlign.center),
+                    )
+                  ],
+                ),
+              );
+            }
 
-                        return Container(
+            final student = snapshot.data[0];
+            final assignments = snapshot.data[1];
+            final timetable = snapshot.data[1];
+
+            final recentAssignments = (assignments as List).where((e) =>
+                e['deadline'] == null
+                    ? true
+                    : DateTime.parse(e['deadline'])
+                            .difference(DateTime.now())
+                            .inSeconds >
+                        0);
+
+            return RefreshIndicator(
+              child: Container(
+                height: double.infinity,
+                child: SingleChildScrollView(
+                  physics: BouncingScrollPhysics(
+                      parent: AlwaysScrollableScrollPhysics()),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                    child: Column(
+                      children: <Widget>[
+                        Container(
                           padding: EdgeInsets.symmetric(vertical: 20),
                           child: Column(
                             children: [
                               Text(
-                                '${snapshot.data!['name']}님, 안녕하세요!',
+                                '${student['name']}님, 안녕하세요!',
                                 style: Theme.of(context)
                                     .textTheme
                                     .headline5!
@@ -216,175 +263,167 @@ class _HomePageState extends State<HomePage> {
                               Text('호산고 알리미입니다.'),
                             ],
                           ),
-                        );
-                      },
-                    ),
-                    Divider(),
-                    Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        ),
+                        Divider(),
+                        Column(
                           children: [
-                            Text('현재 할당된 과제',
-                                style: Theme.of(context).textTheme.headline6),
-                            TextButton(
-                              child: Text('더보기'),
-                              onPressed: () {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => AssignmentsPage(),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('현재 할당된 과제',
+                                    style:
+                                        Theme.of(context).textTheme.headline6),
+                                TextButton(
+                                  child: Text('더보기'),
+                                  onPressed: () {
+                                    Navigator.pushAndRemoveUntil(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => AssignmentsPage(),
+                                      ),
+                                      (route) => route.isFirst,
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 5),
+                            recentAssignments.isNotEmpty
+                                ? Column(
+                                    children:
+                                        recentAssignments.map<Widget>((e) {
+                                      return assignmentCard(context, e);
+                                    }).toList(),
+                                  )
+                                : Container(
+                                    padding: EdgeInsets.all(10),
+                                    child: Text(
+                                      '현재 할당된 과제가 없습니다!',
+                                      style:
+                                          Theme.of(context).textTheme.caption,
+                                    ),
                                   ),
-                                );
-                              },
+                          ],
+                        ),
+                        Divider(),
+                        Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('현재 수행평가',
+                                    style:
+                                        Theme.of(context).textTheme.headline6),
+                                TextButton(
+                                  child: Text('더보기'),
+                                  onPressed: () {},
+                                ),
+                              ],
                             ),
+                            SizedBox(height: 5),
+                            Card(
+                                margin: EdgeInsets.symmetric(vertical: 4),
+                                color: Colors.white,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    ListTile(
+                                      title: Text('완성하기'),
+                                      subtitle: Text('SW해커톤 | 9시간 남음'),
+                                      onTap: () {},
+                                    ),
+                                  ],
+                                )),
                           ],
                         ),
-                        SizedBox(height: 5),
-                        FutureBuilder(
-                          future: _assignments,
-                          builder:
-                              (BuildContext context, AsyncSnapshot snapshot) {
-                            if (!snapshot.hasData)
-                              return CircularProgressIndicator();
-
-                            final recentAssignments = snapshot.data.where((e) =>
-                                e['deadline'] == null
-                                    ? true
-                                    : DateTime.parse(e['deadline'])
-                                            .difference(DateTime.now())
-                                            .inSeconds >
-                                        0);
-
-                            if (recentAssignments.isEmpty) {
-                              return Container(
-                                padding: EdgeInsets.all(10),
-                                child: Text(
-                                  '현재 할당된 과제가 없습니다!',
-                                  style: Theme.of(context).textTheme.caption,
-                                ),
-                              );
-                            }
-
-                            return Column(
-                              children: recentAssignments.map<Widget>((e) {
-                                return assignmentCard(context, e);
-                              }).toList(),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                    Divider(),
-                    Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        Divider(),
+                        Column(
                           children: [
-                            Text('현재 수행평가',
-                                style: Theme.of(context).textTheme.headline6),
-                            TextButton(
-                              child: Text('더보기'),
-                              onPressed: () {},
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('최근 학급 공지',
+                                    style:
+                                        Theme.of(context).textTheme.headline6),
+                                TextButton(
+                                    onPressed: () {}, child: Text('더보기')),
+                              ],
                             ),
+                            SizedBox(height: 5),
+                            Card(
+                                margin: EdgeInsets.symmetric(vertical: 4),
+                                color: Colors.white,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    ListTile(
+                                      title: Text('테스트 공지'),
+                                      subtitle: Text('황부연 작성 | 2일 전'),
+                                      onTap: () {},
+                                    ),
+                                  ],
+                                )),
+                            Card(
+                                margin: EdgeInsets.symmetric(vertical: 4),
+                                color: Colors.white,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    ListTile(
+                                      title: Text('2학기 시간표'),
+                                      subtitle: Text('[담임] 영어 OOO | 한 달 전'),
+                                      onTap: () {},
+                                    ),
+                                  ],
+                                )),
                           ],
                         ),
-                        SizedBox(height: 5),
-                        Card(
-                            margin: EdgeInsets.symmetric(vertical: 4),
-                            color: Colors.white,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
+                        Divider(),
+                        Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                ListTile(
-                                  title: Text('완성하기'),
-                                  subtitle: Text('SW해커톤 | 9시간 남음'),
-                                  onTap: () {},
-                                ),
+                                Text('최근 급식',
+                                    style:
+                                        Theme.of(context).textTheme.headline6),
+                                TextButton(
+                                    onPressed: () {}, child: Text('더보기')),
                               ],
-                            )),
+                            ),
+                            SizedBox(height: 5),
+                            Card(
+                                margin: EdgeInsets.symmetric(vertical: 4),
+                                color: Colors.white,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    ListTile(
+                                      title: Text('2021년 11월 1일'),
+                                      subtitle: Text('테스트'),
+                                      onTap: () {},
+                                    ),
+                                  ],
+                                )),
+                          ],
+                        )
                       ],
                     ),
-                    Divider(),
-                    Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('최근 학급 공지',
-                                style: Theme.of(context).textTheme.headline6),
-                            TextButton(onPressed: () {}, child: Text('더보기')),
-                          ],
-                        ),
-                        SizedBox(height: 5),
-                        Card(
-                            margin: EdgeInsets.symmetric(vertical: 4),
-                            color: Colors.white,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                ListTile(
-                                  title: Text('테스트 공지'),
-                                  subtitle: Text('황부연 작성 | 2일 전'),
-                                  onTap: () {},
-                                ),
-                              ],
-                            )),
-                        Card(
-                            margin: EdgeInsets.symmetric(vertical: 4),
-                            color: Colors.white,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                ListTile(
-                                  title: Text('2학기 시간표'),
-                                  subtitle: Text('[담임] 영어 OOO | 한 달 전'),
-                                  onTap: () {},
-                                ),
-                              ],
-                            )),
-                      ],
-                    ),
-                    Divider(),
-                    Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('최근 급식',
-                                style: Theme.of(context).textTheme.headline6),
-                            TextButton(onPressed: () {}, child: Text('더보기')),
-                          ],
-                        ),
-                        SizedBox(height: 5),
-                        Card(
-                            margin: EdgeInsets.symmetric(vertical: 4),
-                            color: Colors.white,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                ListTile(
-                                  title: Text('2021년 11월 1일'),
-                                  subtitle: Text('테스트'),
-                                  onTap: () {},
-                                ),
-                              ],
-                            )),
-                      ],
-                    )
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ),
-          onRefresh: () async {
-            final fetchAssignmentsFuture = fetchAssignments();
-            final fetchStudentsMeFuture = fetchStudentsMe();
-            setState(() {
-              _assignments = fetchAssignmentsFuture;
-              _me = fetchStudentsMeFuture;
-            });
-            await Future.wait([fetchAssignmentsFuture]);
+              onRefresh: () async {
+                final fetchStudentsMeFuture = fetchStudentsMe();
+                final fetchAssignmentsFuture = fetchAssignments();
+                final fetchTimetableFuture = fetchTimetable();
+                setState(() {
+                  _me = fetchStudentsMeFuture;
+                  _assignments = fetchAssignmentsFuture;
+                  _timetable = fetchTimetableFuture;
+                });
+                await Future.wait([fetchAssignmentsFuture]);
+              },
+            );
           },
         ),
         drawer: MainDrawer(parentContext: context),

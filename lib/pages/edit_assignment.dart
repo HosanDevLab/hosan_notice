@@ -5,7 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:hosan_notice/pages/home.dart';
 import 'package:intl/intl.dart';
 import 'package:localstorage/localstorage.dart';
 import 'package:http/http.dart' as http;
@@ -26,7 +25,7 @@ class _EditAssignmentPageState extends State<EditAssignmentPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final user = FirebaseAuth.instance.currentUser!;
   final refreshKey = GlobalKey<RefreshIndicatorState>();
-  final remoteConfig = RemoteConfig.instance;
+  final remoteConfig = FirebaseRemoteConfig.instance;
   final storage = new LocalStorage('auth.json');
 
   DateTime? deadline;

@@ -25,7 +25,7 @@ class MyClassPage extends StatefulWidget {
 class _MyClassPageState extends State<MyClassPage> {
   final user = FirebaseAuth.instance.currentUser!;
   final refreshKey = GlobalKey<RefreshIndicatorState>();
-  final remoteConfig = RemoteConfig.instance;
+  final remoteConfig = FirebaseRemoteConfig.instance;
   final storage = new LocalStorage('auth.json');
 
   late Future<List<Map<dynamic, dynamic>>> _assignments, _classes;

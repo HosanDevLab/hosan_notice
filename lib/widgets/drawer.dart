@@ -34,7 +34,7 @@ class MainDrawer extends StatefulWidget {
 class _MainDrawerState extends State<MainDrawer> {
   final user = FirebaseAuth.instance.currentUser!;
   final firestore = FirebaseFirestore.instance;
-  final remoteConfig = RemoteConfig.instance;
+  final remoteConfig = FirebaseRemoteConfig.instance;
   final refreshKey = GlobalKey<RefreshIndicatorState>();
   final storage = new LocalStorage('auth.json');
 

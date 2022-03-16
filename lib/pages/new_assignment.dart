@@ -22,7 +22,7 @@ class NewAssignmentPage extends StatefulWidget {
 
 class _NewAssignmentPageState extends State<NewAssignmentPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final remoteConfig = RemoteConfig.instance;
+  final remoteConfig = FirebaseRemoteConfig.instance;
   final user = FirebaseAuth.instance.currentUser!;
   final storage = new LocalStorage('auth.json');
   final refreshKey = GlobalKey<RefreshIndicatorState>();

@@ -26,7 +26,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final _scrollController1 = ScrollController();
   final _scrollController2 = ScrollController();
-  final remoteConfig = RemoteConfig.instance;
+  final remoteConfig = FirebaseRemoteConfig.instance;
   final user = FirebaseAuth.instance.currentUser!;
   final storage = new LocalStorage('auth.json');
 

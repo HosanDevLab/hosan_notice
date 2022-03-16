@@ -61,7 +61,7 @@ final showLoginErrorDialog = (BuildContext context, http.Response response) {
 };
 
 class _LoginPageState extends State<LoginPage> {
-  final remoteConfig = RemoteConfig.instance;
+  final remoteConfig = FirebaseRemoteConfig.instance;
   final storage = new LocalStorage('auth.json');
   bool isLoggingIn = false;
   bool isDisposed = false;

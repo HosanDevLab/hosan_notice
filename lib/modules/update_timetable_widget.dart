@@ -12,7 +12,7 @@ import 'package:workmanager/workmanager.dart';
 
 Future fetchAndUpdateTimetableWidget(
     String authToken, String refreshToken) async {
-  final remoteConfig = RemoteConfig.instance;
+  final remoteConfig = FirebaseRemoteConfig.instance;
   final user = FirebaseAuth.instance.currentUser;
 
   print('asdf');
@@ -57,8 +57,9 @@ Future fetchAndUpdateTimetableWidget(
     } else {
       print(response.statusCode);
       print(response.body);
-      throw Exception('Failed to load post');
+      print('failed to refresh timetable widget');
     }
+    return null;
   }
 
   final timetable = await fetchTimetable();

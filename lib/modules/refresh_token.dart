@@ -10,7 +10,7 @@ import 'get_device_id.dart';
 
 Future refreshToken({String? authToken, String? refreshToken}) async {
   final storage = new LocalStorage('auth.json');
-  final remoteConfig = RemoteConfig.instance;
+  final remoteConfig = FirebaseRemoteConfig.instance;
 
   final user = FirebaseAuth.instance.currentUser!;
   var rawData = remoteConfig.getAll()['BACKEND_HOST'];

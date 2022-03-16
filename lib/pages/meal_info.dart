@@ -20,7 +20,7 @@ class _MealInfoPageState extends State<MealInfoPage> {
   final user = FirebaseAuth.instance.currentUser!;
   final storage = new LocalStorage('auth.json');
   final firestore = FirebaseFirestore.instance;
-  final remoteConfig = RemoteConfig.instance;
+  final remoteConfig = FirebaseRemoteConfig.instance;
   final refreshKey = GlobalKey<RefreshIndicatorState>();
 
   final _scrollController = ScrollController();

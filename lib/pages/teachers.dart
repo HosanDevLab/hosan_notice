@@ -17,7 +17,7 @@ class TeachersPage extends StatefulWidget {
 class _TeachersPageState extends State<TeachersPage> {
   final user = FirebaseAuth.instance.currentUser!;
   final refreshKey = GlobalKey<RefreshIndicatorState>();
-  final remoteConfig = RemoteConfig.instance;
+  final remoteConfig = FirebaseRemoteConfig.instance;
   final storage = new LocalStorage('auth.json');
 
   final _scrollController = ScrollController();

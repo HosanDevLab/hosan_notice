@@ -25,7 +25,7 @@ class _HomePageState extends State<HomePage> {
   final user = FirebaseAuth.instance.currentUser!;
   final firestore = FirebaseFirestore.instance;
   final refreshKey = GlobalKey<RefreshIndicatorState>();
-  final remoteConfig = RemoteConfig.instance;
+  final remoteConfig = FirebaseRemoteConfig.instance;
   final storage = new LocalStorage('auth.json');
 
   late Future<List<Map<dynamic, dynamic>>> _assignments;

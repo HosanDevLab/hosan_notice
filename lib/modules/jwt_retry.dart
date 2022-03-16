@@ -21,7 +21,7 @@ final jwtRetryClient = () {
     onRetry: (req, res, retryCount) async {
       print('retry=========================================================================');
       final user = FirebaseAuth.instance.currentUser!;
-      final remoteConfig = RemoteConfig.instance;
+      final remoteConfig = FirebaseRemoteConfig.instance;
 
       var rawData = remoteConfig.getAll()['BACKEND_HOST'];
       var cfgs = jsonDecode(rawData!.asString());

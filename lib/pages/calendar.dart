@@ -1,10 +1,16 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
+
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hosan_notice/widgets/drawer.dart';
 import 'package:intl/intl.dart';
+import 'package:localstorage/localstorage.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:http/http.dart' as http;
 
+import '../modules/refresh_token.dart';
 import 'assignment.dart';
 
 class CalendarPage extends StatefulWidget {
@@ -14,37 +20,44 @@ class CalendarPage extends StatefulWidget {
 
 class _CalendarPageState extends State<CalendarPage> {
   final user = FirebaseAuth.instance.currentUser!;
-  final firestore = FirebaseFirestore.instance;
   final refreshKey = GlobalKey<RefreshIndicatorState>();
+  final remoteConfig = FirebaseRemoteConfig.instance;
+  final storage = new LocalStorage('auth.json');
 
   DateTime _selectedDay = DateTime.now();
   DateTime _focusedDay = DateTime.now();
 
-  late Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _assignments,
-      _subjects;
+  late Future<List<Map<dynamic, dynamic>>> _assignments;
 
-  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
-      fetchAssignments() async {
-    QuerySnapshot<Map<String, dynamic>> data =
-        await firestore.collection('assignments').orderBy('deadline').get();
-    final ls = data.docs.toList();
-    ls.sort((a, b) => a.data()['deadline'] == null ? 1 : 0);
-    return ls;
-  }
+  Future<List<Map<dynamic, dynamic>>> fetchAssignments() async {
+    var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+    var cfgs = jsonDecode(rawData!.asString());
 
-  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
-      fetchSubjects() async {
-    QuerySnapshot<Map<String, dynamic>> data =
-        await firestore.collection('subjects').orderBy('order').get();
-    final ls = data.docs.toList();
-    return ls;
+    final response = await http.get(
+        Uri.parse(
+            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/assignments'),
+        headers: {
+          'ID-Token': await user.getIdToken(true),
+          'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+        });
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      data.sort((a, b) => a['deadline'] == null ? 1 : 0);
+      return List.from(data);
+    } else if (response.statusCode == 401 &&
+        jsonDecode(response.body)['code'] == 40100) {
+      await refreshToken();
+      return await fetchAssignments();
+    } else {
+      throw Exception('Failed to load post');
+    }
   }
 
   @override
   void initState() {
     super.initState();
     _assignments = fetchAssignments();
-    _subjects = fetchSubjects();
   }
 
   @override
@@ -59,27 +72,28 @@ class _CalendarPageState extends State<CalendarPage> {
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: 5),
           child: FutureBuilder(
-            future: Future.wait([_assignments, _subjects]),
+            future: Future.wait([_assignments]),
             builder: (BuildContext context, AsyncSnapshot snapshot) {
               if (!snapshot.hasData) {
                 return Center(
-                    child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
                       CircularProgressIndicator(color: Colors.deepPurple),
                       Padding(
                         padding: EdgeInsets.only(top: 10),
                         child: Text('불러오는 중', textAlign: TextAlign.center),
                       )
-                    ]));
+                    ],
+                  ),
+                );
               }
 
-              Iterable<QueryDocumentSnapshot<Map<String, dynamic>>>
-                  _getEventsDay(DateTime day) {
+              Iterable<Map> _getEventsDay(DateTime day) {
                 return snapshot.data[0].where((e) {
-                  if (e.data()['deadline'] == null) return false;
+                  if (e['deadline'] == null) return false;
 
-                  DateTime deadline = e.data()['deadline'].toDate();
+                  final deadline = DateTime.parse(e['deadline']);
 
                   return deadline.year == day.year &&
                       deadline.month == day.month &&
@@ -128,11 +142,9 @@ class _CalendarPageState extends State<CalendarPage> {
                             physics: BouncingScrollPhysics(
                                 parent: AlwaysScrollableScrollPhysics()),
                             children: eventsDay.map((e) {
-                              final data = e.data();
-                              final DateTime? deadline =
-                                  data['deadline'] == null
-                                      ? null
-                                      : data['deadline'].toDate();
+                              final DateTime? deadline = e['deadline'] == null
+                                  ? null
+                                  : DateTime.parse(e['deadline']);
 
                               final deadlineStr = deadline == null
                                   ? '기한 없음'
@@ -143,19 +155,16 @@ class _CalendarPageState extends State<CalendarPage> {
 
                               return Card(
                                 child: ListTile(
-                                  title: Text(data['title']),
-                                  subtitle: Text((snapshot.data[1] as List)
-                                          .firstWhere((e) =>
-                                              data['subject'].id ==
-                                              e.id)['name'] +
-                                      ' ${data['teacher'] ?? ''} | ' +
+                                  title: Text(e['title']),
+                                  subtitle: Text(e['subject']['name'] +
+                                      ' ${e['teacher'] ?? ''} | ' +
                                       deadlineStr),
                                   onTap: () {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) =>
-                                            AssignmentPage(assignmentId: e.id),
+                                            AssignmentPage(assignmentId: e['_id']),
                                       ),
                                     );
                                   },

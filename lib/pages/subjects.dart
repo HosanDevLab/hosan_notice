@@ -19,7 +19,7 @@ class SubjectsPage extends StatefulWidget {
 class _SubjectsPageState extends State<SubjectsPage> {
   final user = FirebaseAuth.instance.currentUser!;
   final refreshKey = GlobalKey<RefreshIndicatorState>();
-  final remoteConfig = RemoteConfig.instance;
+  final remoteConfig = FirebaseRemoteConfig.instance;
   final storage = new LocalStorage('auth.json');
 
   late Future<List<Map<dynamic, dynamic>>> _assignments;

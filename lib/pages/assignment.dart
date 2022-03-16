@@ -24,7 +24,7 @@ class AssignmentPage extends StatefulWidget {
 class _AssignmentPageState extends State<AssignmentPage> {
   final user = FirebaseAuth.instance.currentUser!;
   final refreshKey = GlobalKey<RefreshIndicatorState>();
-  final remoteConfig = RemoteConfig.instance;
+  final remoteConfig = FirebaseRemoteConfig.instance;
   final storage = new LocalStorage('auth.json');
 
   bool? assignmentLoadDone;

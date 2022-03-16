@@ -25,7 +25,7 @@ class DevtoolsPage extends StatefulWidget {
 
 class _DevtoolsPageState extends State<DevtoolsPage> {
   final user = FirebaseAuth.instance.currentUser!;
-  final remoteConfig = RemoteConfig.instance;
+  final remoteConfig = FirebaseRemoteConfig.instance;
   final storage = new LocalStorage('auth.json');
   final firestore = FirebaseFirestore.instance;
   final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();

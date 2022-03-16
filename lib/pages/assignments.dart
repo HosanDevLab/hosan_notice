@@ -19,7 +19,7 @@ class AssignmentsPage extends StatefulWidget {
 class _AssignmentsPageState extends State<AssignmentsPage> {
   final user = FirebaseAuth.instance.currentUser!;
   final refreshKey = GlobalKey<RefreshIndicatorState>();
-  final remoteConfig = RemoteConfig.instance;
+  final remoteConfig = FirebaseRemoteConfig.instance;
   final storage = new LocalStorage('auth.json');
 
   late Future<List<Map<dynamic, dynamic>>> _assignments;
@@ -97,133 +97,133 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
                 0);
 
     return Card(
-        color: Colors.white,
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        child: InkWell(
-          child: Column(
-            children: [
-              SizedBox(height: 20),
-              Center(
-                child: Text(
-                  (snapshot.data[1]['subjects']['1st'] as List)
-                      .firstWhere((e) => e['_id'] == subjectId)['name'],
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w500,
-                  ),
+      color: Colors.white,
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: InkWell(
+        child: Column(
+          children: [
+            SizedBox(height: 20),
+            Center(
+              child: Text(
+                (snapshot.data[1]['subjects']['1st'] as List)
+                    .firstWhere((e) => e['_id'] == subjectId)['name'],
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              SizedBox(height: 16),
-              (filteredSubjectAssignments.isNotEmpty
-                  ? Expanded(
-                      child: ListView(
-                          shrinkWrap: true,
-                          children: filteredSubjectAssignments.map<Widget>(
-                            (e) {
-                              Duration? timeDiff;
-                              String? timeDiffStr;
-                              if (e['deadline'] != null) {
-                                timeDiff = DateTime.parse(e['deadline'])
-                                    .difference(DateTime.now());
-                                if (timeDiff.inSeconds <= 0) {
-                                  final timeDiffNagative = DateTime.now()
-                                      .difference(
-                                          DateTime.parse(e['deadline']));
-                                  if (timeDiffNagative.inDays > 0)
-                                    timeDiffStr =
-                                        '${timeDiffNagative.inDays}일 전 마감됨';
-                                  else if (timeDiffNagative.inHours > 0)
-                                    timeDiffStr =
-                                        '${timeDiffNagative.inHours}시간 전 마감됨';
-                                  else if (timeDiffNagative.inMinutes > 0)
-                                    timeDiffStr =
-                                        '${timeDiffNagative.inMinutes}분 전 마감됨';
-                                  else
-                                    timeDiffStr =
-                                        '${timeDiffNagative.inSeconds}초 전 마감됨';
-                                } else {
-                                  if (timeDiff.inDays > 0)
-                                    timeDiffStr = '${timeDiff.inDays}일 남음';
-                                  else if (timeDiff.inHours > 0)
-                                    timeDiffStr = '${timeDiff.inHours}시간 남음';
-                                  else if (timeDiff.inMinutes > 0)
-                                    timeDiffStr = '${timeDiff.inMinutes}분 남음';
-                                  else
-                                    timeDiffStr = '${timeDiff.inSeconds}초 남음';
-                                }
+            ),
+            SizedBox(height: 16),
+            (filteredSubjectAssignments.isNotEmpty
+                ? Expanded(
+                    child: ListView(
+                        shrinkWrap: true,
+                        children: filteredSubjectAssignments.map<Widget>(
+                          (e) {
+                            Duration? timeDiff;
+                            String? timeDiffStr;
+                            if (e['deadline'] != null) {
+                              timeDiff = DateTime.parse(e['deadline'])
+                                  .difference(DateTime.now());
+                              if (timeDiff.inSeconds <= 0) {
+                                final timeDiffNagative = DateTime.now()
+                                    .difference(DateTime.parse(e['deadline']));
+                                if (timeDiffNagative.inDays > 0)
+                                  timeDiffStr =
+                                      '${timeDiffNagative.inDays}일 전 마감됨';
+                                else if (timeDiffNagative.inHours > 0)
+                                  timeDiffStr =
+                                      '${timeDiffNagative.inHours}시간 전 마감됨';
+                                else if (timeDiffNagative.inMinutes > 0)
+                                  timeDiffStr =
+                                      '${timeDiffNagative.inMinutes}분 전 마감됨';
+                                else
+                                  timeDiffStr =
+                                      '${timeDiffNagative.inSeconds}초 전 마감됨';
+                              } else {
+                                if (timeDiff.inDays > 0)
+                                  timeDiffStr = '${timeDiff.inDays}일 남음';
+                                else if (timeDiff.inHours > 0)
+                                  timeDiffStr = '${timeDiff.inHours}시간 남음';
+                                else if (timeDiff.inMinutes > 0)
+                                  timeDiffStr = '${timeDiff.inMinutes}분 남음';
+                                else
+                                  timeDiffStr = '${timeDiff.inSeconds}초 남음';
                               }
+                            }
 
-                              return Card(
-                                margin: EdgeInsets.symmetric(
-                                    vertical: 2, horizontal: 10),
-                                elevation: 0,
+                            return Card(
+                              margin: EdgeInsets.symmetric(
+                                  vertical: 2, horizontal: 10),
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                              child: ListTile(
+                                dense: true,
                                 shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10)),
-                                child: ListTile(
-                                  dense: true,
-                                  shape: RoundedRectangleBorder(
-                                    side: BorderSide(
-                                        width: 0.5, color: Colors.grey[400]!),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  title: Text(e['title'],
-                                      style: TextStyle(fontSize: 15),
-                                      overflow: TextOverflow.ellipsis),
-                                  subtitle: Text(
-                                      e['deadline'] == null
-                                          ? '기한 없음'
-                                          : timeDiffStr!,
-                                      style: TextStyle(fontSize: 13)),
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => AssignmentPage(
-                                            assignmentId: e['_id']),
-                                      ),
-                                    );
-                                  },
+                                  side: BorderSide(
+                                      width: 0.5, color: Colors.grey[400]!),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
-                              );
-                            },
-                          ).toList()),
-                    )
-                  : Column(
-                      children: [
-                        Text('지금은 과제가 없습니다! 다행이네요.\n과제가 있다면 자율적으로 등록하세요!',
-                            textAlign: TextAlign.center),
-                        SizedBox(height: 20)
-                      ],
-                    )),
-              Divider(endIndent: 10, indent: 10, height: 24),
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(horizontal: 10),
-                height: 40,
-                child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).push(MaterialPageRoute(
-                          builder: (context) =>
-                              NewAssignmentPage(subjectId: subjectId)));
-                    },
-                    icon: Icon(Icons.add),
-                    label: Text('과제 등록하기!')),
-              ),
-              SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(horizontal: 10),
-                height: 40,
-                child: OutlinedButton.icon(
-                    onPressed: () {},
-                    icon: Icon(Icons.open_in_new),
-                    label: Text('모두 보기')),
-              ),
-              SizedBox(height: 10),
-            ],
-          ),
-        ));
+                                title: Text(e['title'],
+                                    style: TextStyle(fontSize: 15),
+                                    overflow: TextOverflow.ellipsis),
+                                subtitle: Text(
+                                    e['deadline'] == null
+                                        ? '기한 없음'
+                                        : timeDiffStr!,
+                                    style: TextStyle(fontSize: 13)),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => AssignmentPage(
+                                          assignmentId: e['_id']),
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        ).toList()),
+                  )
+                : Column(
+                    children: [
+                      Text('지금은 과제가 없습니다! 다행이네요.\n과제가 있다면 자율적으로 등록하세요!',
+                          textAlign: TextAlign.center),
+                      SizedBox(height: 20)
+                    ],
+                  )),
+            Divider(endIndent: 10, indent: 10, height: 24),
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              height: 40,
+              child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) =>
+                            NewAssignmentPage(subjectId: subjectId)));
+                  },
+                  icon: Icon(Icons.add),
+                  label: Text('과제 등록하기!')),
+            ),
+            SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              height: 40,
+              child: OutlinedButton.icon(
+                  onPressed: () {},
+                  icon: Icon(Icons.open_in_new),
+                  label: Text('모두 보기')),
+            ),
+            SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
   }
 
   @override

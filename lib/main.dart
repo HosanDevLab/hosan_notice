@@ -50,7 +50,7 @@ void main() async {
     frequency: Duration(minutes: 15),
   );
 
-  final remoteConfig = RemoteConfig.instance;
+  final remoteConfig = FirebaseRemoteConfig.instance;
 
   remoteConfig.setConfigSettings(
     RemoteConfigSettings(
@@ -335,7 +335,7 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
-  final remoteConfig = RemoteConfig.instance;
+  final remoteConfig = FirebaseRemoteConfig.instance;
   final user = FirebaseAuth.instance.currentUser;
   final storage = new LocalStorage('auth.json');
 

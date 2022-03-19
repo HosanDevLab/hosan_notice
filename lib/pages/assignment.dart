@@ -29,7 +29,8 @@ class _AssignmentPageState extends State<AssignmentPage> {
 
   bool? assignmentLoadDone;
 
-  late Future<Map<dynamic, dynamic>> _me, _assignment;
+  late Future<List<Map>> _assignment_comments;
+  late Future<Map> _me, _assignment;
 
   Future<Map<dynamic, dynamic>> fetchStudentsMe() async {
     var rawData = remoteConfig.getAll()['BACKEND_HOST'];
@@ -60,9 +61,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
 
     final response = await http.get(
         Uri.parse(
-            '${kReleaseMode
-                ? cfgs['release']
-                : cfgs['debug']}/assignments/${widget.assignmentId}'),
+            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/assignments/${widget.assignmentId}'),
         headers: {
           'ID-Token': await user.getIdToken(true),
           'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
@@ -79,15 +78,37 @@ class _AssignmentPageState extends State<AssignmentPage> {
     }
   }
 
+  Future<List<Map>> fetchAssignmentComments() async {
+    var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+    var cfgs = jsonDecode(rawData!.asString());
+
+    final response = await http.get(
+        Uri.parse(
+            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/assignments/${widget.assignmentId}/comments'),
+        headers: {
+          'ID-Token': await user.getIdToken(true),
+          'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+        });
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return List.from(data);
+    } else if (response.statusCode == 401 &&
+        jsonDecode(response.body)['code'] == 40100) {
+      await refreshToken();
+      return await fetchAssignmentComments();
+    } else {
+      throw Exception('Failed to load post');
+    }
+  }
+
   Future<Map<dynamic, dynamic>> deleteAssignment() async {
     var rawData = remoteConfig.getAll()['BACKEND_HOST'];
     var cfgs = jsonDecode(rawData!.asString());
 
     final response = await http.delete(
         Uri.parse(
-            '${kReleaseMode
-                ? cfgs['release']
-                : cfgs['debug']}/assignments/${widget.assignmentId}'),
+            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/assignments/${widget.assignmentId}'),
         headers: {
           'ID-Token': await user.getIdToken(true),
           'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
@@ -110,9 +131,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
 
     final response = await http.post(
         Uri.parse(
-            '${kReleaseMode
-                ? cfgs['release']
-                : cfgs['debug']}/assignments/${widget.assignmentId}/heart'),
+            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/assignments/${widget.assignmentId}/heart'),
         headers: {
           'ID-Token': await user.getIdToken(true),
           'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
@@ -135,9 +154,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
 
     final response = await http.delete(
         Uri.parse(
-            '${kReleaseMode
-                ? cfgs['release']
-                : cfgs['debug']}/assignments/${widget.assignmentId}/heart'),
+            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/assignments/${widget.assignmentId}/heart'),
         headers: {
           'ID-Token': await user.getIdToken(true),
           'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
@@ -157,6 +174,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
   @override
   void initState() {
     _assignment = fetchAssignment();
+    _assignment_comments = fetchAssignmentComments();
     _me = fetchStudentsMe();
     super.initState();
   }
@@ -166,7 +184,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
     return GestureDetector(
       onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
       child: FutureBuilder(
-        future: Future.wait([_me, _assignment]),
+        future: Future.wait([_me, _assignment, _assignment_comments]),
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           if (!snapshot.hasData) {
             return Scaffold(
@@ -177,16 +195,17 @@ class _AssignmentPageState extends State<AssignmentPage> {
                     child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          CircularProgressIndicator(color: Colors.deepPurple),
-                          Padding(
-                            padding: EdgeInsets.only(top: 10),
-                            child: Text('불러오는 중', textAlign: TextAlign.center),
-                          )
-                        ])));
+                      CircularProgressIndicator(color: Colors.deepPurple),
+                      Padding(
+                        padding: EdgeInsets.only(top: 10),
+                        child: Text('불러오는 중', textAlign: TextAlign.center),
+                      )
+                    ])));
           }
 
           final student = snapshot.data[0];
           final assignment = snapshot.data[1];
+          final comments = snapshot.data[2] as List<Map>;
 
           Duration? timeDiff;
           String? timeDiffStr;
@@ -228,12 +247,9 @@ class _AssignmentPageState extends State<AssignmentPage> {
                   Text(assignment['title']),
                   Text(
                       assignment['deadline'] != null
-                          ? '기한: ${DateTime.parse(assignment['deadline'])
-                          .toLocal().toString()
-                          .split('.')[0]} 까지'
+                          ? '기한: ${DateTime.parse(assignment['deadline']).toLocal().toString().split('.')[0]} 까지'
                           : '기한 없음',
-                      style: Theme
-                          .of(context)
+                      style: Theme.of(context)
                           .textTheme
                           .subtitle2!
                           .apply(color: Colors.white))
@@ -241,11 +257,10 @@ class _AssignmentPageState extends State<AssignmentPage> {
               ),
               toolbarHeight: 70,
               backgroundColor: (assignment['deadline'] == null ||
-                  DateTime
-                      .parse(assignment['deadline'])
-                      .difference(DateTime.now())
-                      .inSeconds >=
-                      0)
+                      DateTime.parse(assignment['deadline'])
+                              .difference(DateTime.now())
+                              .inSeconds >=
+                          0)
                   ? Colors.deepPurple
                   : Colors.pink,
             ),
@@ -264,14 +279,14 @@ class _AssignmentPageState extends State<AssignmentPage> {
                           Expanded(
                             flex: 4,
                             child: Tooltip(
-                              message: '과목: ${assignment['subject']['name']}',
+                              message: '과목: ${assignment['subject']?['name']}',
                               child: Card(
                                 margin: EdgeInsets.fromLTRB(0, 10, 0, 0),
                                 child: ListTile(
                                   horizontalTitleGap: 2,
                                   leading: Icon(Icons.subject, size: 28),
                                   title: Text(
-                                    assignment['subject']['name'],
+                                    assignment['subject']?['name'],
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(fontSize: 16),
                                   ),
@@ -282,29 +297,30 @@ class _AssignmentPageState extends State<AssignmentPage> {
                           ),
                           (assignment['teacher'] != null
                               ? Expanded(
-                            flex: 3,
-                            child: Card(
-                                margin: EdgeInsets.fromLTRB(6, 10, 0, 0),
-                                child: ListTile(
-                                  horizontalTitleGap: 2,
-                                  leading: Icon(Icons.person, size: 28),
-                                  title: Column(
-                                    crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        assignment['teacher'],
-                                        overflow: TextOverflow.ellipsis,
+                                  flex: 3,
+                                  child: Card(
+                                    margin: EdgeInsets.fromLTRB(6, 10, 0, 0),
+                                    child: ListTile(
+                                      horizontalTitleGap: 2,
+                                      leading: Icon(Icons.person, size: 28),
+                                      title: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            assignment['teacher'],
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          Text(
+                                            '선생님',
+                                            style: TextStyle(fontSize: 12),
+                                          ),
+                                        ],
                                       ),
-                                      Text(
-                                        '선생님',
-                                        style: TextStyle(fontSize: 12),
-                                      ),
-                                    ],
+                                      onTap: () {},
+                                    ),
                                   ),
-                                  onTap: () {},
-                                )),
-                          )
+                                )
                               : SizedBox(width: 0))
                         ],
                       ),
@@ -314,11 +330,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                           SizedBox(width: 5),
                           Text(
                             '과제/수행평가 내용',
-                            style: Theme
-                                .of(context)
-                                .textTheme
-                                .subtitle2!
-                                .apply(
+                            style: Theme.of(context).textTheme.subtitle2!.apply(
                                 color: Colors.grey[700], fontSizeDelta: -1),
                           ),
                           SizedBox(width: 10),
@@ -340,7 +352,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                             child: SelectableText(
                                 (assignment['description'] as String).isNotEmpty
                                     ? assignment['description']
-                                    .replaceAll(r'\n', '\n')
+                                        .replaceAll(r'\n', '\n')
                                     : '(내용 없음)',
                                 style: TextStyle(fontSize: 16)),
                           ),
@@ -352,15 +364,13 @@ class _AssignmentPageState extends State<AssignmentPage> {
                           Expanded(
                             child: Text.rich(
                               TextSpan(
-                                style: Theme
-                                    .of(context)
-                                    .textTheme
-                                    .caption,
+                                style: Theme.of(context).textTheme.caption,
                                 children: [
                                   TextSpan(
-                                    text: assignment['author']['name'],
+                                    text: assignment['author']?['name'] ??
+                                        '(알 수 없는 사용자)',
                                     style:
-                                    TextStyle(fontWeight: FontWeight.w600),
+                                        TextStyle(fontWeight: FontWeight.w600),
                                   ),
                                   TextSpan(
                                     text: '님이 ${timeDiffStr}',
@@ -375,7 +385,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                             child: TextButton.icon(
                               onPressed: () async {
                                 final fetchFuture =
-                                liked ? deleteHeart() : postHeart();
+                                    liked ? deleteHeart() : postHeart();
 
                                 setState(() {
                                   _assignment = fetchFuture;
@@ -400,99 +410,109 @@ class _AssignmentPageState extends State<AssignmentPage> {
                               ),
                             ),
                           ),
-                          Tooltip(
-                            message: '이 게시글 수정하기',
-                            child: TextButton.icon(
-                              icon: Icon(
-                                Icons.edit,
-                                size: 20,
-                              ),
-                              label: Text('수정'),
-                              style: TextButton.styleFrom(
-                                textStyle: TextStyle(fontSize: 12),
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                padding: EdgeInsets.symmetric(
-                                    vertical: 5, horizontal: 5),
-                                minimumSize: Size.zero,
-                              ),
-                              onPressed: () {
-                                Navigator.push(context, MaterialPageRoute(
-                                    builder: (BuildContext context) =>
-                                        EditAssignmentPage(
-                                            assignment)));
-                              },
-                            ),
-                          ),
-                          Tooltip(
-                            message: '이 게시글 삭제하기',
-                            child: TextButton.icon(
-                              icon: Icon(
-                                Icons.close,
-                                size: 22,
-                              ),
-                              label: Text('삭제'),
-                              style: TextButton.styleFrom(
-                                primary: Colors.red[700],
-                                textStyle: TextStyle(fontSize: 12),
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                padding: EdgeInsets.symmetric(
-                                    vertical: 5, horizontal: 5),
-                                minimumSize: Size.zero,
-                              ),
-                              onPressed: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return AlertDialog(
-                                      content: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                        children: [
-                                          Text('이 게시글을 삭제할까요?'),
-                                          SizedBox(height: 12),
-                                          Text(
-                                            '다시 되돌릴 수 없어요!',
-                                            style: Theme
-                                                .of(context)
-                                                .textTheme
-                                                .caption,
-                                          ),
-                                        ],
+                          ...assignment['author']?['_id'] == student['_id']
+                              ? [
+                                  Tooltip(
+                                    message: '이 게시글 수정하기',
+                                    child: TextButton.icon(
+                                      icon: Icon(
+                                        Icons.edit,
+                                        size: 20,
                                       ),
-                                      actions: [
-                                        TextButton(
-                                          child: Text('계속하기'),
-                                          style: TextButton.styleFrom(
-                                            primary: Colors.pink,
+                                      label: Text('수정'),
+                                      style: TextButton.styleFrom(
+                                        textStyle: TextStyle(fontSize: 12),
+                                        tapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: 5,
+                                          horizontal: 5,
+                                        ),
+                                        minimumSize: Size.zero,
+                                      ),
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (BuildContext context) =>
+                                                EditAssignmentPage(assignment),
                                           ),
-                                          onPressed: () async {
-                                            await deleteAssignment();
-
-                                            Navigator.pop(context);
-                                            Navigator.pushReplacement(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder:
-                                                    (BuildContext context) =>
-                                                    HomePage(),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  Tooltip(
+                                    message: '이 게시글 삭제하기',
+                                    child: TextButton.icon(
+                                      icon: Icon(
+                                        Icons.close,
+                                        size: 22,
+                                      ),
+                                      label: Text('삭제'),
+                                      style: TextButton.styleFrom(
+                                        primary: Colors.red[700],
+                                        textStyle: TextStyle(fontSize: 12),
+                                        tapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                        padding: EdgeInsets.symmetric(
+                                            vertical: 5, horizontal: 5),
+                                        minimumSize: Size.zero,
+                                      ),
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return AlertDialog(
+                                              content: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text('이 게시글을 삭제할까요?'),
+                                                  SizedBox(height: 12),
+                                                  Text(
+                                                    '다시 되돌릴 수 없어요!',
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .caption,
+                                                  ),
+                                                ],
                                               ),
+                                              actions: [
+                                                TextButton(
+                                                  child: Text('계속하기'),
+                                                  style: TextButton.styleFrom(
+                                                    primary: Colors.pink,
+                                                  ),
+                                                  onPressed: () async {
+                                                    await deleteAssignment();
+
+                                                    Navigator.pop(context);
+                                                    Navigator.pushReplacement(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (BuildContext
+                                                                context) =>
+                                                            HomePage(),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                                TextButton(
+                                                  child: Text('취소'),
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                  },
+                                                )
+                                              ],
                                             );
                                           },
-                                        ),
-                                        TextButton(
-                                          child: Text('취소'),
-                                          onPressed: () {
-                                            Navigator.pop(context);
-                                          },
-                                        )
-                                      ],
-                                    );
-                                  },
-                                );
-                              },
-                            ),
-                          )
+                                        );
+                                      },
+                                    ),
+                                  )
+                                ]
+                              : [],
                         ],
                       ),
                       SizedBox(height: 20),
@@ -501,11 +521,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                           SizedBox(width: 5),
                           Text(
                             '이 과제/수행평가의 댓글',
-                            style: Theme
-                                .of(context)
-                                .textTheme
-                                .subtitle2!
-                                .apply(
+                            style: Theme.of(context).textTheme.subtitle2!.apply(
                                 color: Colors.grey[700], fontSizeDelta: -1),
                           ),
                           SizedBox(width: 10),
@@ -516,14 +532,19 @@ class _AssignmentPageState extends State<AssignmentPage> {
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 5),
                         child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            CircleAvatar(
-                              backgroundImage: NetworkImage(user.photoURL!),
+                            Container(
+                              padding: EdgeInsets.only(top: 5),
+                              child: CircleAvatar(
+                                backgroundImage: NetworkImage(user.photoURL!),
+                              ),
                             ),
                             SizedBox(width: 16),
                             Expanded(
                               child: TextField(
+                                maxLines: null,
+                                keyboardType: TextInputType.multiline,
                                 decoration: InputDecoration(
                                   labelText: '댓글 추가하기',
                                   contentPadding: EdgeInsets.symmetric(
@@ -534,14 +555,17 @@ class _AssignmentPageState extends State<AssignmentPage> {
                               ),
                             ),
                             SizedBox(width: 10),
-                            IconButton(
-                              onPressed: () {},
-                              icon: Icon(Icons.send),
-                              splashRadius: 24,
-                              splashColor: Colors.deepPurple[100],
-                              color: Colors.deepPurple[700],
-                              padding: EdgeInsets.all(5),
-                              constraints: BoxConstraints(),
+                            Container(
+                              padding: EdgeInsets.only(top: 5),
+                              child: IconButton(
+                                onPressed: () {},
+                                icon: Icon(Icons.send),
+                                splashRadius: 24,
+                                splashColor: Colors.deepPurple[100],
+                                color: Colors.deepPurple[700],
+                                padding: EdgeInsets.all(5),
+                                constraints: BoxConstraints(),
+                              ),
                             )
                           ],
                         ),
@@ -551,91 +575,58 @@ class _AssignmentPageState extends State<AssignmentPage> {
                       Container(
                         child: Column(
                           children: [
-                            InkWell(
-                                onTap: () {},
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                      vertical: 12, horizontal: 5),
-                                  child: Row(
-                                    children: [
-                                      CircleAvatar(
-                                        backgroundImage:
-                                        NetworkImage(user.photoURL!),
-                                      ),
-                                      SizedBox(width: 15),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                          children: [
-                                            Text.rich(
-                                              TextSpan(children: [
-                                                TextSpan(text: '${student['name']}  '),
-                                                TextSpan(
-                                                  text: '1분 전',
-                                                  style: Theme
-                                                      .of(context)
-                                                      .textTheme
-                                                      .caption,
-                                                ),
-                                              ]),
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                            SizedBox(height: 4),
-                                            SelectableText('샘플 댓글입니다.')
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                )),
-                            Divider(height: 0),
-                            InkWell(
-                              onTap: () {},
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                    vertical: 12, horizontal: 5),
-                                child: Row(
-                                  children: [
-                                    CircleAvatar(
-                                      backgroundImage:
-                                      NetworkImage(user.photoURL!),
-                                    ),
-                                    SizedBox(width: 15),
-                                    Expanded(
-                                      child: Column(
+                            ...comments.map((e) {
+                              return Column(
+                                children: [
+                                  InkWell(
+                                    onTap: () {},
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                          vertical: 12, horizontal: 5),
+                                      child: Row(
                                         crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                            CrossAxisAlignment.start,
                                         children: [
-                                          Text.rich(
-                                            TextSpan(children: [
-                                              TextSpan(text: '${student['name']}  '),
-                                              TextSpan(
-                                                text: '1분 전',
-                                                style: Theme
-                                                    .of(context)
-                                                    .textTheme
-                                                    .caption,
-                                              ),
-                                            ]),
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold,
+                                          CircleAvatar(
+                                            backgroundImage:
+                                                NetworkImage(user.photoURL!),
+                                          ),
+                                          SizedBox(width: 15),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text.rich(
+                                                  TextSpan(children: [
+                                                    TextSpan(
+                                                        text:
+                                                            '${e['author']?['name']}  '),
+                                                    TextSpan(
+                                                      text: '1분 전',
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .caption,
+                                                    ),
+                                                  ]),
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                SizedBox(height: 4),
+                                                SelectableText(e['content'])
+                                              ],
                                             ),
                                           ),
-                                          SizedBox(height: 4),
-                                          SelectableText(
-                                              '댓글 기능은 개발중입니다.')
                                         ],
                                       ),
                                     ),
-                                  ],
-                                ),
-                              ),
-                            )
+                                  ),
+                                  Divider(height: 0),
+                                ],
+                              );
+                            }),
                           ],
                         ),
                       )
@@ -644,11 +635,20 @@ class _AssignmentPageState extends State<AssignmentPage> {
                 ),
               ),
               onRefresh: () async {
-                final fetchFuture = fetchAssignment();
+                final fetchStudentsMeFuture = fetchStudentsMe();
+                final fetchAssignmentFuture = fetchAssignment();
+                final fetchAssignmentCommentsFuture = fetchAssignmentComments();
+
                 setState(() {
-                  _assignment = fetchFuture;
+                  _me = fetchStudentsMeFuture;
+                  _assignment = fetchAssignmentFuture;
+                  _assignment_comments = fetchAssignmentCommentsFuture;
                 });
-                await Future.wait([fetchFuture]);
+                await Future.wait([
+                  fetchStudentsMeFuture,
+                  fetchAssignmentFuture,
+                  fetchAssignmentCommentsFuture
+                ]);
               },
             ),
           );

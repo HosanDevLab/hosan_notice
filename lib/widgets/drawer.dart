@@ -55,19 +55,20 @@ class _MainDrawerState extends State<MainDrawer> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
-            flex: 1,
-            child: UserAccountsDrawerHeader(
-              currentAccountPicture: CircleAvatar(
-                radius: 30,
-                backgroundImage: NetworkImage(user.photoURL ?? ''),
-                backgroundColor: Colors.transparent,
-              ),
-              accountEmail: Text((user.email ?? '') + '\n'),
-              accountName: Text(user.displayName ?? ''),
-              decoration: BoxDecoration(
-                color: Colors.deepPurple[400],
-              ),
-            )),
+          flex: 1,
+          child: UserAccountsDrawerHeader(
+            currentAccountPicture: CircleAvatar(
+              radius: 30,
+              backgroundImage: NetworkImage(user.photoURL ?? ''),
+              backgroundColor: Colors.transparent,
+            ),
+            accountEmail: Text((user.email ?? '') + '\n'),
+            accountName: Text(user.displayName ?? ''),
+            decoration: BoxDecoration(
+              color: Colors.deepPurple[400],
+            ),
+          ),
+        ),
         Expanded(
           flex: 2,
           child: ListView(

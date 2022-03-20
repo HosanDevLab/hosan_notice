@@ -9,9 +9,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:hosan_notice/widgets/animated_indexed_stack.dart';
 import 'package:localstorage/localstorage.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:workmanager/workmanager.dart';
@@ -286,7 +288,7 @@ class _RegisterPageState extends State<RegisterPage> {
       if (Platform.isAndroid) {
         final androidInfo = await deviceInfo.androidInfo;
         deviceName =
-        '${androidInfo.brand} ${androidInfo.device} (${androidInfo.model})';
+            '${androidInfo.brand} ${androidInfo.device} (${androidInfo.model})';
       } else if (Platform.isIOS) {
         final iosInfo = await deviceInfo.iosInfo;
         deviceName = iosInfo.name;
@@ -454,149 +456,149 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               SizedBox(height: 14),
               FutureBuilder(
-                  future: _subjects,
-                  builder: (BuildContext context,
-                      AsyncSnapshot<List<Map<dynamic, dynamic>>> snapshot) {
-                    if (!snapshot.hasData) return CircularProgressIndicator();
+                future: _subjects,
+                builder: (BuildContext context,
+                    AsyncSnapshot<List<Map<dynamic, dynamic>>> snapshot) {
+                  if (!snapshot.hasData) return CircularProgressIndicator();
 
-                    return Column(
-                      children: [
-                        ListView(
-                          physics: NeverScrollableScrollPhysics(),
-                          controller: term == 1
-                              ? _scrollController1
-                              : _scrollController2,
-                          itemExtent: 40,
-                          shrinkWrap: true,
-                          children: (snapshot.data as List)
-                              .where((e) =>
-                                  e['hidden'] != true &&
-                                  e['grade'] == grade &&
-                                  [0, term].contains(e['termType']))
-                              .map((e) {
-                            return InkWell(
-                              onTap: () {
-                                setState(() {
-                                  switch (term) {
-                                    case 1:
-                                      _selectedSubjects[0][e['_id']] =
-                                          _selectedSubjects[0][e['_id']] == true
-                                              ? false
-                                              : true;
-                                      break;
-                                    case 2:
-                                      _selectedSubjects[1][e['_id']] =
-                                          _selectedSubjects[1][e['_id']] == true
-                                              ? false
-                                              : true;
-                                      break;
-                                    default:
-                                      _selectedSubjects[0][e['_id']] =
-                                          _selectedSubjects[0][e['_id']] == true
-                                              ? false
-                                              : true;
-                                      _selectedSubjects[1][e['_id']] =
-                                          _selectedSubjects[1][e['_id']] == true
-                                              ? false
-                                              : true;
-                                  }
-                                });
-                              },
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: <Widget>[
-                                  Transform.scale(
-                                    scale: 1.05,
-                                    child: Checkbox(
-                                      shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(4)),
-                                      value: e['isRequired'] == true ||
-                                          _selectedSubjects[term == null
-                                                  ? 0
-                                                  : term - 1][e['_id']] ==
-                                              true,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _selectedSubjects[term == null
-                                              ? 0
-                                              : term - 1][e['_id']] = value;
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                  Text(
-                                      (e['isRequired'] ? '[필수] ' : '') +
-                                          e['name'],
-                                      style:
-                                          Theme.of(context).textTheme.subtitle2)
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                        Padding(
-                            padding: EdgeInsets.symmetric(vertical: 16.0),
+                  return Column(
+                    children: [
+                      ListView(
+                        physics: NeverScrollableScrollPhysics(),
+                        controller:
+                            term == 1 ? _scrollController1 : _scrollController2,
+                        itemExtent: 40,
+                        shrinkWrap: true,
+                        children: (snapshot.data as List)
+                            .where((e) =>
+                                e['hidden'] != true &&
+                                e['grade'] == grade &&
+                                [0, term].contains(e['termType']))
+                            .map((e) {
+                          return InkWell(
+                            onTap: () {
+                              setState(() {
+                                switch (term) {
+                                  case 1:
+                                    _selectedSubjects[0][e['_id']] =
+                                        _selectedSubjects[0][e['_id']] == true
+                                            ? false
+                                            : true;
+                                    break;
+                                  case 2:
+                                    _selectedSubjects[1][e['_id']] =
+                                        _selectedSubjects[1][e['_id']] == true
+                                            ? false
+                                            : true;
+                                    break;
+                                  default:
+                                    _selectedSubjects[0][e['_id']] =
+                                        _selectedSubjects[0][e['_id']] == true
+                                            ? false
+                                            : true;
+                                    _selectedSubjects[1][e['_id']] =
+                                        _selectedSubjects[1][e['_id']] == true
+                                            ? false
+                                            : true;
+                                }
+                              });
+                            },
                             child: Row(
-                              children: [
-                                Expanded(
-                                    child: Container(
-                                  height: 45,
-                                  child: OutlinedButton.icon(
-                                    icon: Icon(Icons.arrow_back),
-                                    label: Text('이전',
-                                        style: TextStyle(fontSize: 16)),
-                                    onPressed: () {
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: <Widget>[
+                                Transform.scale(
+                                  scale: 1.05,
+                                  child: Checkbox(
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(4)),
+                                    value: e['isRequired'] == true ||
+                                        _selectedSubjects[term == null
+                                                ? 0
+                                                : term - 1][e['_id']] ==
+                                            true,
+                                    onChanged: (value) {
                                       setState(() {
-                                        _index = term == 1 ? 0 : 1;
+                                        _selectedSubjects[term == null
+                                            ? 0
+                                            : term - 1][e['_id']] = value;
                                       });
-
-                                      resetScroll();
                                     },
                                   ),
-                                )),
-                                SizedBox(width: 10),
-                                Expanded(
-                                    child: Container(
-                                  height: 45,
-                                  child: term == 1
-                                      ? ElevatedButton(
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text('다음',
-                                                  style:
-                                                      TextStyle(fontSize: 16)),
-                                              SizedBox(width: 5),
-                                              Icon(Icons.arrow_forward),
-                                            ],
-                                          ),
-                                          onPressed: () {
-                                            if (_formKey.currentState!
-                                                .validate()) {
-                                              _formKey.currentState!.save();
-                                              FocusManager.instance.primaryFocus
-                                                  ?.unfocus();
-                                              setState(() {
-                                                _index = term == 1 ? 2 : 3;
-                                              });
-
-                                              resetScroll();
-                                            }
-                                          },
-                                        )
-                                      : ElevatedButton.icon(
-                                          icon: Icon(Icons.check),
-                                          label: Text('등록하기',
-                                              style: TextStyle(fontSize: 16)),
-                                          onPressed: () => doRegister(snapshot),
-                                        ),
-                                )),
+                                ),
+                                Text(
+                                    (e['isRequired'] ? '[필수] ' : '') +
+                                        e['name'],
+                                    style:
+                                        Theme.of(context).textTheme.subtitle2)
                               ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16.0),
+                        child: Row(
+                          children: [
+                            Expanded(
+                                child: Container(
+                              height: 45,
+                              child: OutlinedButton.icon(
+                                icon: Icon(Icons.arrow_back),
+                                label:
+                                    Text('이전', style: TextStyle(fontSize: 16)),
+                                onPressed: () {
+                                  setState(() {
+                                    _index = term == 1 ? 0 : 1;
+                                  });
+
+                                  resetScroll();
+                                },
+                              ),
                             )),
-                      ],
-                    );
-                  }),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: Container(
+                                height: 45,
+                                child: term == 1
+                                    ? ElevatedButton(
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text('다음',
+                                                style: TextStyle(fontSize: 16)),
+                                            SizedBox(width: 5),
+                                            Icon(Icons.arrow_forward),
+                                          ],
+                                        ),
+                                        onPressed: () {
+                                          if (_formKey.currentState!
+                                              .validate()) {
+                                            _formKey.currentState!.save();
+                                            FocusManager.instance.primaryFocus
+                                                ?.unfocus();
+                                            setState(() {
+                                              _index = term == 1 ? 2 : 3;
+                                            });
+
+                                            resetScroll();
+                                          }
+                                        },
+                                      )
+                                    : ElevatedButton.icon(
+                                        icon: Icon(Icons.check),
+                                        label: Text('등록하기',
+                                            style: TextStyle(fontSize: 16)),
+                                        onPressed: () => doRegister(snapshot),
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -645,6 +647,124 @@ class _RegisterPageState extends State<RegisterPage> {
                 height: 45,
                 width: double.infinity,
                 child: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _index++;
+                    });
+                  },
+                  child: Text('다음으로', style: TextStyle(fontSize: 16)),
+                ),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget openChatIntroPage(BuildContext context) {
+    return Container(
+      height: double.infinity,
+      child: SingleChildScrollView(
+        physics: BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.warning, color: Colors.red, size: 24),
+                  SizedBox(width: 8),
+                  Text(
+                    '주의사항!',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.red,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8),
+              Text(
+                '현재 호산고 알리미 앱은 아직 열심히 개발중입니다! '
+                '불안정하거나 미완성된 기능이 존재하며 '
+                '정확하지 않은 정보가 있거나 (시간표, 선생님 담당과목 등) '
+                '예고 없이 기능이 추가/변경/삭제될 수 있습니다. '
+                '이 점 양해해주시기 바랍니다.',
+                style: TextStyle(fontSize: 13.5, height: 1.45),
+              ),
+              Divider(height: 50),
+              Center(
+                  child: InkWell(
+                child: Image.asset('assets/openchat.png', height: 140),
+                onTap: () {
+                  launch("https://open.kakao.com/o/gU97bT6d");
+                },
+              )),
+              SizedBox(height: 16),
+              Center(
+                child: Text(
+                  '교내 소프트웨어 개발팀 호산고 데브랩은 '
+                  '학생 여러분들이 이 애플리케이션을 좀 더 '
+                  '잘 활용할 수 있도록 카카오톡 오픈채팅을 '
+                  '운영하고 있습니다.\n\n'
+                  '이곳에서 앱 사용에 관한 문의사항이나 불편사항, '
+                  '각종 공지 전달과 '
+                  '오류 및 버그 문의를 받고 있으니,\n'
+                  '많은 참여 부탁드립니다!',
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    height: 1.38,
+                    color: Colors.grey[800],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Image.asset('assets/kakao_chat_logo.png', height: 15),
+                          SizedBox(width: 8),
+                          Text(
+                            '오픈채팅 참여하기',
+                            style: TextStyle(color: Colors.black87),
+                          ),
+                        ],
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        elevation: 2,
+                        primary: Color(0xFFFEE500),
+                      ),
+                      onPressed: () {
+                        launch("https://open.kakao.com/o/gU97bT6d");
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              Divider(height: 10),
+              SizedBox(height: 8),
+              Text(
+                "언제든 앱 메뉴를 통해 오픈채팅에 참여하실 수 있습니다. "
+                "또는 카카오톡 오픈채팅 검색창에 '호산고 알리미 지원센터'를 "
+                "검색하셔서 참여하실 수도 있습니다!",
+                style: Theme.of(context).textTheme.caption,
+              ),
+              Divider(height: 20),
+              SizedBox(height: 10),
+              SizedBox(
+                height: 45,
+                width: double.infinity,
+                child: ElevatedButton(
                   onPressed: () async {
                     await [
                       Permission.location,
@@ -678,12 +798,19 @@ class _RegisterPageState extends State<RegisterPage> {
               selectSubjectPage(context, term: 1),
               selectSubjectPage(context, term: 2),
             ]),
-      permissionsAlertPage(context)
+      permissionsAlertPage(context),
+      openChatIntroPage(context),
     ];
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_index == pages.length - 1 ? "앱 권한 허용" : '학생 등록'),
+        title: Text(
+          _index == pages.length - 2
+              ? "앱 권한 허용"
+              : _index == pages.length - 1
+                  ? '시작하기 전에'
+                  : '학생 등록',
+        ),
       ),
       body: Form(
         key: _formKey,

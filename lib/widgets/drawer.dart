@@ -279,76 +279,92 @@ class _MainDrawerState extends State<MainDrawer> {
               ),
               Divider(height: 0),
               ListTile(
+                title: Text('카톡 오픈채팅 참여하기'),
+                dense: true,
+                leading: Icon(Icons.chat),
+                onTap: () {
+                  launch("https://open.kakao.com/o/gU97bT6d");
+                },
+                textColor: Colors.orange,
+                iconColor: Colors.orange,
+              ),
+              Divider(height: 0),
+              ListTile(
                 title: Text('개발자 및 정보'),
                 dense: true,
                 leading: Icon(Icons.info),
                 onTap: () async {
                   PackageInfo packageInfo = await PackageInfo.fromPlatform();
                   showAboutDialog(
-                      context: context,
-                      applicationName: packageInfo.appName,
-                      applicationIcon: GestureDetector(
-                        onTap: () {
-                          Fluttertoast.showToast(
-                              msg: "호산고 알리미",
-                              toastLength: Toast.LENGTH_SHORT,
-                              gravity: ToastGravity.CENTER,
-                              timeInSecForIosWeb: 1,
-                              backgroundColor: Colors.green,
-                              textColor: Colors.white,
-                              fontSize: 16.0);
-                        },
-                        child: Image.asset(
-                          'assets/hosan.png',
-                          width: 70,
-                          height: 70,
-                        ),
+                    context: context,
+                    applicationName: packageInfo.appName,
+                    applicationIcon: GestureDetector(
+                      onTap: () {
+                        Fluttertoast.showToast(
+                            msg: "호산고 알리미",
+                            toastLength: Toast.LENGTH_SHORT,
+                            gravity: ToastGravity.CENTER,
+                            timeInSecForIosWeb: 1,
+                            backgroundColor: Colors.green,
+                            textColor: Colors.white,
+                            fontSize: 16.0);
+                      },
+                      child: Image.asset(
+                        'assets/hosan.png',
+                        width: 70,
+                        height: 70,
                       ),
-                      applicationVersion:
-                          '${packageInfo.version} (빌드번호 ${packageInfo.buildNumber})',
-                      applicationLegalese: '제8회 대한민국 SW 융합 해커톤 대회 우수상 수상작',
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.only(top: 20),
-                          child: RichText(
-                              text: TextSpan(children: [
-                            TextSpan(
-                              style: TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold),
-                              text: '앱/서버 개발: ',
-                            ),
-                            TextSpan(
-                              style: TextStyle(color: Colors.black),
-                              text: '황부연 ',
-                            ),
-                            TextSpan(
-                              style: TextStyle(color: Colors.blue),
-                              text: '(21181@hosan.hs.kr)',
-                              recognizer: TapGestureRecognizer()
-                                ..onTap = () {
-                                  launch('mailto:21181@hosan.hs.kr');
-                                },
-                            ),
-                            TextSpan(
-                              style: TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold),
-                              text: '\n하드웨어 개발/설계: ',
-                            ),
-                            TextSpan(
-                              style: TextStyle(color: Colors.black),
-                              text: '강해, 이승민',
-                            ),
-                            TextSpan(
-                              style: TextStyle(color: Colors.black),
-                              text: '\n\n* 앱 이용과 관련해 문의사항이 있으시거나 '
-                                  '오류 등으로 이용에 지장이 생기는 경우 '
-                                  '언제든 상기 메일 주소를 통해 연락해주시기 바랍니다.',
-                            ),
-                          ])),
-                        )
-                      ]);
+                    ),
+                    applicationVersion:
+                        '${packageInfo.version} (빌드번호 ${packageInfo.buildNumber})',
+                    applicationLegalese: '제8회 대한민국 SW 융합 해커톤 대회 우수상 수상작',
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.only(top: 20),
+                        child: RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                style: TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold),
+                                text: '앱/서버 개발: ',
+                              ),
+                              TextSpan(
+                                style: TextStyle(color: Colors.black),
+                                text: '황부연 ',
+                              ),
+                              TextSpan(
+                                style: TextStyle(color: Colors.blue),
+                                text: '(21181@hosan.hs.kr)',
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () {
+                                    launch('mailto:21181@hosan.hs.kr');
+                                  },
+                              ),
+                              TextSpan(
+                                style: TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold),
+                                text: '\n하드웨어 개발/설계: ',
+                              ),
+                              TextSpan(
+                                style: TextStyle(color: Colors.black),
+                                text: '강해, 이승민',
+                              ),
+                              TextSpan(
+                                style: TextStyle(color: Colors.black),
+                                text: '\n\n* 앱 이용과 관련해 문의사항이 있으시거나 '
+                                    '오류 등으로 이용에 지장이 생기는 경우 '
+                                    '언제든 카카오톡 오픈채팅방에 문의해주시거나 '
+                                    '또는 상기 메일 주소를 통해 연락해주시기 바랍니다.',
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    ],
+                  );
                 },
               ),
             ],

@@ -187,7 +187,6 @@ class _HomePageState extends State<HomePage> {
 
     final subjectStr = assignment['subject']['name'];
 
-    print(teacher);
     String teacherString = '';
     if (teacher is String) {
       teacherString = teacher + ' ';

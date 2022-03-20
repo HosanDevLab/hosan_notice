@@ -508,7 +508,7 @@ class _MyClassPageState extends State<MyClassPage> {
                           Card(
                             child: ListTile(
                               title: Text(
-                                '이승민',
+                                'OOO',
                                 style: Theme.of(context).textTheme.bodyLarge,
                               ),
                               subtitle: Text(

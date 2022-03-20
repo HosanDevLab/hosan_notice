@@ -438,7 +438,7 @@ class _LoginPageState extends State<LoginPage> {
             ],
           ),
           SizedBox(height: 5),
-          Text('학업 관리, 자동 출결, 내비게이션 시스템'),
+          Text('과제 및 일정 등 학업 관리, 급식 확인 시스템'),
           SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -556,7 +556,7 @@ class _LoginPageState extends State<LoginPage> {
             padding: EdgeInsets.only(bottom: 16),
             child: Column(
               children: [
-                Text('개발 및 운영: HosanDevLab\n제3기 로봇공학반 강해 이승민 황부연',
+                Text('개발 및 운영: HosanDevLab (제3기 로봇공학반)\n강해(HW) 이승민(HW) 황부연(PM & 주 개발자)',
                     textAlign: TextAlign.center,
                     style: Theme.of(context)
                         .textTheme

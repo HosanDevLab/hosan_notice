@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
@@ -26,10 +27,11 @@ class _AssignmentPageState extends State<AssignmentPage> {
   final refreshKey = GlobalKey<RefreshIndicatorState>();
   final remoteConfig = FirebaseRemoteConfig.instance;
   final storage = new LocalStorage('auth.json');
+  final _commentTextFieldController = TextEditingController();
 
   bool? assignmentLoadDone;
 
-  late Future<List<Map>> _assignment_comments;
+  late Future<List<Map>> _assignment_comments, _teachers;
   late Future<Map> _me, _assignment;
 
   Future<Map<dynamic, dynamic>> fetchStudentsMe() async {
@@ -119,7 +121,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
     } else if (response.statusCode == 401 &&
         jsonDecode(response.body)['code'] == 40100) {
       await refreshToken();
-      return await fetchAssignment();
+      return await deleteAssignment();
     } else {
       throw Exception('Failed to load post');
     }
@@ -142,7 +144,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
     } else if (response.statusCode == 401 &&
         jsonDecode(response.body)['code'] == 40100) {
       await refreshToken();
-      return await fetchAssignment();
+      return await postHeart();
     } else {
       throw Exception('Failed to load post');
     }
@@ -165,7 +167,56 @@ class _AssignmentPageState extends State<AssignmentPage> {
     } else if (response.statusCode == 401 &&
         jsonDecode(response.body)['code'] == 40100) {
       await refreshToken();
-      return await fetchAssignment();
+      return await deleteHeart();
+    } else {
+      throw Exception('Failed to load post');
+    }
+  }
+
+  Future<Map> postAssignmentComment(String text) async {
+    var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+    var cfgs = jsonDecode(rawData!.asString());
+
+    final response = await http.post(
+        Uri.parse(
+            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/assignments/${widget.assignmentId}/comments'),
+        body: json.encode({'content': text}),
+        headers: {
+          'ID-Token': await user.getIdToken(true),
+          'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+          HttpHeaders.contentTypeHeader: 'application/json; charset=utf-8',
+        });
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else if (response.statusCode == 401 &&
+        jsonDecode(response.body)['code'] == 40100) {
+      await refreshToken();
+      return await postAssignmentComment(text);
+    } else {
+      throw Exception('Failed to load post');
+    }
+  }
+
+  Future<List<Map<dynamic, dynamic>>> fetchTeachers() async {
+    var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+    var cfgs = jsonDecode(rawData!.asString());
+
+    final response = await http.get(
+        Uri.parse(
+            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/teachers/all'),
+        headers: {
+          'ID-Token': await user.getIdToken(true),
+          'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+        });
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as List;
+      return List.from(data);
+    } else if (response.statusCode == 401 &&
+        jsonDecode(response.body)['code'] == 40100) {
+      await refreshToken();
+      return await fetchTeachers();
     } else {
       throw Exception('Failed to load post');
     }
@@ -176,6 +227,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
     _assignment = fetchAssignment();
     _assignment_comments = fetchAssignmentComments();
     _me = fetchStudentsMe();
+    _teachers = fetchTeachers();
     super.initState();
   }
 
@@ -184,28 +236,33 @@ class _AssignmentPageState extends State<AssignmentPage> {
     return GestureDetector(
       onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
       child: FutureBuilder(
-        future: Future.wait([_me, _assignment, _assignment_comments]),
+        future:
+            Future.wait([_me, _assignment, _assignment_comments, _teachers]),
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           if (!snapshot.hasData) {
             return Scaffold(
-                appBar: AppBar(
-                  title: Text('과제 불러오는 중...'),
+              appBar: AppBar(
+                title: Text('과제 불러오는 중...'),
+              ),
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(color: Colors.deepPurple),
+                    Padding(
+                      padding: EdgeInsets.only(top: 10),
+                      child: Text('불러오는 중', textAlign: TextAlign.center),
+                    )
+                  ],
                 ),
-                body: Center(
-                    child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                      CircularProgressIndicator(color: Colors.deepPurple),
-                      Padding(
-                        padding: EdgeInsets.only(top: 10),
-                        child: Text('불러오는 중', textAlign: TextAlign.center),
-                      )
-                    ])));
+              ),
+            );
           }
 
           final student = snapshot.data[0];
           final assignment = snapshot.data[1];
-          final comments = snapshot.data[2] as List<Map>;
+          final List<Map> comments = snapshot.data[2];
+          final List<Map> teachers = snapshot.data[3];
 
           Duration? timeDiff;
           String? timeDiffStr;
@@ -246,13 +303,14 @@ class _AssignmentPageState extends State<AssignmentPage> {
                 children: [
                   Text(assignment['title']),
                   Text(
-                      assignment['deadline'] != null
-                          ? '기한: ${DateTime.parse(assignment['deadline']).toLocal().toString().split('.')[0]} 까지'
-                          : '기한 없음',
-                      style: Theme.of(context)
-                          .textTheme
-                          .subtitle2!
-                          .apply(color: Colors.white))
+                    assignment['deadline'] != null
+                        ? '기한: ${DateTime.parse(assignment['deadline']).toLocal().toString().split('.')[0]} 까지'
+                        : '기한 없음',
+                    style: Theme.of(context)
+                        .textTheme
+                        .subtitle2!
+                        .apply(color: Colors.white),
+                  )
                 ],
               ),
               toolbarHeight: 70,
@@ -274,6 +332,34 @@ class _AssignmentPageState extends State<AssignmentPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          vertical: 18,
+                          horizontal: 5,
+                        ),
+                        child: Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: '제목: ',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              TextSpan(
+                                text: assignment['title'],
+                                style: TextStyle(
+                                  fontWeight: FontWeight.normal,
+                                ),
+                              ),
+                            ],
+                          ),
+                          style: TextStyle(
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                      Divider(height: 0),
                       Row(
                         children: [
                           Expanded(
@@ -308,7 +394,13 @@ class _AssignmentPageState extends State<AssignmentPage> {
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            assignment['teacher'],
+                                            teachers.firstWhere(
+                                                  (t) =>
+                                                      t['_id'] ==
+                                                      assignment['teacher'],
+                                                  orElse: () => {},
+                                                )['name'] ??
+                                                '(알 수 없음)',
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                           Text(
@@ -543,6 +635,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                             SizedBox(width: 16),
                             Expanded(
                               child: TextField(
+                                controller: _commentTextFieldController,
                                 maxLines: null,
                                 keyboardType: TextInputType.multiline,
                                 decoration: InputDecoration(
@@ -558,13 +651,32 @@ class _AssignmentPageState extends State<AssignmentPage> {
                             Container(
                               padding: EdgeInsets.only(top: 5),
                               child: IconButton(
-                                onPressed: () {},
                                 icon: Icon(Icons.send),
                                 splashRadius: 24,
                                 splashColor: Colors.deepPurple[100],
                                 color: Colors.deepPurple[700],
                                 padding: EdgeInsets.all(5),
                                 constraints: BoxConstraints(),
+                                onPressed: () async {
+                                  if (_commentTextFieldController
+                                      .text.isEmpty) {
+                                    return;
+                                  }
+
+                                  FocusManager.instance.primaryFocus?.unfocus();
+
+                                  final text = _commentTextFieldController.text;
+                                  _commentTextFieldController.clear();
+
+                                  await postAssignmentComment(text);
+
+                                  final fetchAssignmentCommentsFuture =
+                                      fetchAssignmentComments();
+                                  setState(() {
+                                    _assignment_comments =
+                                        fetchAssignmentCommentsFuture;
+                                  });
+                                },
                               ),
                             )
                           ],

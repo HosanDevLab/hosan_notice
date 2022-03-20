@@ -34,7 +34,8 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
   late String description;
   String type = 'assignment';
 
-  late Future<Map<dynamic, dynamic>> _subject;
+  late Future<Map> _subject;
+  late Future<List<Map>> _teachers;
 
   Future<Map<dynamic, dynamic>> fetchSubject() async {
     var rawData = remoteConfig.getAll()['BACKEND_HOST'];
@@ -59,9 +60,34 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
     }
   }
 
+  Future<List<Map<dynamic, dynamic>>> fetchTeachers() async {
+    var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+    var cfgs = jsonDecode(rawData!.asString());
+
+    final response = await http.get(
+        Uri.parse(
+            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/teachers/all'),
+        headers: {
+          'ID-Token': await user.getIdToken(true),
+          'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+        });
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as List;
+      return List.from(data);
+    } else if (response.statusCode == 401 &&
+        jsonDecode(response.body)['code'] == 40100) {
+      await refreshToken();
+      return await fetchTeachers();
+    } else {
+      throw Exception('Failed to load post');
+    }
+  }
+
   @override
   void initState() {
     _subject = fetchSubject();
+    _teachers = fetchTeachers();
     super.initState();
   }
 
@@ -126,7 +152,7 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-        future: _subject,
+        future: Future.wait([_subject, _teachers]),
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           if (!snapshot.hasData) {
             return Scaffold(
@@ -145,7 +171,8 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
                     ])));
           }
 
-          final data = snapshot.data;
+          final subject = snapshot.data[0];
+          final List<Map> teachers = snapshot.data[1];
 
           return Scaffold(
             appBar: AppBar(
@@ -153,7 +180,7 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('새 과제 등록'),
-                  Text(data['name'],
+                  Text(subject['name'],
                       style: Theme.of(context)
                           .textTheme
                           .subtitle2!
@@ -176,71 +203,86 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
                               child: ListTile(
                                 horizontalTitleGap: 2,
                                 leading: Icon(Icons.subject, size: 28),
-                                title: Text(data['name'],
+                                title: Text(subject['name'],
                                     overflow: TextOverflow.ellipsis),
                                 onTap: () {},
                               )),
                           Card(
-                              margin: EdgeInsets.fromLTRB(10, 10, 10, 0),
-                              child: ListTile(
-                                horizontalTitleGap: 2,
-                                leading: Icon(Icons.person, size: 28),
-                                title: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    DropdownButton(
-                                      value: teacher,
-                                      isExpanded: true,
-                                      hint: Text('선생님',
-                                          overflow: TextOverflow.ellipsis),
-                                      items: [
-                                        DropdownMenuItem(
-                                            child: Text('선택 안 함',
-                                                overflow:
-                                                    TextOverflow.ellipsis),
-                                            value: 0),
-                                        ...(data['teachers'] as List).map((e) =>
-                                            DropdownMenuItem(
-                                                child: Text(e,
-                                                    overflow:
-                                                        TextOverflow.ellipsis),
-                                                value: e))
-                                      ],
-                                      onChanged: (value) {
-                                        setState(() {
-                                          teacher =
-                                              value is String ? value : null;
-                                        });
-                                      },
+                            margin: EdgeInsets.fromLTRB(10, 10, 10, 0),
+                            child: ListTile(
+                              horizontalTitleGap: 2,
+                              leading: Icon(Icons.person, size: 28),
+                              title: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  DropdownButton(
+                                    value: teacher,
+                                    isExpanded: true,
+                                    hint: Text(
+                                      '선생님',
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                  ],
-                                ),
-                                onTap: () {},
-                              )),
+                                    items: [
+                                      DropdownMenuItem(
+                                        child: Text(
+                                          '선택 안 함',
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        value: 0,
+                                      ),
+                                      ...teachers
+                                          .where((e) => e['subjects']
+                                              .contains(subject['_id']))
+                                          .map(
+                                            (e) => DropdownMenuItem(
+                                              child: Text(
+                                                e['name'],
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              value: e['_id'],
+                                            ),
+                                          )
+                                    ],
+                                    onChanged: (value) {
+                                      setState(() {
+                                        teacher =
+                                            value is String ? value : null;
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
+                              onTap: () {},
+                            ),
+                          ),
                           Card(
                               margin: EdgeInsets.fromLTRB(10, 12, 10, 0),
                               child: Row(
                                 children: [
                                   Expanded(
-                                      child: RadioListTile(
-                                          title: Text('과제'),
-                                          value: 'assignment',
-                                          groupValue: type,
-                                          onChanged: (value) {
-                                            setState(() {
-                                              type = value as String;
-                                            });
-                                          })),
+                                    child: RadioListTile(
+                                      title: Text('과제'),
+                                      value: 'assignment',
+                                      groupValue: type,
+                                      onChanged: (value) {
+                                        setState(() {
+                                          type = value as String;
+                                        });
+                                      },
+                                    ),
+                                  ),
                                   Expanded(
-                                      child: RadioListTile(
-                                          title: Text('수행평가'),
-                                          value: 'assessment',
-                                          groupValue: type,
-                                          onChanged: (value) {
-                                            setState(() {
-                                              type = value as String;
-                                            });
-                                          })),
+                                    child: RadioListTile(
+                                      title: Text('수행평가'),
+                                      value: 'assessment',
+                                      groupValue: type,
+                                      onChanged: (value) {
+                                        setState(() {
+                                          type = value as String;
+                                        });
+                                      },
+                                    ),
+                                  ),
                                 ],
                               )),
                           Card(
@@ -326,21 +368,25 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
                             width: double.infinity,
                             child: ElevatedButton.icon(
                                 icon: Icon(Icons.done),
-                                label: Text(isBeingAdded ? '등록하는 중...': '등록하기'),
+                                label:
+                                    Text(isBeingAdded ? '등록하는 중...' : '등록하기'),
                                 onPressed: () async {
                                   if (isBeingAdded) return;
-                                  await postAssignment(context, data['_id']);
+                                  await postAssignment(context, subject['_id']);
                                 }),
                           )
                         ]),
                       )),
                 ),
                 onRefresh: () async {
-                  final fetchFuture = fetchSubject();
+                  final fetchSubjectFuture = fetchSubject();
+                  final fetchTeachersFuture = fetchTeachers();
+
                   setState(() {
-                    _subject = fetchFuture;
+                    _subject = fetchSubjectFuture;
+                    _teachers = fetchTeachersFuture;
                   });
-                  await Future.wait([fetchFuture]);
+                  await Future.wait([fetchSubjectFuture, fetchTeachersFuture]);
                 }),
           );
         });

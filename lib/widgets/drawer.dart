@@ -251,8 +251,9 @@ class _MainDrawerState extends State<MainDrawer> {
                                 Navigator.pushReplacement(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) => LoginPage(),
-                                      fullscreenDialog: true),
+                                    builder: (context) => LoginPage(),
+                                    fullscreenDialog: true,
+                                  ),
                                 );
                               },
                             ),

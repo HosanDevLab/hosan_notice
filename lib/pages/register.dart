@@ -1,6 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -13,6 +16,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:workmanager/workmanager.dart';
 
+import '../modules/get_device_id.dart';
 import '../modules/refresh_token.dart';
 import '../modules/update_timetable_widget.dart';
 import 'home.dart';
@@ -275,6 +279,19 @@ class _RegisterPageState extends State<RegisterPage> {
         }
       });
 
+      final deviceId = await getDeviceId();
+      late String? deviceName;
+
+      DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+      if (Platform.isAndroid) {
+        final androidInfo = await deviceInfo.androidInfo;
+        deviceName =
+        '${androidInfo.brand} ${androidInfo.device} (${androidInfo.model})';
+      } else if (Platform.isIOS) {
+        final iosInfo = await deviceInfo.iosInfo;
+        deviceName = iosInfo.name;
+      }
+
       Future<Map<dynamic, dynamic>> postData() async {
         var rawData = remoteConfig.getAll()['BACKEND_HOST'];
         var cfgs = jsonDecode(rawData!.asString());
@@ -298,7 +315,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     .where((e) => e.value)
                     .map((e) => e.key)
                     .toList()
-              }
+              },
             }),
             headers: {
               'ID-Token': await user.getIdToken(true),
@@ -317,6 +334,30 @@ class _RegisterPageState extends State<RegisterPage> {
           throw Exception('Failed to load post');
         }
       }
+
+      final getToken = () async {
+        var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+        var cfgs = jsonDecode(rawData!.asString());
+
+        return await http.get(
+            Uri.parse(
+                '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/auth/token'),
+            headers: {
+              'ID-Token': await user.getIdToken(true),
+              'Device-ID': deviceId ?? '',
+              'Device-Name': deviceName ?? '',
+              'FCM-Token': await FirebaseMessaging.instance.getToken() ?? '',
+            }).timeout(
+          Duration(seconds: 20),
+          onTimeout: () => http.Response(
+            '{"message":"연결 시간 초과"}',
+            403,
+            headers: {
+              HttpHeaders.contentTypeHeader: 'application/json; charset=utf-8',
+            },
+          ),
+        );
+      };
 
       BuildContext? ctx;
       showDialog(
@@ -360,6 +401,13 @@ class _RegisterPageState extends State<RegisterPage> {
       );
 
       await postData();
+
+      final resp = await getToken();
+      final data = json.decode(resp.body);
+
+      storage.setItem('AUTH_TOKEN', data['token']);
+      storage.setItem('REFRESH_TOKEN', data['refreshToken']);
+
       Navigator.pop(ctx!);
 
       setState(() {

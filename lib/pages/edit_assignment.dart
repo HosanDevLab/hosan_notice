@@ -35,9 +35,10 @@ class _EditAssignmentPageState extends State<EditAssignmentPage> {
   late String description;
   String type = 'assignment';
 
-  late Future<Map<dynamic, dynamic>> _subject;
+  late Future<Map> _subject;
+  late Future<List<Map>> _teachers;
 
-  Future<Map<dynamic, dynamic>> fetchSubject() async {
+  Future<Map> fetchSubject() async {
     var rawData = remoteConfig.getAll()['BACKEND_HOST'];
     var cfgs = jsonDecode(rawData!.asString());
 
@@ -60,6 +61,30 @@ class _EditAssignmentPageState extends State<EditAssignmentPage> {
     }
   }
 
+  Future<List<Map>> fetchTeachers() async {
+    var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+    var cfgs = jsonDecode(rawData!.asString());
+
+    final response = await http.get(
+        Uri.parse(
+            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/teachers/all'),
+        headers: {
+          'ID-Token': await user.getIdToken(true),
+          'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+        });
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as List;
+      return List.from(data);
+    } else if (response.statusCode == 401 &&
+        jsonDecode(response.body)['code'] == 40100) {
+      await refreshToken();
+      return await fetchTeachers();
+    } else {
+      throw Exception('Failed to load post');
+    }
+  }
+
   @override
   void initState() {
     deadline = widget.assignment['deadline'] != null
@@ -69,6 +94,7 @@ class _EditAssignmentPageState extends State<EditAssignmentPage> {
     type = widget.assignment['type'];
 
     _subject = fetchSubject();
+    _teachers = fetchTeachers();
     super.initState();
   }
 
@@ -80,7 +106,7 @@ class _EditAssignmentPageState extends State<EditAssignmentPage> {
         isBeingEdited = true;
       });
 
-      Future<Map<dynamic, dynamic>> patchData() async {
+      Future<Map> patchData() async {
         var rawData = remoteConfig.getAll()['BACKEND_HOST'];
         var cfgs = jsonDecode(rawData!.asString());
 
@@ -138,7 +164,7 @@ class _EditAssignmentPageState extends State<EditAssignmentPage> {
     return GestureDetector(
       onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
       child: FutureBuilder(
-          future: _subject,
+          future: Future.wait([_subject, _teachers]),
           builder: (BuildContext context, AsyncSnapshot snapshot) {
             if (!snapshot.hasData) {
               return Scaffold(
@@ -160,7 +186,8 @@ class _EditAssignmentPageState extends State<EditAssignmentPage> {
               );
             }
 
-            final subject = snapshot.data;
+            final subject = snapshot.data[0];
+            final List<Map> teachers = snapshot.data[1];
 
             return Scaffold(
               appBar: AppBar(
@@ -213,16 +240,25 @@ class _EditAssignmentPageState extends State<EditAssignmentPage> {
                                         ),
                                         items: [
                                           DropdownMenuItem(
-                                              child: Text('선택 안 함',
-                                                  overflow:
-                                                      TextOverflow.ellipsis),
-                                              value: 0),
-                                          ...(subject['teachers'] as List).map(
-                                              (e) => DropdownMenuItem(
-                                                  child: Text(e,
-                                                      overflow: TextOverflow
-                                                          .ellipsis),
-                                                  value: e))
+                                            child: Text(
+                                              '선택 안 함',
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            value: 0,
+                                          ),
+                                          ...teachers
+                                              .where((e) => e['subjects']
+                                                  .contains(subject['_id']))
+                                              .map(
+                                                (e) => DropdownMenuItem(
+                                                  child: Text(
+                                                    e['name'],
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                  value: e['_id'],
+                                                ),
+                                              )
                                         ],
                                         onChanged: (value) {
                                           setState(() {
@@ -374,11 +410,17 @@ class _EditAssignmentPageState extends State<EditAssignmentPage> {
                         )),
                   ),
                   onRefresh: () async {
-                    final fetchFuture = fetchSubject();
+                    final fetchSubjectFuture = fetchSubject();
+                    final fetchTeachersFuture = fetchTeachers();
+
                     setState(() {
-                      _subject = fetchFuture;
+                      _subject = fetchSubjectFuture;
+                      _teachers = fetchTeachersFuture;
                     });
-                    await Future.wait([fetchFuture]);
+                    await Future.wait([
+                      fetchSubjectFuture,
+                      fetchTeachersFuture,
+                    ]);
                   }),
             );
           }),

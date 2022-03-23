@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>661237482006-8c526sr4aeadla0rn5r6pprm9p123pqh.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.661237482006-8c526sr4aeadla0rn5r6pprm9p123pqh</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>661237482006-0rjbp56r74n9l7nb8h8gqdvejrl3t30l.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyAH045WBAWsrScbxsa3TR2BLVhOQL9eeEk</string>
+	<key>GCM_SENDER_ID</key>
+	<string>661237482006</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.hosandevlab.notice</string>
+	<key>PROJECT_ID</key>
+	<string>hosan-notice</string>
+	<key>STORAGE_BUCKET</key>
+	<string>hosan-notice.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:661237482006:ios:562ba1bf444a36756fab37</string>
+</dict>
+</plist>

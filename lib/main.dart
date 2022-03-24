@@ -29,9 +29,11 @@ final storage = new LocalStorage('auth.json');
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
 
   await storage.ready;
 
@@ -72,7 +74,8 @@ void main() async {
     sound: true,
   );
 
-  await messaging.subscribeToTopic(kDebugMode ? 'debugNotification' : 'releaseNotification');
+  await messaging.subscribeToTopic(
+      kDebugMode ? 'debugNotification' : 'releaseNotification');
 
   await FlutterForegroundTask.init(
     androidNotificationOptions: AndroidNotificationOptions(
@@ -167,7 +170,12 @@ void callbackDispatcher() {
       throw Exception('authToken not provided');
     }
 
-    await Firebase.initializeApp();
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
+
     await storage.ready;
 
     try {
@@ -232,7 +240,12 @@ void initAndBeginForeground() async {
   final api = Api();
   await api.startScan();
 
-  await Firebase.initializeApp();
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
+  
   final firestore = FirebaseFirestore.instance;
   final beacons = (await firestore.collection('beacons').get()).docs;
 
@@ -299,9 +312,9 @@ void initAndBeginForeground() async {
     currentBeacons.sort((a, b) => a!.rssi! - b!.rssi!);
 
     final currentBeacon =
-        currentBeacons.isNotEmpty ? currentBeacons.first : null;
+        currentBeacons.isEmpty ? currentBeacons.first : null;
 
-    final currentBeaconFBData = currentBeacons.isNotEmpty
+    final currentBeaconFBData = currentBeacons.isEmpty
         ? beacons.firstWhere((e) => e.id == currentBeacon!.uuid)
         : null;
 

@@ -276,15 +276,20 @@ class _LoginPageState extends State<LoginPage> {
           storage.getItem('REFRESH_TOKEN'),
         );
 
-        await Workmanager().registerPeriodicTask(
-          '1',
-          'widgetBackgroundUpdate',
-          inputData: {
-            'authToken': storage.getItem('AUTH_TOKEN') ?? '',
-            'refreshToken': storage.getItem('REFRESH_TOKEN') ?? '',
-          },
-          frequency: Duration(minutes: 15),
-        );
+        if (Platform.isAndroid) {
+          await Workmanager().registerPeriodicTask(
+            '1',
+            'widgetBackgroundUpdate',
+            inputData: {
+              'authToken': storage.getItem('AUTH_TOKEN') ?? '',
+              'refreshToken': storage.getItem('REFRESH_TOKEN') ?? '',
+            },
+            frequency: Duration(minutes: 15),
+            constraints: Constraints(
+              networkType: NetworkType.connected,
+            )
+          );
+        }
 
         continueLogin();
       } else if (response.statusCode == 403 && data['code'] == 40300) {
@@ -297,14 +302,14 @@ class _LoginPageState extends State<LoginPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '이미 로그인된 기기가 존재해요.\n이 기기로 계속할까요?',
+                    '이미 로그인된 기기가 존재해요.\n현재 기기로 계속할까요?',
                     style: Theme.of(context).textTheme.subtitle2,
                   ),
                   SizedBox(height: 20),
                   Text(data['deviceName']),
                   Divider(height: 36),
                   Text(
-                    '주의! 부정이용 방지를 위해, 계속하면 기존에 로그인된 기기는 로그아웃하고 이 기기로 로그인됩니다.',
+                    '주의! 부정이용 방지를 위해, 계속하면 기존에 로그인된 기기는 로그아웃하고 현재 기기로 로그인됩니다.',
                     style: Theme.of(context).textTheme.caption,
                   ),
                 ],
@@ -374,15 +379,20 @@ class _LoginPageState extends State<LoginPage> {
                       storage.getItem('REFRESH_TOKEN'),
                     );
 
-                    await Workmanager().registerPeriodicTask(
-                      '1',
-                      'widgetBackgroundUpdate',
-                      inputData: {
-                        'authToken': storage.getItem('AUTH_TOKEN') ?? '',
-                        'refreshToken': storage.getItem('REFRESH_TOKEN') ?? '',
-                      },
-                      frequency: Duration(minutes: 15),
-                    );
+                    if (Platform.isAndroid) {
+                      await Workmanager().registerPeriodicTask(
+                        '1',
+                        'widgetBackgroundUpdate',
+                        inputData: {
+                          'authToken': storage.getItem('AUTH_TOKEN') ?? '',
+                          'refreshToken': storage.getItem('REFRESH_TOKEN') ?? '',
+                        },
+                        frequency: Duration(minutes: 15),
+                        constraints: Constraints(
+                          networkType: NetworkType.connected,
+                        )
+                      );
+                    }
 
                     continueLogin();
                   },

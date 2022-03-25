@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:isolate';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -41,20 +42,26 @@ void main() async {
     callbackDispatcher,
     isInDebugMode: kDebugMode,
   );
-  await Workmanager().cancelByUniqueName('1');
-  await Workmanager().registerPeriodicTask(
-    '1',
-    'widgetBackgroundUpdate',
-    inputData: {
-      'authToken': storage.getItem('AUTH_TOKEN') ?? '',
-      'refreshToken': storage.getItem('REFRESH_TOKEN') ?? ''
-    },
-    frequency: Duration(minutes: 15),
-  );
+
+  if (Platform.isAndroid) {
+    await Workmanager().cancelByUniqueName('1');
+    await Workmanager().registerPeriodicTask(
+      '1',
+      'widgetBackgroundUpdate',
+      inputData: {
+        'authToken': storage.getItem('AUTH_TOKEN') ?? '',
+        'refreshToken': storage.getItem('REFRESH_TOKEN') ?? ''
+      },
+      frequency: Duration(minutes: 15),
+      constraints: Constraints(
+        networkType: NetworkType.connected,
+      ),
+    );
+  }
 
   final remoteConfig = FirebaseRemoteConfig.instance;
 
-  remoteConfig.setConfigSettings(
+  await remoteConfig.setConfigSettings(
     RemoteConfigSettings(
       fetchTimeout: Duration(seconds: 10),
       minimumFetchInterval: Duration(minutes: 1),
@@ -245,7 +252,7 @@ void initAndBeginForeground() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
   }
-  
+
   final firestore = FirebaseFirestore.instance;
   final beacons = (await firestore.collection('beacons').get()).docs;
 
@@ -311,8 +318,7 @@ void initAndBeginForeground() async {
         scannedBeacons.where((e) => beaconUUIDs.contains(e!.uuid)).toList();
     currentBeacons.sort((a, b) => a!.rssi! - b!.rssi!);
 
-    final currentBeacon =
-        currentBeacons.isEmpty ? currentBeacons.first : null;
+    final currentBeacon = currentBeacons.isEmpty ? currentBeacons.first : null;
 
     final currentBeaconFBData = currentBeacons.isEmpty
         ? beacons.firstWhere((e) => e.id == currentBeacon!.uuid)
@@ -370,15 +376,20 @@ class _AppState extends State<App> {
         storage.getItem('REFRESH_TOKEN'),
       );
 
-      await Workmanager().registerPeriodicTask(
-        '1',
-        'widgetBackgroundUpdate',
-        inputData: {
-          'authToken': storage.getItem('AUTH_TOKEN') ?? '',
-          'refreshToken': storage.getItem('REFRESH_TOKEN') ?? ''
-        },
-        frequency: Duration(minutes: 15),
-      );
+      if (Platform.isAndroid) {
+        await Workmanager().registerPeriodicTask(
+          '1',
+          'widgetBackgroundUpdate',
+          inputData: {
+            'authToken': storage.getItem('AUTH_TOKEN') ?? '',
+            'refreshToken': storage.getItem('REFRESH_TOKEN') ?? ''
+          },
+          frequency: Duration(minutes: 15),
+          constraints: Constraints(
+            networkType: NetworkType.connected,
+          ),
+        );
+      }
     }();
   }
 

@@ -272,7 +272,7 @@ class _HomePageState extends State<HomePage> {
                             .inSeconds >
                         0);
 
-            final dow = 1;
+            final dow = DateTime.now().weekday;
 
             final tod = TimeOfDay.now();
             final inMin = tod.hour * 60 + tod.minute;

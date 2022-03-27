@@ -10,6 +10,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_blue/flutter_blue.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -18,6 +19,7 @@ import 'package:hosan_notice/pages/home.dart';
 import 'package:hosan_notice/pages/login.dart';
 import 'package:localstorage/localstorage.dart';
 import 'package:http/http.dart' as http;
+import 'package:permission_handler/permission_handler.dart';
 import 'package:workmanager/workmanager.dart';
 
 import 'firebase_options.dart';
@@ -35,6 +37,10 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
   }
+
+  await [
+    Permission.bluetoothScan,
+  ].request();
 
   await storage.ready;
 
@@ -139,16 +145,6 @@ void main() async {
     final notification = message.notification;
     final android = message.notification?.android;
 
-    BigPictureStyleInformation? bigPictureStyleInformation;
-
-    if (android?.imageUrl != null) {
-      final response = await http.get(Uri.parse(android!.imageUrl!));
-
-      final bigPicture = ByteArrayAndroidBitmap(response.bodyBytes);
-
-      bigPictureStyleInformation = BigPictureStyleInformation(bigPicture);
-    }
-
     if (notification != null && android != null) {
       flutterLocalNotificationsPlugin.show(
         notification.hashCode,
@@ -161,7 +157,7 @@ void main() async {
             channelDescription: channel.description,
             icon: 'ic_stat_app_icon',
             importance: Importance.max,
-            styleInformation: bigPictureStyleInformation,
+            styleInformation: BigTextStyleInformation(''),
           ),
         ),
       );
@@ -245,7 +241,10 @@ void initAndBeginForeground() async {
   }
 
   final api = Api();
-  await api.startScan();
+
+  if (await FlutterBlue.instance.isOn) {
+    await api.startScan();
+  }
 
   if (Firebase.apps.isEmpty) {
     await Firebase.initializeApp(
@@ -318,9 +317,10 @@ void initAndBeginForeground() async {
         scannedBeacons.where((e) => beaconUUIDs.contains(e!.uuid)).toList();
     currentBeacons.sort((a, b) => a!.rssi! - b!.rssi!);
 
-    final currentBeacon = currentBeacons.isEmpty ? currentBeacons.first : null;
+    final currentBeacon =
+        currentBeacons.isNotEmpty ? currentBeacons.first : null;
 
-    final currentBeaconFBData = currentBeacons.isEmpty
+    final currentBeaconFBData = currentBeacons.isNotEmpty
         ? beacons.firstWhere((e) => e.id == currentBeacon!.uuid)
         : null;
 
@@ -427,13 +427,6 @@ class _AppState extends State<App> {
       home: FutureBuilder(
         future: Future.wait([
           () async {
-            if (user == null) return null;
-            CollectionReference students =
-                FirebaseFirestore.instance.collection('students');
-
-            return await students.doc(user.uid).get();
-          }(),
-          () async {
             await storage.ready;
             final authToken = await storage.getItem('AUTH_TOKEN');
             final refreshToken = await storage.getItem('REFRESH_TOKEN');
@@ -453,22 +446,24 @@ class _AppState extends State<App> {
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           if (user != null && !snapshot.hasData) {
             return Scaffold(
-                body: Center(
-                    child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                  CircularProgressIndicator(color: Colors.deepPurple),
-                  Padding(
-                    padding: EdgeInsets.only(top: 10),
-                    child: Text('불러오는 중', textAlign: TextAlign.center),
-                  )
-                ])));
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(color: Colors.deepPurple),
+                    Padding(
+                      padding: EdgeInsets.only(top: 10),
+                      child: Text('불러오는 중', textAlign: TextAlign.center),
+                    )
+                  ],
+                ),
+              ),
+            );
           }
 
           final isLoggedIn = user != null &&
-              snapshot.data[0].exists &&
-              !(snapshot.data[1] as List).contains(null) &&
-              snapshot.data[2];
+              !(snapshot.data[0] as List).contains(null) &&
+              snapshot.data[1];
 
           if (isLoggedIn) {
             initAndBeginForeground();

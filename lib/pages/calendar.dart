@@ -27,7 +27,7 @@ class _CalendarPageState extends State<CalendarPage> {
   DateTime _selectedDay = DateTime.now();
   DateTime _focusedDay = DateTime.now();
 
-  late Future<List<Map<dynamic, dynamic>>> _assignments;
+  late Future<List<Map<dynamic, dynamic>>> _assignments, _teachers;
 
   Future<List<Map<dynamic, dynamic>>> fetchAssignments() async {
     var rawData = remoteConfig.getAll()['BACKEND_HOST'];
@@ -54,10 +54,35 @@ class _CalendarPageState extends State<CalendarPage> {
     }
   }
 
+  Future<List<Map<dynamic, dynamic>>> fetchTeachers() async {
+    var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+    var cfgs = jsonDecode(rawData!.asString());
+
+    final response = await http.get(
+        Uri.parse(
+            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/teachers/all'),
+        headers: {
+          'ID-Token': await user.getIdToken(true),
+          'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+        });
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as List;
+      return List.from(data);
+    } else if (response.statusCode == 401 &&
+        jsonDecode(response.body)['code'] == 40100) {
+      await refreshToken();
+      return await fetchTeachers();
+    } else {
+      throw Exception('Failed to load post');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _assignments = fetchAssignments();
+    _teachers = fetchTeachers();
   }
 
   @override
@@ -72,7 +97,7 @@ class _CalendarPageState extends State<CalendarPage> {
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: 5),
           child: FutureBuilder(
-            future: Future.wait([_assignments]),
+            future: Future.wait([_assignments, _teachers]),
             builder: (BuildContext context, AsyncSnapshot snapshot) {
               if (!snapshot.hasData) {
                 return Center(
@@ -102,6 +127,8 @@ class _CalendarPageState extends State<CalendarPage> {
               }
 
               final eventsDay = _getEventsDay(_selectedDay);
+
+              final teachers = snapshot.data[1];
 
               return Column(
                 children: <Widget>[
@@ -157,14 +184,20 @@ class _CalendarPageState extends State<CalendarPage> {
                                 child: ListTile(
                                   title: Text(e['title']),
                                   subtitle: Text(e['subject']['name'] +
-                                      ' ${e['teacher'] ?? ''} | ' +
+                                      ' ' +
+                                      (teachers.firstWhere(
+                                            (t) => t['_id'] == e['teacher'],
+                                            orElse: () => {},
+                                          )['name'] ??
+                                          '') +
+                                      ' | ' +
                                       deadlineStr),
                                   onTap: () {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) =>
-                                            AssignmentPage(assignmentId: e['_id']),
+                                        builder: (context) => AssignmentPage(
+                                            assignmentId: e['_id']),
                                       ),
                                     );
                                   },

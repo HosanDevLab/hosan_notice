@@ -308,7 +308,7 @@ class _EditAssignmentPageState extends State<EditAssignmentPage> {
                                       Text(deadline == null
                                           ? '기한 없음'
                                           : DateFormat('yyyy-MM-dd a hh:mm')
-                                                  .format(deadline!)
+                                                  .format(deadline!.toLocal())
                                                   .replaceAll('AM', '오전')
                                                   .replaceAll('PM', '오후') +
                                               ' 까지'),
@@ -347,7 +347,7 @@ class _EditAssignmentPageState extends State<EditAssignmentPage> {
 
                                     setState(() {
                                       deadline = DateTime(date.year, date.month,
-                                          date.day, time.hour, time.minute);
+                                          date.day, time.hour, time.minute).toUtc();
                                     });
                                   },
                                 )),

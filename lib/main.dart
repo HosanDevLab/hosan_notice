@@ -88,7 +88,8 @@ void main() async {
   );
 
   await messaging.subscribeToTopic(
-      kDebugMode ? 'debugNotification' : 'releaseNotification');
+    kDebugMode ? 'debugNotification' : 'releaseNotification',
+  );
 
   await FlutterForegroundTask.init(
     androidNotificationOptions: AndroidNotificationOptions(
@@ -206,147 +207,147 @@ void backgroundCallback(Uri data) async {
   }
 }
 
-void startCallback() {
-  FlutterForegroundTask.setTaskHandler(ForegroundTaskHandler());
-}
+// void startCallback() {
+//   FlutterForegroundTask.setTaskHandler(ForegroundTaskHandler());
+// }
 
-class ForegroundTaskHandler implements TaskHandler {
-  @override
-  onStart(DateTime timestamp, SendPort? sendPort) async {}
+// class ForegroundTaskHandler implements TaskHandler {
+//   @override
+//   onStart(DateTime timestamp, SendPort? sendPort) async {}
+//
+//   @override
+//   onEvent(DateTime timestamp, SendPort? sendPort) async {
+//     sendPort?.send(null);
+//   }
+//
+//   @override
+//   void onButtonPressed(String id) async {}
+//
+//   @override
+//   onDestroy(DateTime timestamp) async {
+//     await FlutterForegroundTask.clearAllData();
+//   }
+// }
 
-  @override
-  onEvent(DateTime timestamp, SendPort? sendPort) async {
-    sendPort?.send(null);
-  }
-
-  @override
-  void onButtonPressed(String id) async {}
-
-  @override
-  onDestroy(DateTime timestamp) async {
-    await FlutterForegroundTask.clearAllData();
-  }
-}
-
-void initAndBeginForeground() async {
-  late ReceivePort? receivePort;
-  if (await FlutterForegroundTask.isRunningService) {
-    receivePort = await FlutterForegroundTask.restartService();
-  } else {
-    receivePort = await FlutterForegroundTask.startService(
-      notificationTitle: '자동 출결 시스템 동작중',
-      notificationText: '시작 중...',
-      callback: startCallback,
-    );
-  }
-
-  final api = Api();
-
-  if (await FlutterBlue.instance.isOn) {
-    await api.startScan();
-  }
-
-  if (Firebase.apps.isEmpty) {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-  }
-
-  final firestore = FirebaseFirestore.instance;
-  final beacons = (await firestore.collection('beacons').get()).docs;
-
-  QueryDocumentSnapshot<Map<String, dynamic>>? prevBeaconFBData;
-
-  receivePort?.listen((message) async {
-    final scannedBeacons = await api.getScannedBeacons();
-
-    final notiText = "디버그 모드에서 실행 중: " +
-        "비콘 ${beacons.length}개 로드됨 | " +
-        "${scannedBeacons.length}개 스캔됨";
-
-    FlutterForegroundTask.updateService(notificationText: notiText);
-
-    final now = DateTime.now();
-
-    final user = FirebaseAuth.instance.currentUser;
-
-    // 교내 비콘이 감지될 경우, 즉 사용자가 학교 내에 있는 경우 출석 인정
-    if (beacons.any((e) => scannedBeacons.map((e) => e!.uuid).contains(e.id))) {
-      final attendAny = await firestore
-          .collection('attendance')
-          .where(
-            'attendedAt',
-            isGreaterThanOrEqualTo: DateTime(now.year, now.month, now.day),
-          )
-          .limit(1)
-          .get();
-
-      // 오늘 출석 내역 없는 경우 출석 등록
-      if (attendAny.size == 0) {
-        await firestore
-            .collection('attendance')
-            .add({'uid': user!.uid, 'attendedAt': now});
-
-        final androidPlatformChannelSpecifics = AndroidNotificationDetails(
-            'attendance', '출결 알림',
-            channelDescription: '자동 출석이 완료되었을 때 알림 표시',
-            importance: Importance.low,
-            priority: Priority.low);
-
-        final iosPlatformChannelSpecifics =
-            IOSNotificationDetails(sound: 'slow_spring.board.aiff');
-        var platformChannelSpecifics = NotificationDetails(
-            android: androidPlatformChannelSpecifics,
-            iOS: iosPlatformChannelSpecifics);
-
-        final flutterLocalNotificationsPlugin =
-            FlutterLocalNotificationsPlugin();
-
-        await flutterLocalNotificationsPlugin.show(
-          0,
-          '출석이 체크되었습니다!',
-          '${now.toString().split('.')[0]}에 교문을 통과했습니다.',
-          platformChannelSpecifics,
-        );
-      }
-    }
-
-    // 실시간 위치 기록
-    final beaconUUIDs = beacons.map((e) => e.id);
-    final currentBeacons =
-        scannedBeacons.where((e) => beaconUUIDs.contains(e!.uuid)).toList();
-    currentBeacons.sort((a, b) => a!.rssi! - b!.rssi!);
-
-    final currentBeacon =
-        currentBeacons.isNotEmpty ? currentBeacons.first : null;
-
-    final currentBeaconFBData = currentBeacons.isNotEmpty
-        ? beacons.firstWhere((e) => e.id == currentBeacon!.uuid)
-        : null;
-
-    if (prevBeaconFBData?.id != currentBeaconFBData?.id) {
-      if (currentBeaconFBData != null) {
-        // 입실
-        await firestore.collection('activities').add({
-          'room': currentBeaconFBData.data()['room'],
-          'type': 'in',
-          'didAt': now,
-          'uid': user!.uid
-        });
-      } else if (prevBeaconFBData != null) {
-        // 퇴실
-        await firestore.collection('activities').add({
-          'room': prevBeaconFBData!.data()['room'],
-          'type': 'out',
-          'didAt': now,
-          'uid': user!.uid
-        });
-      }
-
-      prevBeaconFBData = currentBeaconFBData;
-    }
-  });
-}
+// void initAndBeginForeground() async {
+//   late ReceivePort? receivePort;
+//   if (await FlutterForegroundTask.isRunningService) {
+//     receivePort = await FlutterForegroundTask.restartService();
+//   } else {
+//     receivePort = await FlutterForegroundTask.startService(
+//       notificationTitle: '자동 출결 시스템 동작중',
+//       notificationText: '시작 중...',
+//       callback: startCallback,
+//     );
+//   }
+//
+//   final api = Api();
+//
+//   if (await FlutterBlue.instance.isOn) {
+//     await api.startScan();
+//   }
+//
+//   if (Firebase.apps.isEmpty) {
+//     await Firebase.initializeApp(
+//       options: DefaultFirebaseOptions.currentPlatform,
+//     );
+//   }
+//
+//   final firestore = FirebaseFirestore.instance;
+//   final beacons = (await firestore.collection('beacons').get()).docs;
+//
+//   QueryDocumentSnapshot<Map<String, dynamic>>? prevBeaconFBData;
+//
+//   receivePort?.listen((message) async {
+//     final scannedBeacons = await api.getScannedBeacons();
+//
+//     final notiText = "디버그 모드에서 실행 중: " +
+//         "비콘 ${beacons.length}개 로드됨 | " +
+//         "${scannedBeacons.length}개 스캔됨";
+//
+//     FlutterForegroundTask.updateService(notificationText: notiText);
+//
+//     final now = DateTime.now();
+//
+//     final user = FirebaseAuth.instance.currentUser;
+//
+//     // 교내 비콘이 감지될 경우, 즉 사용자가 학교 내에 있는 경우 출석 인정
+//     if (beacons.any((e) => scannedBeacons.map((e) => e!.uuid).contains(e.id))) {
+//       final attendAny = await firestore
+//           .collection('attendance')
+//           .where(
+//             'attendedAt',
+//             isGreaterThanOrEqualTo: DateTime(now.year, now.month, now.day),
+//           )
+//           .limit(1)
+//           .get();
+//
+//       // 오늘 출석 내역 없는 경우 출석 등록
+//       if (attendAny.size == 0) {
+//         await firestore
+//             .collection('attendance')
+//             .add({'uid': user!.uid, 'attendedAt': now});
+//
+//         final androidPlatformChannelSpecifics = AndroidNotificationDetails(
+//             'attendance', '출결 알림',
+//             channelDescription: '자동 출석이 완료되었을 때 알림 표시',
+//             importance: Importance.low,
+//             priority: Priority.low);
+//
+//         final iosPlatformChannelSpecifics =
+//             IOSNotificationDetails(sound: 'slow_spring.board.aiff');
+//         var platformChannelSpecifics = NotificationDetails(
+//             android: androidPlatformChannelSpecifics,
+//             iOS: iosPlatformChannelSpecifics);
+//
+//         final flutterLocalNotificationsPlugin =
+//             FlutterLocalNotificationsPlugin();
+//
+//         await flutterLocalNotificationsPlugin.show(
+//           0,
+//           '출석이 체크되었습니다!',
+//           '${now.toString().split('.')[0]}에 교문을 통과했습니다.',
+//           platformChannelSpecifics,
+//         );
+//       }
+//     }
+//
+//     // 실시간 위치 기록
+//     final beaconUUIDs = beacons.map((e) => e.id);
+//     final currentBeacons =
+//         scannedBeacons.where((e) => beaconUUIDs.contains(e!.uuid)).toList();
+//     currentBeacons.sort((a, b) => a!.rssi! - b!.rssi!);
+//
+//     final currentBeacon =
+//         currentBeacons.isNotEmpty ? currentBeacons.first : null;
+//
+//     final currentBeaconFBData = currentBeacons.isNotEmpty
+//         ? beacons.firstWhere((e) => e.id == currentBeacon!.uuid)
+//         : null;
+//
+//     if (prevBeaconFBData?.id != currentBeaconFBData?.id) {
+//       if (currentBeaconFBData != null) {
+//         // 입실
+//         await firestore.collection('activities').add({
+//           'room': currentBeaconFBData.data()['room'],
+//           'type': 'in',
+//           'didAt': now,
+//           'uid': user!.uid
+//         });
+//       } else if (prevBeaconFBData != null) {
+//         // 퇴실
+//         await firestore.collection('activities').add({
+//           'room': prevBeaconFBData!.data()['room'],
+//           'type': 'out',
+//           'didAt': now,
+//           'uid': user!.uid
+//         });
+//       }
+//
+//       prevBeaconFBData = currentBeaconFBData;
+//     }
+//   });
+// }
 
 class App extends StatefulWidget {
   @override
@@ -466,7 +467,7 @@ class _AppState extends State<App> {
               snapshot.data[1];
 
           if (isLoggedIn) {
-            initAndBeginForeground();
+            // initAndBeginForeground();
             return HomePage();
           } else {
             return LoginPage();

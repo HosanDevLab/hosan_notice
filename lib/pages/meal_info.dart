@@ -105,7 +105,7 @@ class _MealInfoPageState extends State<MealInfoPage> {
                 SizedBox(height: 24, child: Divider()),
                 Expanded(
                     child: Scrollbar(
-                  isAlwaysShown: true,
+                  thumbVisibility: true,
                   controller: _scrollController,
                   child: ListView(
                     physics: BouncingScrollPhysics(

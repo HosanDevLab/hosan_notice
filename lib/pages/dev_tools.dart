@@ -113,7 +113,7 @@ class _DevtoolsPageState extends State<DevtoolsPage> {
                                     ),
                                   ),
                                 ),
-                                isAlwaysShown: true,
+                                thumbVisibility: true,
                               );
                             },
                           ),
@@ -161,7 +161,7 @@ class _DevtoolsPageState extends State<DevtoolsPage> {
                                     ),
                                   ),
                                 ),
-                                isAlwaysShown: true,
+                                thumbVisibility: true,
                               );
                             },
                           ),

@@ -193,7 +193,7 @@ class _PathSearchPageState extends State<PathSearchPage> {
                             ),
                             Expanded(
                                 child: Scrollbar(
-                              isAlwaysShown: true,
+                              thumbVisibility: true,
                               child: ListView(
                                 children: [
                                   Card(

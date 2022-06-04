@@ -283,7 +283,7 @@ class _MainDrawerState extends State<MainDrawer> {
                 dense: true,
                 leading: Icon(Icons.chat),
                 onTap: () {
-                  launch("https://open.kakao.com/o/gU97bT6d");
+                  launchUrl(Uri.parse(remoteConfig.getString('OPENCHAT_URL')));
                 },
                 textColor: Colors.orange,
                 iconColor: Colors.orange,
@@ -339,7 +339,11 @@ class _MainDrawerState extends State<MainDrawer> {
                                 text: '(21181@hosan.hs.kr)',
                                 recognizer: TapGestureRecognizer()
                                   ..onTap = () {
-                                    launch('mailto:21181@hosan.hs.kr');
+                                    launchUrl(
+                                      Uri.parse(
+                                        'mailto:${remoteConfig.getString('SUPPORT_EMAIL')}',
+                                      ),
+                                    );
                                   },
                               ),
                               TextSpan(

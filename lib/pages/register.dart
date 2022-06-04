@@ -700,7 +700,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   child: InkWell(
                 child: Image.asset('assets/openchat.png', height: 140),
                 onTap: () {
-                  launch("https://open.kakao.com/o/gU97bT6d");
+                  launchUrl(Uri.parse(remoteConfig.getString('OPENCHAT_URL')));
                 },
               )),
               SizedBox(height: 16),
@@ -744,7 +744,9 @@ class _RegisterPageState extends State<RegisterPage> {
                         primary: Color(0xFFFEE500),
                       ),
                       onPressed: () {
-                        launch("https://open.kakao.com/o/gU97bT6d");
+                        launchUrl(
+                          Uri.parse(remoteConfig.getString('OPENCHAT_URL')),
+                        );
                       },
                     ),
                   ),

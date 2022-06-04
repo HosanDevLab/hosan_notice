@@ -210,7 +210,7 @@ class _TeachersPageState extends State<TeachersPage> {
                   child: filteredTeachers.isNotEmpty
                       ? Scrollbar(
                           thickness: 6,
-                          isAlwaysShown: true,
+                          thumbVisibility: true,
                           child: ListView(
                             controller: _scrollController,
                             shrinkWrap: true,

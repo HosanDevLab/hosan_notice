@@ -12,6 +12,7 @@ import 'package:hosan_notice/modules/get_device_id.dart';
 import 'package:http/http.dart' as http;
 import 'package:localstorage/localstorage.dart';
 import 'package:package_info/package_info.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:workmanager/workmanager.dart';
 
 import '../modules/update_timetable_widget.dart';
@@ -277,18 +278,16 @@ class _LoginPageState extends State<LoginPage> {
         );
 
         if (Platform.isAndroid) {
-          await Workmanager().registerPeriodicTask(
-            '1',
-            'widgetBackgroundUpdate',
-            inputData: {
-              'authToken': storage.getItem('AUTH_TOKEN') ?? '',
-              'refreshToken': storage.getItem('REFRESH_TOKEN') ?? '',
-            },
-            frequency: Duration(minutes: 15),
-            constraints: Constraints(
-              networkType: NetworkType.connected,
-            )
-          );
+          await Workmanager()
+              .registerPeriodicTask('1', 'widgetBackgroundUpdate',
+                  inputData: {
+                    'authToken': storage.getItem('AUTH_TOKEN') ?? '',
+                    'refreshToken': storage.getItem('REFRESH_TOKEN') ?? '',
+                  },
+                  frequency: Duration(minutes: 15),
+                  constraints: Constraints(
+                    networkType: NetworkType.connected,
+                  ));
         }
 
         continueLogin();
@@ -381,17 +380,16 @@ class _LoginPageState extends State<LoginPage> {
 
                     if (Platform.isAndroid) {
                       await Workmanager().registerPeriodicTask(
-                        '1',
-                        'widgetBackgroundUpdate',
-                        inputData: {
-                          'authToken': storage.getItem('AUTH_TOKEN') ?? '',
-                          'refreshToken': storage.getItem('REFRESH_TOKEN') ?? '',
-                        },
-                        frequency: Duration(minutes: 15),
-                        constraints: Constraints(
-                          networkType: NetworkType.connected,
-                        )
-                      );
+                          '1', 'widgetBackgroundUpdate',
+                          inputData: {
+                            'authToken': storage.getItem('AUTH_TOKEN') ?? '',
+                            'refreshToken':
+                                storage.getItem('REFRESH_TOKEN') ?? '',
+                          },
+                          frequency: Duration(minutes: 15),
+                          constraints: Constraints(
+                            networkType: NetworkType.connected,
+                          ));
                     }
 
                     continueLogin();
@@ -471,12 +469,46 @@ class _LoginPageState extends State<LoginPage> {
                 child: Text('교직원 로그인'),
                 onPressed: () async {
                   showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          content: Text('개발중'),
-                        );
-                      });
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('개발중 😎'),
+                            SizedBox(height: 8),
+                            Text.rich(
+                              TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: '과연 이게 만들어질 날이 올까? ',
+                                    style: TextStyle(fontSize: 14, height: 1.5),
+                                  ),
+                                  TextSpan(
+                                    text: '후배님들 도와주세요',
+                                    style: TextStyle(
+                                      decoration: TextDecoration.lineThrough,
+                                      fontSize: 14,
+                                      height: 1.5,
+                                    ),
+                                  )
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: Text('닫기'),
+                          )
+                        ],
+                      );
+                    },
+                  );
                   return;
 
                   /*
@@ -566,7 +598,66 @@ class _LoginPageState extends State<LoginPage> {
             padding: EdgeInsets.only(bottom: 16),
             child: Column(
               children: [
-                Text('개발 및 운영: HosanDevLab (제3기 로봇공학반)\n강해(HW) 이승민(HW) 황부연(PM & 주 개발자)',
+                InkWell(
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('로그인 문제 해결하기'),
+                              SizedBox(height: 8),
+                              Text(
+                                '로그인하는 데 문제가 발생하는 경우, 아래 연락처를 통해 도와드립니다!',
+                                style: TextStyle(fontSize: 14, height: 1.5),
+                              ),
+                              SizedBox(height: 16),
+                              Divider(height: 5),
+                              TextButton(
+                                child: Text('카카오톡 오픈채팅 참여하기'),
+                                onPressed: () {
+                                  launchUrl(
+                                    Uri.parse(
+                                      remoteConfig.getString('OPENCHAT_URL'),
+                                    ),
+                                  );
+                                },
+                              ),
+                              TextButton(
+                                child: Text('이메일 보내기: ${remoteConfig.getString('SUPPORT_EMAIL')}'),
+                                onPressed: () {
+                                  launchUrl(
+                                    Uri.parse(
+                                      'mailto:${remoteConfig.getString('SUPPORT_EMAIL')}',
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                              child: Text('닫기'),
+                            )
+                          ],
+                        );
+                      },
+                    );
+                  },
+                  child: Text(
+                    '로그인에 문제가 있나요? 이곳을 클릭하세요!',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                ),
+                SizedBox(height: 10),
+                Text(
+                    '개발 및 운영: HosanDevLab (제3기 로봇공학반)\n강해(HW) 이승민(HW) 황부연(PM & 주 개발자)',
                     textAlign: TextAlign.center,
                     style: Theme.of(context)
                         .textTheme

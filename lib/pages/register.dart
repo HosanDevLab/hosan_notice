@@ -700,7 +700,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   child: InkWell(
                 child: Image.asset('assets/openchat.png', height: 140),
                 onTap: () {
-                  launchUrl(Uri.parse(remoteConfig.getString('OPENCHAT_URL')));
+                  launchUrl(
+                    Uri.parse(remoteConfig.getString('OPENCHAT_URL')),
+                    mode: LaunchMode.externalApplication,
+                  );
                 },
               )),
               SizedBox(height: 16),
@@ -745,7 +748,10 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                       onPressed: () {
                         launchUrl(
-                          Uri.parse(remoteConfig.getString('OPENCHAT_URL')),
+                          Uri.parse(
+                            remoteConfig.getString('OPENCHAT_URL'),
+                          ),
+                          mode: LaunchMode.externalApplication,
                         );
                       },
                     ),

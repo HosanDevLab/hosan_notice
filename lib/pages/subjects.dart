@@ -16,11 +16,14 @@ class SubjectsPage extends StatefulWidget {
   _SubjectsPageState createState() => _SubjectsPageState();
 }
 
-class _SubjectsPageState extends State<SubjectsPage> {
+class _SubjectsPageState extends State<SubjectsPage>
+    with TickerProviderStateMixin {
   final user = FirebaseAuth.instance.currentUser!;
   final refreshKey = GlobalKey<RefreshIndicatorState>();
   final remoteConfig = FirebaseRemoteConfig.instance;
   final storage = new LocalStorage('auth.json');
+
+  late TabController _tabController;
 
   late Future<List<Map<dynamic, dynamic>>> _assignments;
   late Future<Map<dynamic, dynamic>> _me;
@@ -51,10 +54,10 @@ class _SubjectsPageState extends State<SubjectsPage> {
     }
   }
 
-
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _me = fetchStudentsMe();
   }
 
@@ -64,11 +67,20 @@ class _SubjectsPageState extends State<SubjectsPage> {
       message: '뒤로가기를 한번 더 누르면 종료합니다.',
       child: Scaffold(
         appBar: AppBar(
-          title: Text('선택과목 관리'),
+          title: Text('내 수강 과목'),
           centerTitle: true,
-          backgroundColor: Colors.transparent,
+          bottom: TabBar(
+            controller: _tabController,
+            tabs: [
+              Tab(
+                text: '1학기',
+              ),
+              Tab(
+                text: '2학기'
+              ),
+            ],
+          ),
         ),
-        extendBodyBehindAppBar: true,
         body: FutureBuilder(
           future: _me,
           builder: (BuildContext context, AsyncSnapshot snapshot) {
@@ -92,16 +104,16 @@ class _SubjectsPageState extends State<SubjectsPage> {
             return RefreshIndicator(
               child: Container(
                 height: double.infinity,
-                child: SingleChildScrollView(
-                  physics: BouncingScrollPhysics(
-                    parent: AlwaysScrollableScrollPhysics(),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-
-                    ],
-                  ),
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    Center(
+                      child: Text("ㅁㄴㅇㄹ"),
+                    ),
+                    Center(
+                      child: Text("asdf"),
+                    ),
+                  ],
                 ),
               ),
               onRefresh: () async {

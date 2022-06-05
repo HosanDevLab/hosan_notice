@@ -16,6 +16,7 @@ import 'package:hosan_notice/pages/meal_info.dart';
 import 'package:hosan_notice/pages/my_attend.dart';
 import 'package:hosan_notice/pages/myclass.dart';
 import 'package:hosan_notice/pages/navigation.dart';
+import 'package:hosan_notice/pages/subjects.dart';
 import 'package:hosan_notice/pages/teachers.dart';
 import 'package:localstorage/localstorage.dart';
 import 'package:package_info/package_info.dart';
@@ -119,6 +120,23 @@ class _MainDrawerState extends State<MainDrawer> {
                     widget.parentContext,
                     MaterialPageRoute(
                       builder: (context) => MyClassPage(),
+                    ),
+                    (route) => route.isFirst,
+                  );
+                },
+              ),
+              Divider(height: 0),
+              ListTile(
+                title: Text('내 수강 과목 (개발중)'),
+                enabled: kDebugMode || isDev,
+                dense: true,
+                leading: Icon(Icons.subject),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushAndRemoveUntil(
+                    widget.parentContext,
+                    MaterialPageRoute(
+                      builder: (context) => SubjectsPage(),
                     ),
                     (route) => route.isFirst,
                   );
@@ -283,7 +301,10 @@ class _MainDrawerState extends State<MainDrawer> {
                 dense: true,
                 leading: Icon(Icons.chat),
                 onTap: () {
-                  launchUrl(Uri.parse(remoteConfig.getString('OPENCHAT_URL')));
+                  launchUrl(
+                    Uri.parse(remoteConfig.getString('OPENCHAT_URL')),
+                    mode: LaunchMode.externalApplication,
+                  );
                 },
                 textColor: Colors.orange,
                 iconColor: Colors.orange,

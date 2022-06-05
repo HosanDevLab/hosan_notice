@@ -623,6 +623,7 @@ class _LoginPageState extends State<LoginPage> {
                                     Uri.parse(
                                       remoteConfig.getString('OPENCHAT_URL'),
                                     ),
+                                    mode: LaunchMode.externalApplication,
                                   );
                                 },
                               ),

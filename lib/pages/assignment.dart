@@ -29,6 +29,8 @@ class _AssignmentPageState extends State<AssignmentPage> {
   final storage = new LocalStorage('auth.json');
   final _commentTextFieldController = TextEditingController();
 
+  late Offset _commentOffset;
+
   bool? assignmentLoadDone;
 
   late Future<List<Map>> _assignment_comments, _teachers;
@@ -122,6 +124,29 @@ class _AssignmentPageState extends State<AssignmentPage> {
         jsonDecode(response.body)['code'] == 40100) {
       await refreshToken();
       return await deleteAssignment();
+    } else {
+      throw Exception('Failed to load post');
+    }
+  }
+
+  Future<Map<dynamic, dynamic>> deleteComment(String commentId) async {
+    var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+    var cfgs = jsonDecode(rawData!.asString());
+
+    final response = await http.delete(
+        Uri.parse(
+            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/assignments/${widget.assignmentId}/comments/${commentId}'),
+        headers: {
+          'ID-Token': await user.getIdToken(true),
+          'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+        });
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else if (response.statusCode == 401 &&
+        jsonDecode(response.body)['code'] == 40100) {
+      await refreshToken();
+      return await deleteComment(commentId);
     } else {
       throw Exception('Failed to load post');
     }
@@ -231,6 +256,157 @@ class _AssignmentPageState extends State<AssignmentPage> {
     super.initState();
   }
 
+  Widget commentCard(BuildContext context, Map student, Map comment) {
+    return Column(
+      children: [
+        InkWell(
+          onTap: () {
+            if (comment['author']?['_id'] == student['_id']) {
+              showMenu(
+                useRootNavigator: true,
+                context: context,
+                position: RelativeRect.fromLTRB(
+                  _commentOffset.dx,
+                  _commentOffset.dy,
+                  0,
+                  0,
+                ),
+                items: [
+                  PopupMenuItem(
+                    value: 'delete',
+                    height: 42,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.delete,
+                          size: 22,
+                        ),
+                        Text(
+                          ' 삭제',
+                          style: TextStyle(fontSize: 15),
+                        ),
+                      ],
+                    ),
+                    onTap: () {
+                      print('asdf');
+
+                      Future.delayed(Duration(seconds: 0), () {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('이 댓글을 삭제할까요?'),
+                                  SizedBox(height: 12),
+                                  Text(
+                                    '다시 되돌릴 수 없어요!',
+                                    style: Theme.of(context).textTheme.caption,
+                                  ),
+                                ],
+                              ),
+                              actions: [
+                                TextButton(
+                                  child: Text('계속하기'),
+                                  style: TextButton.styleFrom(
+                                    primary: Colors.pink,
+                                  ),
+                                  onPressed: () async {
+                                    await deleteComment(comment['_id']);
+
+                                    Navigator.pop(context);
+
+                                    final fetchFuture =
+                                        fetchAssignmentComments();
+
+                                    setState(() {
+                                      _assignment_comments = fetchFuture;
+                                    });
+                                    await fetchFuture;
+                                  },
+                                ),
+                                TextButton(
+                                  child: Text('취소'),
+                                  style: TextButton.styleFrom(
+                                    primary: Colors.black54,
+                                  ),
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                )
+                              ],
+                            );
+                          },
+                        );
+                      });
+                    },
+                  ),
+                  PopupMenuItem(
+                    value: 'edit',
+                    height: 42,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.edit,
+                          size: 22,
+                        ),
+                        Text(
+                          ' 수정',
+                          style: TextStyle(fontSize: 15),
+                        ),
+                      ],
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                    ),
+                  )
+                ],
+              );
+            }
+          },
+          onTapDown: (details) {
+            _commentOffset = details.globalPosition;
+          },
+          child: Container(
+            padding: EdgeInsets.symmetric(vertical: 12, horizontal: 5),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  backgroundImage: NetworkImage(user.photoURL!),
+                ),
+                SizedBox(width: 15),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text.rich(
+                        TextSpan(children: [
+                          TextSpan(text: '${comment['author']?['name']}  '),
+                          TextSpan(
+                            text: '1분 전',
+                            style: Theme.of(context).textTheme.caption,
+                          ),
+                        ]),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      SelectableText(comment['content'])
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        Divider(height: 0),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -281,14 +457,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
               else
                 timeDiffStr = '${timeDiffNegative.inSeconds}초 전 등록함';
             } else {
-              if (timeDiff.inDays > 0)
-                timeDiffStr = '${timeDiff.inDays}일 남음';
-              else if (timeDiff.inHours > 0)
-                timeDiffStr = '${timeDiff.inHours}시간 남음';
-              else if (timeDiff.inMinutes > 0)
-                timeDiffStr = '${timeDiff.inMinutes}분 남음';
-              else
-                timeDiffStr = '${timeDiff.inSeconds}초 남음';
+              timeDiffStr = '방금';
             }
           }
 
@@ -592,6 +761,9 @@ class _AssignmentPageState extends State<AssignmentPage> {
                                                 ),
                                                 TextButton(
                                                   child: Text('취소'),
+                                                  style: TextButton.styleFrom(
+                                                    primary: Colors.black54,
+                                                  ),
                                                   onPressed: () {
                                                     Navigator.pop(context);
                                                   },
@@ -688,56 +860,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                         child: Column(
                           children: [
                             ...comments.map((e) {
-                              return Column(
-                                children: [
-                                  InkWell(
-                                    onTap: () {},
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(
-                                          vertical: 12, horizontal: 5),
-                                      child: Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          CircleAvatar(
-                                            backgroundImage:
-                                                NetworkImage(user.photoURL!),
-                                          ),
-                                          SizedBox(width: 15),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text.rich(
-                                                  TextSpan(children: [
-                                                    TextSpan(
-                                                        text:
-                                                            '${e['author']?['name']}  '),
-                                                    TextSpan(
-                                                      text: '1분 전',
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .caption,
-                                                    ),
-                                                  ]),
-                                                  style: TextStyle(
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                                SizedBox(height: 4),
-                                                SelectableText(e['content'])
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  Divider(height: 0),
-                                ],
-                              );
+                              return commentCard(context, student, e);
                             }),
                           ],
                         ),

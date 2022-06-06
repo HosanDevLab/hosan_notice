@@ -223,80 +223,81 @@ class _EditAssignmentPageState extends State<EditAssignmentPage> {
                                   onTap: () {},
                                 )),
                             Card(
-                                margin: EdgeInsets.fromLTRB(10, 10, 10, 0),
-                                child: ListTile(
-                                  horizontalTitleGap: 2,
-                                  leading: Icon(Icons.person, size: 28),
-                                  title: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      DropdownButton(
-                                        value: teacher,
-                                        isExpanded: true,
-                                        hint: Text(
-                                          '선생님',
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        items: [
-                                          DropdownMenuItem(
-                                            child: Text(
-                                              '선택 안 함',
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            value: 0,
-                                          ),
-                                          ...teachers
-                                              .where((e) => e['subjects']
-                                                  .contains(subject['_id']))
-                                              .map(
-                                                (e) => DropdownMenuItem(
-                                                  child: Text(
-                                                    e['name'],
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                  value: e['_id'],
-                                                ),
-                                              )
-                                        ],
-                                        onChanged: (value) {
-                                          setState(() {
-                                            teacher =
-                                                value is String ? value : null;
-                                          });
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                  onTap: () {},
-                                )),
-                            Card(
-                                margin: EdgeInsets.fromLTRB(10, 12, 10, 0),
-                                child: Row(
+                              margin: EdgeInsets.fromLTRB(10, 10, 10, 0),
+                              child: ListTile(
+                                horizontalTitleGap: 2,
+                                leading: Icon(Icons.person, size: 28),
+                                title: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Expanded(
-                                        child: RadioListTile(
-                                            title: Text('과제'),
-                                            value: 'assignment',
-                                            groupValue: type,
-                                            onChanged: (value) {
-                                              setState(() {
-                                                type = value as String;
-                                              });
-                                            })),
-                                    Expanded(
-                                        child: RadioListTile(
-                                            title: Text('수행평가'),
-                                            value: 'assessment',
-                                            groupValue: type,
-                                            onChanged: (value) {
-                                              setState(() {
-                                                type = value as String;
-                                              });
-                                            })),
+                                    DropdownButton(
+                                      value: teacher,
+                                      isExpanded: true,
+                                      hint: Text(
+                                        '선생님',
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      items: [
+                                        DropdownMenuItem(
+                                          child: Text(
+                                            '선택 안 함',
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          value: 0,
+                                        ),
+                                        ...teachers
+                                            .where((e) => e['subjects']
+                                                .contains(subject['_id']))
+                                            .map(
+                                              (e) => DropdownMenuItem(
+                                                child: Text(
+                                                  e['name'],
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                                value: e['_id'],
+                                              ),
+                                            )
+                                      ],
+                                      onChanged: (value) {
+                                        setState(() {
+                                          teacher =
+                                              value is String ? value : null;
+                                        });
+                                      },
+                                    ),
                                   ],
-                                )),
+                                ),
+                                onTap: () {},
+                              ),
+                            ),
+                            // Card(
+                            //   margin: EdgeInsets.fromLTRB(10, 12, 10, 0),
+                            //   child: Row(
+                            //     children: [
+                            //       Expanded(
+                            //           child: RadioListTile(
+                            //               title: Text('과제'),
+                            //               value: 'assignment',
+                            //               groupValue: type,
+                            //               onChanged: (value) {
+                            //                 setState(() {
+                            //                   type = value as String;
+                            //                 });
+                            //               })),
+                            //       Expanded(
+                            //           child: RadioListTile(
+                            //               title: Text('수행평가'),
+                            //               value: 'assessment',
+                            //               groupValue: type,
+                            //               onChanged: (value) {
+                            //                 setState(() {
+                            //                   type = value as String;
+                            //                 });
+                            //               })),
+                            //     ],
+                            //   ),
+                            // ),
                             Card(
                                 margin: EdgeInsets.fromLTRB(10, 10, 10, 0),
                                 child: ListTile(
@@ -347,7 +348,8 @@ class _EditAssignmentPageState extends State<EditAssignmentPage> {
 
                                     setState(() {
                                       deadline = DateTime(date.year, date.month,
-                                          date.day, time.hour, time.minute).toUtc();
+                                              date.day, time.hour, time.minute)
+                                          .toUtc();
                                     });
                                   },
                                 )),

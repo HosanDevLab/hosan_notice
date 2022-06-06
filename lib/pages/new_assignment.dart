@@ -255,36 +255,37 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
                               onTap: () {},
                             ),
                           ),
-                          Card(
-                              margin: EdgeInsets.fromLTRB(10, 12, 10, 0),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: RadioListTile(
-                                      title: Text('과제'),
-                                      value: 'assignment',
-                                      groupValue: type,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          type = value as String;
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: RadioListTile(
-                                      title: Text('수행평가'),
-                                      value: 'assessment',
-                                      groupValue: type,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          type = value as String;
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              )),
+                          // Card(
+                          //   margin: EdgeInsets.fromLTRB(10, 12, 10, 0),
+                          //   child: Row(
+                          //     children: [
+                          //       Expanded(
+                          //         child: RadioListTile(
+                          //           title: Text('과제'),
+                          //           value: 'assignment',
+                          //           groupValue: type,
+                          //           onChanged: (value) {
+                          //             setState(() {
+                          //               type = value as String;
+                          //             });
+                          //           },
+                          //         ),
+                          //       ),
+                          //       Expanded(
+                          //         child: RadioListTile(
+                          //           title: Text('수행평가'),
+                          //           value: 'assessment',
+                          //           groupValue: type,
+                          //           onChanged: (value) {
+                          //             setState(() {
+                          //               type = value as String;
+                          //             });
+                          //           },
+                          //         ),
+                          //       ),
+                          //     ],
+                          //   ),
+                          // ),
                           Card(
                               margin: EdgeInsets.fromLTRB(10, 10, 10, 0),
                               child: ListTile(

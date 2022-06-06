@@ -127,8 +127,7 @@ class _MainDrawerState extends State<MainDrawer> {
               ),
               Divider(height: 0),
               ListTile(
-                title: Text('내 수강 과목 (개발중)'),
-                enabled: kDebugMode || isDev,
+                title: Text('수강 관리'),
                 dense: true,
                 leading: Icon(Icons.subject),
                 onTap: () {

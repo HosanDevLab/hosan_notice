@@ -106,7 +106,10 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
             SizedBox(height: 20),
             Center(
               child: Text(
-                (snapshot.data[1]['subjects']['1st'] as List)
+                ((snapshot.data[1]['subjects'][remoteConfig.getString(kDebugMode
+                            ? 'DEV_CURRENT_SEMESTER'
+                            : 'CURRENT_SEMESTER')] ??
+                        []) as List)
                     .firstWhere((e) => e['_id'] == subjectId)['name'],
                 style: TextStyle(
                   fontSize: 24,
@@ -217,7 +220,7 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
               child: OutlinedButton.icon(
                   onPressed: () {},
                   icon: Icon(Icons.open_in_new),
-                  label: Text('모두 보기')),
+                  label: Text('모두 보기 (개발중)')),
             ),
             SizedBox(height: 10),
           ],
@@ -288,14 +291,24 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
                           physics: BouncingScrollPhysics(),
                           controller: PageController(viewportFraction: 0.95),
                           onPageChanged: (index) {},
-                          children: (student['subjects']['1st'] as List)
+                          children: ((student['subjects'][
+                                      remoteConfig.getString(kDebugMode
+                                          ? 'DEV_CURRENT_SEMESTER'
+                                          : 'CURRENT_SEMESTER')] ??
+                                  []) as List)
                               .where((e) =>
                                   student['grade'] == e['grade'] &&
                                   e['hidden'] != true)
-                              .map((e) => Padding(
+                              .map(
+                                (e) => Padding(
                                   padding: EdgeInsets.symmetric(vertical: 5),
                                   child: assignmentCard(
-                                      context, snapshot, e['_id'])))
+                                    context,
+                                    snapshot,
+                                    e['_id'],
+                                  ),
+                                ),
+                              )
                               .toList(),
                         ),
                       ),

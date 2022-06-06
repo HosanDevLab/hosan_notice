@@ -509,7 +509,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                   scale: 1.05,
                                   child: Checkbox(
                                     shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(4)),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
                                     value: e['isRequired'] == true ||
                                         _selectedSubjects[term == null
                                                 ? 0

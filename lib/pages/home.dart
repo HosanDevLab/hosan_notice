@@ -565,31 +565,19 @@ class _HomePageState extends State<HomePage> {
                             ),
                             SizedBox(height: 5),
                             Card(
-                                margin: EdgeInsets.symmetric(vertical: 4),
-                                color: Colors.white,
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    ListTile(
-                                      title: Text('이 기능은 개발중입니다.'),
-                                      subtitle: Text('OOO 작성 | X일 전'),
-                                      onTap: () {},
-                                    ),
-                                  ],
-                                )),
-                            Card(
-                                margin: EdgeInsets.symmetric(vertical: 4),
-                                color: Colors.white,
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    ListTile(
-                                      title: Text('1학기 시간표'),
-                                      subtitle: Text('[담임] OOO | X 달 전'),
-                                      onTap: () {},
-                                    ),
-                                  ],
-                                )),
+                              margin: EdgeInsets.symmetric(vertical: 4),
+                              color: Colors.white,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ListTile(
+                                    title: Text('이 기능은 개발중입니다.'),
+                                    subtitle: Text('OOO 작성 | X일 전'),
+                                    onTap: () {},
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                         Divider(),
@@ -598,11 +586,14 @@ class _HomePageState extends State<HomePage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('최근 급식',
-                                    style:
-                                        Theme.of(context).textTheme.headline6),
+                                Text(
+                                  '최근 급식',
+                                  style: Theme.of(context).textTheme.headline6,
+                                ),
                                 TextButton(
-                                    onPressed: () {}, child: Text('더보기')),
+                                  onPressed: () {},
+                                  child: Text('더보기'),
+                                ),
                               ],
                             ),
                             SizedBox(height: 5),

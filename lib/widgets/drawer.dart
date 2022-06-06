@@ -16,6 +16,7 @@ import 'package:hosan_notice/pages/meal_info.dart';
 import 'package:hosan_notice/pages/my_attend.dart';
 import 'package:hosan_notice/pages/myclass.dart';
 import 'package:hosan_notice/pages/navigation.dart';
+import 'package:hosan_notice/pages/settings.dart';
 import 'package:hosan_notice/pages/subjects.dart';
 import 'package:hosan_notice/pages/teachers.dart';
 import 'package:localstorage/localstorage.dart';
@@ -191,6 +192,23 @@ class _MainDrawerState extends State<MainDrawer> {
               ),
               Divider(height: 0),
               ListTile(
+                title: Text('도서관 책 검색 (개발중)'),
+                enabled: kDebugMode || isDev,
+                dense: true,
+                leading: Icon(Icons.library_books_outlined),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushAndRemoveUntil(
+                    widget.parentContext,
+                    MaterialPageRoute(
+                      builder: (context) => MyAttendancePage(),
+                    ),
+                    (route) => route.isFirst,
+                  );
+                },
+              ),
+              Divider(height: 0),
+              ListTile(
                 title: Text('내 출결 및 활동 (개발중)'),
                 enabled: kDebugMode || isDev,
                 dense: true,
@@ -250,39 +268,40 @@ class _MainDrawerState extends State<MainDrawer> {
                 leading: Icon(Icons.logout, color: Colors.red),
                 onTap: () async {
                   showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          content: Text('로그아웃할까요?'),
-                          actions: <Widget>[
-                            TextButton(
-                              child: Text('계속하기'),
-                              onPressed: () async {
-                                Navigator.pop(context);
-                                await FirebaseAuth.instance.signOut();
-                                await GoogleSignIn().signOut();
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        content: Text('로그아웃할까요?'),
+                        actions: <Widget>[
+                          TextButton(
+                            child: Text('계속하기'),
+                            onPressed: () async {
+                              Navigator.pop(context);
+                              await FirebaseAuth.instance.signOut();
+                              await GoogleSignIn().signOut();
 
-                                await storage.deleteItem('AUTH_TOKEN');
-                                await storage.deleteItem('REFRESH_TOKEN');
+                              await storage.deleteItem('AUTH_TOKEN');
+                              await storage.deleteItem('REFRESH_TOKEN');
 
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => LoginPage(),
-                                    fullscreenDialog: true,
-                                  ),
-                                );
-                              },
-                            ),
-                            TextButton(
-                              child: Text('취소'),
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                            ),
-                          ],
-                        );
-                      });
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => LoginPage(),
+                                  fullscreenDialog: true,
+                                ),
+                              );
+                            },
+                          ),
+                          TextButton(
+                            child: Text('취소'),
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                  );
                 },
               ),
               Divider(height: 0),
@@ -292,6 +311,13 @@ class _MainDrawerState extends State<MainDrawer> {
                 leading: Icon(Icons.settings),
                 onTap: () {
                   Navigator.pop(context);
+                  Navigator.pushAndRemoveUntil(
+                    widget.parentContext,
+                    MaterialPageRoute(
+                      builder: (context) => SettingsPage(),
+                    ),
+                    (route) => route.isFirst,
+                  );
                 },
               ),
               Divider(height: 0),
@@ -317,17 +343,18 @@ class _MainDrawerState extends State<MainDrawer> {
                   PackageInfo packageInfo = await PackageInfo.fromPlatform();
                   showAboutDialog(
                     context: context,
-                    applicationName: packageInfo.appName,
+                    applicationName: "호산고\n알리미",
                     applicationIcon: GestureDetector(
                       onTap: () {
                         Fluttertoast.showToast(
-                            msg: "호산고 알리미",
-                            toastLength: Toast.LENGTH_SHORT,
-                            gravity: ToastGravity.CENTER,
-                            timeInSecForIosWeb: 1,
-                            backgroundColor: Colors.green,
-                            textColor: Colors.white,
-                            fontSize: 16.0);
+                          msg: "호산고 알리미",
+                          toastLength: Toast.LENGTH_SHORT,
+                          gravity: ToastGravity.CENTER,
+                          timeInSecForIosWeb: 1,
+                          backgroundColor: Colors.green,
+                          textColor: Colors.white,
+                          fontSize: 16.0,
+                        );
                       },
                       child: Image.asset(
                         'assets/hosan.png',
@@ -336,14 +363,21 @@ class _MainDrawerState extends State<MainDrawer> {
                       ),
                     ),
                     applicationVersion:
-                        '${packageInfo.version} (빌드번호 ${packageInfo.buildNumber})',
-                    applicationLegalese: '제8회 대한민국 SW 융합 해커톤 대회 우수상 수상작',
+                        '${packageInfo.version}\n(빌드번호 ${packageInfo.buildNumber})',
                     children: [
                       Padding(
-                        padding: EdgeInsets.only(top: 20),
+                        padding: EdgeInsets.only(top: 0),
                         child: RichText(
                           text: TextSpan(
                             children: [
+                              TextSpan(
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .caption!
+                                    .apply(
+                                        fontSizeDelta: 1, fontWeightDelta: 2),
+                                text: '제8회 대한민국 SW 융합 해커톤 대회 우수상 수상작\n\n',
+                              ),
                               TextSpan(
                                 style: TextStyle(
                                     color: Colors.black,

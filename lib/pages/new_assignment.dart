@@ -363,6 +363,21 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
                                       maxLines: null,
                                     ))),
                           ),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 13,
+                              vertical: 4,
+                            ),
+                            child: Text(
+                              '* 담당 선생님이 뜨지 않거나 틀릴 경우, 카카오톡 '
+                              '오픈채팅으로 문의해주시면 등록해드립니다! '
+                              '원활한 서비스 제공을 위해 적극적으로 신고해주세요.',
+                              style: Theme.of(context).textTheme.caption!.apply(
+                                    fontSizeDelta: -1,
+                                    color: Colors.red,
+                                  ),
+                            ),
+                          ),
                           Divider(indent: 10, endIndent: 10),
                           Container(
                             padding: EdgeInsets.symmetric(horizontal: 10),
@@ -375,7 +390,7 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
                                   if (isBeingAdded) return;
                                   await postAssignment(context, subject['_id']);
                                 }),
-                          )
+                          ),
                         ]),
                       )),
                 ),

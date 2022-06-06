@@ -164,7 +164,7 @@ class _SubjectsPageState extends State<SubjectsPage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('수강 관리'),
+        title: Text('내 수강 관리'),
         centerTitle: true,
         bottom: TabBar(
           controller: _tabController,

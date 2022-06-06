@@ -152,6 +152,35 @@ class _AssignmentPageState extends State<AssignmentPage> {
     }
   }
 
+  Future<Map<dynamic, dynamic>> patchComment(String commentId,
+      {required String content}) async {
+    var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+    var cfgs = jsonDecode(rawData!.asString());
+
+    final response = await http.patch(
+      Uri.parse(
+          '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/assignments/${widget.assignmentId}/comments/${commentId}'),
+      headers: {
+        'ID-Token': await user.getIdToken(true),
+        'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'content': content,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else if (response.statusCode == 401 &&
+        jsonDecode(response.body)['code'] == 40100) {
+      await refreshToken();
+      return await deleteComment(commentId);
+    } else {
+      throw Exception('Failed to load post');
+    }
+  }
+
   Future<Map<dynamic, dynamic>> postHeart() async {
     var rawData = remoteConfig.getAll()['BACKEND_HOST'];
     var cfgs = jsonDecode(rawData!.asString());
@@ -273,7 +302,6 @@ class _AssignmentPageState extends State<AssignmentPage> {
                 ),
                 items: [
                   PopupMenuItem(
-                    value: 'delete',
                     height: 42,
                     child: Row(
                       children: [
@@ -288,8 +316,6 @@ class _AssignmentPageState extends State<AssignmentPage> {
                       ],
                     ),
                     onTap: () {
-                      print('asdf');
-
                       Future.delayed(Duration(seconds: 0), () {
                         showDialog(
                           context: context,
@@ -344,7 +370,6 @@ class _AssignmentPageState extends State<AssignmentPage> {
                     },
                   ),
                   PopupMenuItem(
-                    value: 'edit',
                     height: 42,
                     child: Row(
                       children: [
@@ -359,6 +384,71 @@ class _AssignmentPageState extends State<AssignmentPage> {
                       ],
                       crossAxisAlignment: CrossAxisAlignment.center,
                     ),
+                    onTap: () {
+                      final _editFieldController = TextEditingController(
+                        text: comment['content'],
+                      );
+
+                      bool isPatching = false;
+
+                      Future.delayed(Duration(seconds: 0), () {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('댓글 수정하기'),
+                                  SizedBox(height: 12),
+                                  TextFormField(
+                                    controller: _editFieldController,
+                                    autofocus: true,
+                                  )
+                                ],
+                              ),
+                              actions: [
+                                TextButton(
+                                  child: Text('완료'),
+                                  onPressed: () async {
+                                    if (isPatching) {
+                                      return;
+                                    }
+
+                                    isPatching = true;
+
+                                    await patchComment(
+                                      comment['_id'],
+                                      content: _editFieldController.text,
+                                    );
+
+                                    Navigator.pop(context);
+
+                                    final fetchFuture =
+                                        fetchAssignmentComments();
+
+                                    setState(() {
+                                      _assignment_comments = fetchFuture;
+                                    });
+                                    await fetchFuture;
+                                  },
+                                ),
+                                TextButton(
+                                  child: Text('취소'),
+                                  style: TextButton.styleFrom(
+                                    primary: Colors.black54,
+                                  ),
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                )
+                              ],
+                            );
+                          },
+                        );
+                      });
+                    },
                   )
                 ],
               );

@@ -195,7 +195,12 @@ class _RegisterPageState extends State<RegisterPage> {
                 contentPadding:
                     EdgeInsets.symmetric(vertical: 18, horizontal: 12)),
           ),
-          SizedBox(height: 16),
+          SizedBox(height: 14),
+          Text(
+            '정확하게 입력해주세요! 악의적인 목적으로 허위 정보를 입력할 경우 관리자에 의해 사용이 제한될 수 있습니다.',
+            style: Theme.of(context).textTheme.caption!.apply(color: Colors.red[400]),
+          ),
+          Divider(height: 18),
           RichText(
               text: TextSpan(style: TextStyle(color: Colors.black), children: [
             TextSpan(text: '등록하면 '),
@@ -763,7 +768,7 @@ class _RegisterPageState extends State<RegisterPage> {
               SizedBox(height: 8),
               Text(
                 "언제든 앱 메뉴를 통해 오픈채팅에 참여하실 수 있습니다. "
-                "또는 카카오톡 오픈채팅 검색창에 '호산고 알리미 지원센터'를 "
+                "또는 카카오톡 오픈채팅 검색창에 \"호산고 알리미\"를 "
                 "검색하셔서 참여하실 수도 있습니다!",
                 style: Theme.of(context).textTheme.caption,
               ),

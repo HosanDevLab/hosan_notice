@@ -386,7 +386,7 @@ class _MainDrawerState extends State<MainDrawer> {
                               ),
                               TextSpan(
                                 style: TextStyle(color: Colors.black),
-                                text: '황부연 ',
+                                text: '황부연 (2022 2학년 8반) ',
                               ),
                               TextSpan(
                                 style: TextStyle(color: Colors.blue),
@@ -408,7 +408,7 @@ class _MainDrawerState extends State<MainDrawer> {
                               ),
                               TextSpan(
                                 style: TextStyle(color: Colors.black),
-                                text: '강해, 이승민',
+                                text: '강해, 이승민 (2022 2학년 8반)',
                               ),
                               TextSpan(
                                 style: TextStyle(color: Colors.black),

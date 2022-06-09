@@ -133,7 +133,6 @@ class _MyClassPageState extends State<MyClassPage> {
     }
   }
 
-  String url = 'https://placeimg.com/640/480/nature';
   late Image image;
   int timeTableMode = 0;
 
@@ -149,7 +148,8 @@ class _MyClassPageState extends State<MyClassPage> {
       setState(() {});
     });
 
-    image = Image.network(url, fit: BoxFit.fill, height: 300);
+    image = Image.asset('assets/class_bg_empty.jpeg',
+        fit: BoxFit.fill, height: 300);
   }
 
   @override
@@ -263,23 +263,13 @@ class _MyClassPageState extends State<MyClassPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    InkWell(
-                      child: Card(
-                        semanticContainer: true,
-                        clipBehavior: Clip.antiAliasWithSaveLayer,
-                        child: image,
-                        shape: RoundedRectangleBorder(),
-                        margin: EdgeInsets.zero,
-                        elevation: 6,
-                      ),
-                      onTap: () {
-                        setState(() {
-                          url =
-                              'https://placeimg.com/640/480/nature#${Random().nextInt(2147483890)}';
-                          image =
-                              Image.network(url, fit: BoxFit.fill, height: 300);
-                        });
-                      },
+                    Card(
+                      semanticContainer: true,
+                      clipBehavior: Clip.antiAliasWithSaveLayer,
+                      child: image,
+                      shape: RoundedRectangleBorder(),
+                      margin: EdgeInsets.zero,
+                      elevation: 6,
                     ),
                     Container(
                       width: double.infinity,
@@ -484,7 +474,7 @@ class _MyClassPageState extends State<MyClassPage> {
                                 style: Theme.of(context).textTheme.bodyLarge,
                               ),
                               subtitle: Text(
-                                'OOO 선생님',
+                                '개발중',
                                 style: Theme.of(context).textTheme.caption,
                               ),
                               dense: true,
@@ -508,7 +498,7 @@ class _MyClassPageState extends State<MyClassPage> {
                           Card(
                             child: ListTile(
                               title: Text(
-                                'OOO',
+                                '개발중',
                                 style: Theme.of(context).textTheme.bodyLarge,
                               ),
                               subtitle: Text(

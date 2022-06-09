@@ -295,6 +295,10 @@ class _SubjectsPageState extends State<SubjectsPage>
                                         .contains(e['_id']),
                                     onChanged: (value) {
                                       setState(() {
+                                        if (e['isRequired'] == true) {
+                                          return;
+                                        }
+
                                         if (value == true) {
                                           if (t == '1st') {
                                             subjectsFirst.add(e['_id']);
@@ -316,6 +320,10 @@ class _SubjectsPageState extends State<SubjectsPage>
                             : null,
                         onTap: () {
                           setState(() {
+                            if (e['isRequired'] == true) {
+                              return;
+                            }
+
                             if (t == '1st') {
                               if (subjectsFirst.contains(e['_id'])) {
                                 subjectsFirst.remove(e['_id']);
@@ -332,7 +340,8 @@ class _SubjectsPageState extends State<SubjectsPage>
                           });
                         },
                         title: Text(
-                          e['name'],
+                          (editMode && e['isRequired'] ? '[필수] ' : '') +
+                              e['name'],
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,

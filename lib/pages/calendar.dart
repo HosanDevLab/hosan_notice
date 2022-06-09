@@ -210,7 +210,7 @@ class _CalendarPageState extends State<CalendarPage> {
                             child: Container(
                               padding: EdgeInsets.only(bottom: 20),
                               child: Text(
-                                '이날 마감되는 과제가 없습니다!',
+                                '이날 마감되는 과제/수행평가가 없습니다!',
                                 style: TextStyle(color: Colors.grey[700]),
                               ),
                             ),

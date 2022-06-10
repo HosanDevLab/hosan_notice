@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:hosan_notice/pages/features_guide.dart';
 import 'package:hosan_notice/widgets/animated_indexed_stack.dart';
 import 'package:localstorage/localstorage.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -52,7 +53,7 @@ class _RegisterPageState extends State<RegisterPage> {
     isDisposed = true;
   }
 
-  late Future<List<Map<dynamic, dynamic>>> _subjects;
+  late Future<List<Map<dynamic, dynamic>>> _subjects, _classes;
 
   Future<List<Map<dynamic, dynamic>>> fetchSubjects() async {
     var rawData = remoteConfig.getAll()['BACKEND_HOST'];
@@ -79,6 +80,30 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
+  Future<List<Map<dynamic, dynamic>>> fetchClasses() async {
+    var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+    var cfgs = jsonDecode(rawData!.asString());
+
+    final response = await http.get(
+        Uri.parse(
+            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/classes/all'),
+        headers: {
+          'ID-Token': await user.getIdToken(true),
+          'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+        });
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as List;
+      return List.from(data);
+    } else if (response.statusCode == 401 &&
+        jsonDecode(response.body)['code'] == 40100) {
+      await refreshToken();
+      return await fetchClasses();
+    } else {
+      throw Exception('Failed to load post');
+    }
+  }
+
   void resetScroll() {
     _scrollController1.jumpTo(_scrollController1.position.maxScrollExtent);
     _scrollController2.jumpTo(_scrollController2.position.maxScrollExtent);
@@ -88,6 +113,7 @@ class _RegisterPageState extends State<RegisterPage> {
   void initState() {
     super.initState();
     _subjects = fetchSubjects();
+    _classes = fetchClasses();
   }
 
   Widget studentInfoPage(BuildContext context) {
@@ -99,144 +125,194 @@ class _RegisterPageState extends State<RegisterPage> {
         children: <Widget>[
           Text('학생 정보를 입력합니다', style: Theme.of(context).textTheme.subtitle1),
           SizedBox(height: 18),
-          Row(
-            children: [
-              Expanded(
-                flex: 1,
-                child: DropdownButtonFormField(
-                  validator: (value) => value == null ? "학년을 선택하세요." : null,
-                  decoration: InputDecoration(
-                      hintText: '학년',
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.deepPurple),
-                      ),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(5.0)),
-                      contentPadding:
-                          EdgeInsets.symmetric(vertical: 16, horizontal: 12)),
-                  onChanged: (value) {},
-                  onSaved: (value) {
-                    grade = value as int;
-                  },
-                  items: List.generate(3, (index) => index + 1)
-                      .map((e) =>
-                          DropdownMenuItem(child: Text('$e학년'), value: e))
-                      .toList(),
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                flex: 1,
-                child: DropdownButtonFormField(
-                  validator: (value) => value == null ? "반을 선택하세요." : null,
-                  decoration: InputDecoration(
-                      hintText: '반',
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.deepPurple),
-                      ),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(5.0)),
-                      contentPadding:
-                          EdgeInsets.symmetric(vertical: 16, horizontal: 12)),
-                  onChanged: (value) {},
-                  onSaved: (value) {
-                    classNum = value as int;
-                  },
-                  items: List.generate(10, (index) => index + 1)
-                      .map(
-                          (e) => DropdownMenuItem(child: Text('$e반'), value: e))
-                      .toList(),
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                flex: 1,
-                child: TextFormField(
-                  validator: (text) => text!.isEmpty ? "번호를 입력하세요." : null,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: <TextInputFormatter>[
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
-                  ],
-                  onChanged: (text) {},
-                  onSaved: (text) {
-                    numberInClass = int.parse(text!);
-                  },
-                  decoration: InputDecoration(
-                      labelText: '번호',
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.deepPurple),
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(5.0),
-                      ),
-                      contentPadding:
-                          EdgeInsets.symmetric(vertical: 18, horizontal: 12)),
-                ),
-              )
-            ],
-          ),
-          SizedBox(height: 16),
-          TextFormField(
-            validator: (text) => text!.isEmpty ? "이름를 입력하세요." : null,
-            keyboardType: TextInputType.text,
-            onChanged: (text) {},
-            onSaved: (text) {
-              name = text!;
-            },
-            decoration: InputDecoration(
-                labelText: '이름',
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.deepPurple),
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(5.0),
-                ),
-                contentPadding:
-                    EdgeInsets.symmetric(vertical: 18, horizontal: 12)),
-          ),
-          SizedBox(height: 14),
-          Text(
-            '정확하게 입력해주세요! 악의적인 목적으로 허위 정보를 입력할 경우 관리자에 의해 사용이 제한될 수 있습니다.',
-            style: Theme.of(context)
-                .textTheme
-                .caption!
-                .apply(color: Colors.red[400]),
-          ),
-          Divider(height: 18),
-          RichText(
-              text: TextSpan(style: TextStyle(color: Colors.black), children: [
-            TextSpan(text: '등록하면 '),
-            TextSpan(
-              text: '<호산고 알리미> 개인정보 처리방침',
-              style: TextStyle(color: Colors.blue),
-              recognizer: TapGestureRecognizer()
-                ..onTap = () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text('개인정보 처리방침'),
-                        content: WebView(
-                          initialUrl: 'about:blank',
-                          onWebViewCreated:
-                              (WebViewController webViewController) async {
-                            _controller = webViewController;
-                            String fileText = await rootBundle
-                                .loadString('assets/privacy.html');
-                            _controller.loadUrl(Uri.dataFromString(
-                              fileText,
-                              mimeType: 'text/html',
-                              encoding: Encoding.getByName('utf-8'),
-                            ).toString());
+          FutureBuilder(
+            future: _classes,
+            builder: (BuildContext context,
+                AsyncSnapshot<List<Map<dynamic, dynamic>>> snapshot) {
+              if (!snapshot.hasData)
+                return Center(
+                  child: Container(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+
+              final classes = snapshot.data as List<Map>;
+
+              return Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 1,
+                        child: DropdownButtonFormField(
+                          validator: (value) =>
+                              value == null ? "학년을 선택하세요." : null,
+                          decoration: InputDecoration(
+                              hintText: '학년',
+                              focusedBorder: OutlineInputBorder(
+                                borderSide:
+                                    BorderSide(color: Colors.deepPurple),
+                              ),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(5.0)),
+                              contentPadding: EdgeInsets.symmetric(
+                                  vertical: 16, horizontal: 12)),
+                          onChanged: (value) {
+                            setState(() {
+                              grade = value as int;
+                            });
                           },
+                          onSaved: (value) {
+                            grade = value as int;
+                          },
+                          items: List.generate(3, (index) => index + 1)
+                              .map((e) => DropdownMenuItem(
+                                  child: Text('$e학년'), value: e))
+                              .toList(),
                         ),
-                      );
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        flex: 1,
+                        child: DropdownButtonFormField(
+                          validator: (value) =>
+                              value == null ? "반을 선택하세요." : null,
+                          decoration: InputDecoration(
+                              hintText: '반',
+                              focusedBorder: OutlineInputBorder(
+                                borderSide:
+                                    BorderSide(color: Colors.deepPurple),
+                              ),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(5.0)),
+                              contentPadding: EdgeInsets.symmetric(
+                                  vertical: 16, horizontal: 12)),
+                          onChanged: (value) {},
+                          onSaved: (value) {
+                            classNum = value as int;
+                          },
+                          items: grade == 0
+                              ? [
+                                  DropdownMenuItem(
+                                    child: Text(''),
+                                    value: 0,
+                                    enabled: false,
+                                  )
+                                ]
+                              : (classes
+                                      .where((e) => e['grade'] == grade)
+                                      .toList()
+                                    ..sort((a, b) =>
+                                        a['classNum'] - b['classNum']))
+                                  .map(
+                                    (e) => DropdownMenuItem(
+                                      child: Text('${e['classNum']}반'),
+                                      value: e['classNum'],
+                                    ),
+                                  )
+                                  .toList(),
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        flex: 1,
+                        child: TextFormField(
+                          validator: (text) =>
+                              text!.isEmpty ? "번호를 입력하세요." : null,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: <TextInputFormatter>[
+                            FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+                          ],
+                          onChanged: (text) {},
+                          onSaved: (text) {
+                            numberInClass = int.parse(text!);
+                          },
+                          decoration: InputDecoration(
+                              labelText: '번호',
+                              focusedBorder: OutlineInputBorder(
+                                borderSide:
+                                    BorderSide(color: Colors.deepPurple),
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(5.0),
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                  vertical: 18, horizontal: 12)),
+                        ),
+                      )
+                    ],
+                  ),
+                  SizedBox(height: 16),
+                  TextFormField(
+                    validator: (text) => text!.isEmpty ? "이름를 입력하세요." : null,
+                    keyboardType: TextInputType.text,
+                    onChanged: (text) {},
+                    onSaved: (text) {
+                      name = text!;
                     },
-                  );
-                },
-            ),
-            TextSpan(text: '에 동의하는 것으로 간주됩니다.')
-          ])),
+                    decoration: InputDecoration(
+                        labelText: '이름',
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.deepPurple),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(5.0),
+                        ),
+                        contentPadding:
+                            EdgeInsets.symmetric(vertical: 18, horizontal: 12)),
+                  ),
+                  SizedBox(height: 14),
+                  Text(
+                    '정확하게 입력해주세요! 악의적인 목적으로 허위 정보를 입력할 경우 관리자에 의해 사용이 제한될 수 있습니다.',
+                    style: Theme.of(context)
+                        .textTheme
+                        .caption!
+                        .apply(color: Colors.red[400]),
+                  ),
+                  Divider(height: 18),
+                  RichText(
+                    text: TextSpan(
+                      style: TextStyle(color: Colors.black),
+                      children: [
+                        TextSpan(text: '등록하면 '),
+                        TextSpan(
+                          text: '<호산고 알리미> 개인정보 처리방침',
+                          style: TextStyle(color: Colors.blue),
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: Text('개인정보 처리방침'),
+                                    content: WebView(
+                                      initialUrl: 'about:blank',
+                                      onWebViewCreated: (WebViewController
+                                          webViewController) async {
+                                        _controller = webViewController;
+                                        String fileText = await rootBundle
+                                            .loadString('assets/privacy.html');
+                                        _controller.loadUrl(Uri.dataFromString(
+                                          fileText,
+                                          mimeType: 'text/html',
+                                          encoding: Encoding.getByName('utf-8'),
+                                        ).toString());
+                                      },
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                        ),
+                        TextSpan(text: '에 동의하는 것으로 간주됩니다.')
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
           Padding(
             padding: EdgeInsets.symmetric(vertical: 16.0),
             child: SizedBox(
@@ -672,7 +748,7 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  Widget openChatIntroPage(BuildContext context) {
+  Widget beforeStartPage(BuildContext context) {
     return Container(
       height: double.infinity,
       child: SingleChildScrollView(
@@ -700,10 +776,9 @@ class _RegisterPageState extends State<RegisterPage> {
               SizedBox(height: 8),
               Text(
                 '현재 호산고 알리미 앱은 아직 열심히 개발중입니다! '
-                '불안정하거나 미완성된 기능이 존재하며 '
-                '정확하지 않은 정보가 있거나 (시간표, 선생님 담당과목 등) '
-                '예고 없이 기능이 추가/변경/삭제될 수 있습니다. '
-                '이 점 양해해주시기 바랍니다.',
+                '불안정하거나 미완성된 기능이 존재하며, '
+                '정확하지 않은 정보(시간표, 선생님, 과목 등)가 있을 수 있습니다.\n\n'
+                '이 점 양해해주시기 바라며 아래 오픈채팅으로 적극적인 신고 부탁드립니다.',
                 style: TextStyle(fontSize: 13.5, height: 1.45),
               ),
               Divider(height: 50),
@@ -783,16 +858,18 @@ class _RegisterPageState extends State<RegisterPage> {
                 height: 45,
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () async {
-                    // await [
-                    //   Permission.location,
-                    //   Permission.bluetooth,
-                    // ].request();
+                  onPressed: () {
                     Navigator.pop(context);
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
                         builder: (context) => HomePage(),
+                      ),
+                    );
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FeaturesGuidePage(),
                       ),
                     );
                   },
@@ -816,18 +893,17 @@ class _RegisterPageState extends State<RegisterPage> {
               selectSubjectPage(context, term: 1),
               selectSubjectPage(context, term: 2),
             ]),
-      permissionsAlertPage(context),
-      openChatIntroPage(context),
+      beforeStartPage(context),
     ];
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
           _index == pages.length - 2
-              ? "앱 권한 허용"
+              ? "학생 등록"
               : _index == pages.length - 1
-                  ? '시작하기 전에'
-                  : '학생 등록',
+                  ? "시작하기 전에"
+                  : "학생 등록",
         ),
       ),
       body: Form(

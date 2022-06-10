@@ -8,6 +8,7 @@ import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hosan_notice/modules/refresh_token.dart';
+import 'package:hosan_notice/pages/meal_info.dart';
 import 'package:hosan_notice/pages/myclass.dart';
 import 'package:hosan_notice/widgets/drawer.dart';
 import 'package:localstorage/localstorage.dart';
@@ -30,7 +31,7 @@ class _HomePageState extends State<HomePage> {
   final storage = new LocalStorage('auth.json');
 
   late Future<List<Map<dynamic, dynamic>>> _assignments, _teachers;
-  late Future<Map<dynamic, dynamic>> _me, _timetable;
+  late Future<Map<dynamic, dynamic>> _me, _timetable, _meal_info;
 
   int timeTableMode = 0;
 
@@ -130,14 +131,37 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<Map<dynamic, dynamic>> fetchMealInfo() async {
+    var rawData = remoteConfig.getAll()['BACKEND_HOST'];
+    var cfgs = jsonDecode(rawData!.asString());
+
+    final response = await http.get(
+        Uri.parse(
+            '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/meal-info'),
+        headers: {
+          'ID-Token': await user.getIdToken(true),
+          'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
+        });
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else if (response.statusCode == 401 &&
+        jsonDecode(response.body)['code'] == 40100) {
+      await refreshToken();
+      return await fetchMealInfo();
+    } else {
+      throw Exception('Failed to load post');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     () async {
-      final intent = AndroidIntent(
-          action: "android.bluetooth.adapter.action.REQUEST_ENABLE");
-      await intent.launch();
-      await Permission.location.request();
+      // final intent = AndroidIntent(
+      //     action: "android.bluetooth.adapter.action.REQUEST_ENABLE");
+      // await intent.launch();
+      // await Permission.location.request();
     }();
   }
 
@@ -148,6 +172,7 @@ class _HomePageState extends State<HomePage> {
     _assignments = fetchAssignments();
     _timetable = fetchTimetable();
     _teachers = fetchTeachers();
+    _meal_info = fetchMealInfo();
     precacheImage(AssetImage('assets/hosan.png'), context);
   }
 
@@ -242,7 +267,8 @@ class _HomePageState extends State<HomePage> {
           centerTitle: true,
         ),
         body: FutureBuilder(
-          future: Future.wait([_me, _assignments, _timetable, _teachers]),
+          future: Future.wait(
+              [_me, _assignments, _timetable, _teachers, _meal_info]),
           builder: (BuildContext context, AsyncSnapshot snapshot) {
             if (!snapshot.hasData) {
               return Center(
@@ -262,7 +288,10 @@ class _HomePageState extends State<HomePage> {
             final student = snapshot.data[0];
             final assignments = snapshot.data[1];
             final timetable = snapshot.data[2];
-            final List<Map> teachers = snapshot.data[3];
+            final teachers = snapshot.data[3] as List<Map>;
+            final mealinfo = snapshot.data[4] as Map;
+
+            final mealRows = mealinfo['mealServiceDietInfo'][1]['row'] as List;
 
             final recentAssignments = (assignments as List).where((e) =>
                 e['deadline'] == null
@@ -587,29 +616,88 @@ class _HomePageState extends State<HomePage> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  '최근 급식',
+                                  '다가오는 급식 메뉴',
                                   style: Theme.of(context).textTheme.headline6,
                                 ),
                                 TextButton(
-                                  onPressed: () {},
+                                  onPressed: () {
+                                    Navigator.pushAndRemoveUntil(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => MealInfoPage(),
+                                      ),
+                                      (route) => route.isFirst,
+                                    );
+                                  },
                                   child: Text('더보기'),
                                 ),
                               ],
                             ),
                             SizedBox(height: 5),
                             Card(
-                                margin: EdgeInsets.symmetric(vertical: 4),
-                                color: Colors.white,
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    ListTile(
-                                      title: Text('2021년 11월 1일'),
-                                      subtitle: Text('테스트'),
-                                      onTap: () {},
-                                    ),
-                                  ],
-                                )),
+                              margin: EdgeInsets.symmetric(vertical: 4),
+                              color: Colors.white,
+                              child: Column(
+                                children: <Widget>[SizedBox(height: 10)] +
+                                    mealRows.take(5).map((e) {
+                                      final String rawDt = e['MLSV_YMD'];
+                                      final dt = DateTime(
+                                          int.parse(rawDt.substring(0, 4)),
+                                          int.parse(rawDt.substring(4, 6)),
+                                          int.parse(rawDt.substring(6, 8)));
+
+                                      final now = DateTime.now();
+                                      final diffDays = dt
+                                          .difference(DateTime(
+                                              now.year, now.month, now.day))
+                                          .inDays;
+
+                                      final dayofWeek = [
+                                        '월',
+                                        '화',
+                                        '수',
+                                        '목',
+                                        '금',
+                                        '토',
+                                        ' 일'
+                                      ][dt.weekday - 1];
+
+                                      return Column(
+                                        children: [
+                                          ListTile(
+                                            title: Text(
+                                              diffDays == 0
+                                                  ? '오늘'
+                                                  : diffDays == 1
+                                                      ? '내일'
+                                                      : diffDays == 2
+                                                          ? '모레'
+                                                          : '${dt.month}월 ${dt.day}일 ($dayofWeek)',
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            subtitle: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                SizedBox(height: 5),
+                                                Text(
+                                                  (e['DDISH_NM'] as String)
+                                                      .split('<br/>')
+                                                      .join('\n'),
+                                                ),
+                                              ],
+                                            ),
+                                            onTap: () {},
+                                          ),
+                                          Divider(),
+                                        ],
+                                      );
+                                    }).toList(),
+                              ),
+                            ),
                           ],
                         )
                       ],
@@ -622,18 +710,21 @@ class _HomePageState extends State<HomePage> {
                 final fetchAssignmentsFuture = fetchAssignments();
                 final fetchTimetableFuture = fetchTimetable();
                 final fetchTeachersFuture = fetchTeachers();
+                final fetchMealInfoFuture = fetchMealInfo();
 
                 setState(() {
                   _me = fetchStudentsMeFuture;
                   _assignments = fetchAssignmentsFuture;
                   _timetable = fetchTimetableFuture;
                   _teachers = fetchTeachersFuture;
+                  _meal_info = fetchMealInfoFuture;
                 });
                 await Future.wait([
                   fetchStudentsMeFuture,
                   fetchAssignmentsFuture,
                   fetchTimetableFuture,
-                  fetchTeachersFuture
+                  fetchTeachersFuture,
+                  fetchMealInfoFuture,
                 ]);
               },
             );

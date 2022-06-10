@@ -11,6 +11,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hosan_notice/pages/assignments.dart';
 import 'package:hosan_notice/pages/calendar.dart';
 import 'package:hosan_notice/pages/dev_tools.dart';
+import 'package:hosan_notice/pages/features_guide.dart';
 import 'package:hosan_notice/pages/home.dart';
 import 'package:hosan_notice/pages/meal_info.dart';
 import 'package:hosan_notice/pages/my_attend.dart';
@@ -229,6 +230,36 @@ class _MainDrawerState extends State<MainDrawer> {
                   : []),
               Divider(height: 0),
               ListTile(
+                title: Text('설정'),
+                dense: true,
+                leading: Icon(Icons.settings),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushAndRemoveUntil(
+                    widget.parentContext,
+                    MaterialPageRoute(
+                      builder: (context) => SettingsPage(),
+                    ),
+                    (route) => route.isFirst,
+                  );
+                },
+              ),
+              Divider(height: 0),
+              ListTile(
+                title: Text('카톡 오픈채팅 참여하기'),
+                dense: true,
+                leading: Icon(Icons.chat),
+                onTap: () {
+                  launchUrl(
+                    Uri.parse(remoteConfig.getString('OPENCHAT_URL')),
+                    mode: LaunchMode.externalApplication,
+                  );
+                },
+                textColor: Colors.orange,
+                iconColor: Colors.orange,
+              ),
+              Divider(height: 0),
+              ListTile(
                 title: Text('로그아웃', style: TextStyle(color: Colors.red)),
                 dense: true,
                 leading: Icon(Icons.logout, color: Colors.red),
@@ -272,33 +303,16 @@ class _MainDrawerState extends State<MainDrawer> {
               ),
               Divider(height: 0),
               ListTile(
-                title: Text('설정'),
+                title: Text('앱 기능 설명 및 사용법'),
                 dense: true,
-                leading: Icon(Icons.settings),
+                leading: Icon(Icons.question_mark),
                 onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushAndRemoveUntil(
-                    widget.parentContext,
+                  Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (context) => SettingsPage(),
+                      builder: (context) => FeaturesGuidePage(),
                     ),
-                    (route) => route.isFirst,
                   );
                 },
-              ),
-              Divider(height: 0),
-              ListTile(
-                title: Text('카톡 오픈채팅 참여하기'),
-                dense: true,
-                leading: Icon(Icons.chat),
-                onTap: () {
-                  launchUrl(
-                    Uri.parse(remoteConfig.getString('OPENCHAT_URL')),
-                    mode: LaunchMode.externalApplication,
-                  );
-                },
-                textColor: Colors.orange,
-                iconColor: Colors.orange,
               ),
               Divider(height: 0),
               ListTile(

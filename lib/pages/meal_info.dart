@@ -11,12 +11,14 @@ import 'package:hosan_notice/widgets/drawer.dart';
 import 'package:localstorage/localstorage.dart';
 import 'package:http/http.dart' as http;
 
+import '../modules/refresh_token.dart';
+
 class MealInfoPage extends StatefulWidget {
   @override
-  _MealInfoPageState createState() => _MealInfoPageState();
+  _meal_infoPageState createState() => _meal_infoPageState();
 }
 
-class _MealInfoPageState extends State<MealInfoPage> {
+class _meal_infoPageState extends State<MealInfoPage> {
   final user = FirebaseAuth.instance.currentUser!;
   final storage = new LocalStorage('auth.json');
   final firestore = FirebaseFirestore.instance;
@@ -26,7 +28,7 @@ class _MealInfoPageState extends State<MealInfoPage> {
   final _scrollController = ScrollController();
   final _pageController = PageController(viewportFraction: 0.95);
 
-  late Future<Map<dynamic, dynamic>> _mealInfo;
+  late Future<Map<dynamic, dynamic>> _meal_info;
 
   Future<Map<dynamic, dynamic>> fetchMealInfo() async {
     var rawData = remoteConfig.getAll()['BACKEND_HOST'];
@@ -44,24 +46,8 @@ class _MealInfoPageState extends State<MealInfoPage> {
       return json.decode(response.body);
     } else if (response.statusCode == 401 &&
         jsonDecode(response.body)['code'] == 40100) {
-      final response = await http.get(
-          Uri.parse(
-              '${kReleaseMode ? cfgs['release'] : cfgs['debug']}/auth/refresh'),
-          headers: {
-            'ID-Token': await user.getIdToken(true),
-            'Authorization': 'Bearer ${storage.getItem('AUTH_TOKEN')}',
-            'Refresh-Token': storage.getItem('REFRESH_TOKEN') ?? '',
-            'Device-ID': await getDeviceId() ?? ''
-          });
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        await storage.setItem('AUTH_TOKEN', data['token']);
-        await storage.setItem('REFRESH_TOKEN', data['refreshToken']);
-        return await fetchMealInfo();
-      } else {
-        throw Exception('Failed to refresh token');
-      }
+      await refreshToken();
+      return await fetchMealInfo();
     } else {
       throw Exception('Failed to load post');
     }
@@ -70,7 +56,7 @@ class _MealInfoPageState extends State<MealInfoPage> {
   @override
   void initState() {
     super.initState();
-    _mealInfo = fetchMealInfo();
+    _meal_info = fetchMealInfo();
   }
 
   Widget mealCard(BuildContext context, dynamic data) {
@@ -94,14 +80,15 @@ class _MealInfoPageState extends State<MealInfoPage> {
             child: Column(
               children: [
                 Text(
-                    diffDays == 0
-                        ? '오늘'
-                        : diffDays == 1
-                            ? '내일'
-                            : diffDays == 2
-                                ? '모레'
-                                : '${dt.month}월 ${dt.day}일 ($dayofWeek)',
-                    style: TextStyle(fontSize: 22)),
+                  diffDays == 0
+                      ? '오늘'
+                      : diffDays == 1
+                          ? '내일'
+                          : diffDays == 2
+                              ? '모레'
+                              : '${dt.month}월 ${dt.day}일 ($dayofWeek)',
+                  style: TextStyle(fontSize: 22),
+                ),
                 SizedBox(height: 24, child: Divider()),
                 Expanded(
                     child: Scrollbar(
@@ -146,7 +133,7 @@ class _MealInfoPageState extends State<MealInfoPage> {
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: 5),
           child: FutureBuilder(
-            future: _mealInfo,
+            future: _meal_info,
             builder: (BuildContext context, AsyncSnapshot snapshot) {
               if (!snapshot.hasData) {
                 return Center(
@@ -275,9 +262,9 @@ class _MealInfoPageState extends State<MealInfoPage> {
                   onRefresh: () async {
                     final fetchMealInfoFuture = fetchMealInfo();
                     setState(() {
-                      _mealInfo = fetchMealInfoFuture;
+                      _meal_info = fetchMealInfoFuture;
                     });
-                    await _mealInfo;
+                    await _meal_info;
                   });
             },
           ),

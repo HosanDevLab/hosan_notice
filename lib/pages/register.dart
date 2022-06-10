@@ -11,7 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hosan_notice/widgets/animated_indexed_stack.dart';
 import 'package:localstorage/localstorage.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:http/http.dart' as http;
@@ -198,7 +197,10 @@ class _RegisterPageState extends State<RegisterPage> {
           SizedBox(height: 14),
           Text(
             '정확하게 입력해주세요! 악의적인 목적으로 허위 정보를 입력할 경우 관리자에 의해 사용이 제한될 수 있습니다.',
-            style: Theme.of(context).textTheme.caption!.apply(color: Colors.red[400]),
+            style: Theme.of(context)
+                .textTheme
+                .caption!
+                .apply(color: Colors.red[400]),
           ),
           Divider(height: 18),
           RichText(
@@ -210,54 +212,57 @@ class _RegisterPageState extends State<RegisterPage> {
               recognizer: TapGestureRecognizer()
                 ..onTap = () {
                   showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text('개인정보 처리방침'),
-                          content: WebView(
-                            initialUrl: 'about:blank',
-                            onWebViewCreated:
-                                (WebViewController webViewController) async {
-                              _controller = webViewController;
-                              String fileText = await rootBundle
-                                  .loadString('assets/privacy.html');
-                              _controller.loadUrl(Uri.dataFromString(fileText,
-                                      mimeType: 'text/html',
-                                      encoding: Encoding.getByName('utf-8'))
-                                  .toString());
-                            },
-                          ),
-                        );
-                      });
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text('개인정보 처리방침'),
+                        content: WebView(
+                          initialUrl: 'about:blank',
+                          onWebViewCreated:
+                              (WebViewController webViewController) async {
+                            _controller = webViewController;
+                            String fileText = await rootBundle
+                                .loadString('assets/privacy.html');
+                            _controller.loadUrl(Uri.dataFromString(
+                              fileText,
+                              mimeType: 'text/html',
+                              encoding: Encoding.getByName('utf-8'),
+                            ).toString());
+                          },
+                        ),
+                      );
+                    },
+                  );
                 },
             ),
             TextSpan(text: '에 동의하는 것으로 간주됩니다.')
           ])),
           Padding(
-              padding: EdgeInsets.symmetric(vertical: 16.0),
-              child: SizedBox(
-                width: double.infinity,
-                height: 45,
-                child: ElevatedButton(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('다음', style: TextStyle(fontSize: 16)),
-                      SizedBox(width: 5),
-                      Icon(Icons.arrow_forward),
-                    ],
-                  ),
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      _formKey.currentState!.save();
-                      FocusManager.instance.primaryFocus?.unfocus();
-                      setState(() {
-                        _index = 1;
-                      });
-                    }
-                  },
+            padding: EdgeInsets.symmetric(vertical: 16.0),
+            child: SizedBox(
+              width: double.infinity,
+              height: 45,
+              child: ElevatedButton(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('다음', style: TextStyle(fontSize: 16)),
+                    SizedBox(width: 5),
+                    Icon(Icons.arrow_forward),
+                  ],
                 ),
-              )),
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    _formKey.currentState!.save();
+                    FocusManager.instance.primaryFocus?.unfocus();
+                    setState(() {
+                      _index = 1;
+                    });
+                  }
+                },
+              ),
+            ),
+          ),
         ],
       ),
     ));
@@ -779,10 +784,10 @@ class _RegisterPageState extends State<RegisterPage> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () async {
-                    await [
-                      Permission.location,
-                      Permission.bluetooth,
-                    ].request();
+                    // await [
+                    //   Permission.location,
+                    //   Permission.bluetooth,
+                    // ].request();
                     Navigator.pop(context);
                     Navigator.pushReplacement(
                       context,

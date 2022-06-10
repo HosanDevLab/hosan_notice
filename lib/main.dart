@@ -38,9 +38,9 @@ void main() async {
     );
   }
 
-  await [
-    Permission.bluetoothScan,
-  ].request();
+  // await [
+  //   Permission.bluetoothScan,
+  // ].request();
 
   await storage.ready;
 

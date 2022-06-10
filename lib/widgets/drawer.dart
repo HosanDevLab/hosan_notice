@@ -207,40 +207,6 @@ class _MainDrawerState extends State<MainDrawer> {
                   );
                 },
               ),
-              Divider(height: 0),
-              ListTile(
-                title: Text('내 출결 및 활동 (개발중)'),
-                enabled: kDebugMode || isDev,
-                dense: true,
-                leading: Icon(Icons.fact_check),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushAndRemoveUntil(
-                    widget.parentContext,
-                    MaterialPageRoute(
-                      builder: (context) => MyAttendancePage(),
-                    ),
-                    (route) => route.isFirst,
-                  );
-                },
-              ),
-              Divider(height: 0),
-              ListTile(
-                title: Text('교내 내비게이션 (개발중)'),
-                enabled: kDebugMode || isDev,
-                dense: true,
-                leading: Icon(Icons.room),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushAndRemoveUntil(
-                    widget.parentContext,
-                    MaterialPageRoute(
-                      builder: (context) => NavigationPage(),
-                    ),
-                    (route) => route.isFirst,
-                  );
-                },
-              ),
               ...(isDev
                   ? [
                       Divider(height: 0),

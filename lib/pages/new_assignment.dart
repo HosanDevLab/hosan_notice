@@ -179,7 +179,7 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
               title: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('새 과제 등록'),
+                  Text('새 과제/수행평가 등록'),
                   Text(subject['name'],
                       style: Theme.of(context)
                           .textTheme
@@ -341,7 +341,7 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
                                       decoration: InputDecoration(
                                           border: UnderlineInputBorder(
                                               borderSide: BorderSide.none),
-                                          label: Text('과제 제목')),
+                                          label: Text('과제(수행평가) 제목')),
                                       keyboardType: TextInputType.text,
                                     ))),
                           ),
@@ -358,7 +358,7 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
                                         description = text!;
                                       },
                                       decoration:
-                                          InputDecoration(label: Text('과제 내용')),
+                                          InputDecoration(label: Text('과제(수행평가) 내용')),
                                       keyboardType: TextInputType.multiline,
                                       maxLines: null,
                                     ))),
@@ -378,14 +378,29 @@ class _NewAssignmentPageState extends State<NewAssignmentPage> {
                                   ),
                             ),
                           ),
+                          Divider(indent: 10, endIndent: 10, height: 10),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 13,
+                              vertical: 5,
+                            ),
+                            child: Text(
+                              '* 과제를 등록하면, 같은 반 친구들에게도 공유됩니다. '
+                              '내용을 올바르게 입력했는지 확인해주세요!',
+                              style: Theme.of(context).textTheme.caption!.apply(
+                                    fontWeightDelta: 1,
+                                    fontSizeDelta: -1,
+                                  ),
+                            ),
+                          ),
                           Divider(indent: 10, endIndent: 10),
                           Container(
                             padding: EdgeInsets.symmetric(horizontal: 10),
                             width: double.infinity,
                             child: ElevatedButton.icon(
                                 icon: Icon(Icons.done),
-                                label:
-                                    Text(isBeingAdded ? '등록하는 중...' : '등록하기'),
+                                label: Text(
+                                    isBeingAdded ? '등록하는 중...' : '등록 및 공유하기'),
                                 onPressed: () async {
                                   if (isBeingAdded) return;
                                   await postAssignment(context, subject['_id']);

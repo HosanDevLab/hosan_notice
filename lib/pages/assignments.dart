@@ -193,7 +193,8 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
                   )
                 : Column(
                     children: [
-                      Text('지금은 과제가 없습니다! 다행이네요.\n과제가 있다면 자율적으로 등록하세요!',
+                      Text('지금은 과제나 수행평가가 없습니다! 다행이네요.\n'
+                          '과제나 수행평가가 있다면 자율적으로 등록하세요!',
                           textAlign: TextAlign.center),
                       SizedBox(height: 20)
                     ],
@@ -210,7 +211,7 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
                             NewAssignmentPage(subjectId: subjectId)));
                   },
                   icon: Icon(Icons.add),
-                  label: Text('과제 등록하기!')),
+                  label: Text('과제/수행평가 등록하기!')),
             ),
             SizedBox(height: 8),
             Container(
@@ -270,11 +271,11 @@ class _AssignmentsPageState extends State<AssignmentsPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('과목별 과제',
+                            Text('과목별 과제 및 수행평가',
                                 style: Theme.of(context).textTheme.headline6),
                             SizedBox(height: 8),
                             Text(
-                              '수업에서 과제가 있다면 잊어버리지 않도록 누구나 자율적으로 등록해 친구들과 공유하세요!',
+                              '수업에서 과제 또는 수행평가가 있다면 잊어버리지 않도록 누구나 자율적으로 등록해 친구들과 공유하세요!',
                               style: Theme.of(context).textTheme.bodySmall,
                               textAlign: TextAlign.start,
                             ),

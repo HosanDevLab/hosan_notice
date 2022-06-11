@@ -194,7 +194,7 @@ class _EditAssignmentPageState extends State<EditAssignmentPage> {
                 title: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('과제 편집'),
+                    Text('과제/수행평가 편집'),
                     Text(assignment['title'],
                         style: Theme.of(context)
                             .textTheme
@@ -370,7 +370,7 @@ class _EditAssignmentPageState extends State<EditAssignmentPage> {
                                         decoration: InputDecoration(
                                             border: UnderlineInputBorder(
                                                 borderSide: BorderSide.none),
-                                            label: Text('과제 제목')),
+                                            label: Text('과제(수행평가) 제목')),
                                         keyboardType: TextInputType.text,
                                       ))),
                             ),
@@ -389,7 +389,7 @@ class _EditAssignmentPageState extends State<EditAssignmentPage> {
                                           description = text!;
                                         },
                                         decoration: InputDecoration(
-                                            label: Text('과제 내용')),
+                                            label: Text('과제(수행평가) 내용')),
                                         keyboardType: TextInputType.multiline,
                                         maxLines: null,
                                       ))),

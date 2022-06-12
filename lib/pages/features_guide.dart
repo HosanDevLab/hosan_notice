@@ -10,12 +10,13 @@ class _FeaturesGuidePageState extends State<FeaturesGuidePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('앱 기능 & 사용법'),
+        title: Text('앱 기능 및 사용법'),
       ),
       body: Container(
         height: double.infinity,
         child: SingleChildScrollView(
-          physics: BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+          physics:
+              BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
           child: Container(
             padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
             child: Column(
@@ -77,15 +78,15 @@ class _FeaturesGuidePageState extends State<FeaturesGuidePage> {
                 SizedBox(height: 4),
                 Text(
                   '과제나 수행평가가 있으면 누구나 등록하세요! '
-                      '반 친구들에게도 공유되어 누구나 확인할 수 있고, 잊지 않도록 알림도 보내드려요.',
+                  '반 친구들에게도 공유되어 누구나 확인할 수 있고, 잊지 않도록 알림도 보내드려요.',
                   style: TextStyle(fontSize: 14, height: 1.45),
                 ),
                 SizedBox(height: 18),
                 Center(
                     child: Image.asset(
-                      'assets/assignments_page.png',
-                      width: MediaQuery.of(context).size.width * 0.7,
-                    )),
+                  'assets/assignments_page.png',
+                  width: MediaQuery.of(context).size.width * 0.7,
+                )),
                 SizedBox(height: 18),
                 Divider(),
                 SizedBox(height: 12),
@@ -99,15 +100,15 @@ class _FeaturesGuidePageState extends State<FeaturesGuidePage> {
                 SizedBox(height: 4),
                 Text(
                   '복잡한 과제/수행평가 일정, 정리해서 보여드려요! '
-                      '과제를 등록하기만 하면 캘린더에 표시됩니다. ',
+                  '과제를 등록하기만 하면 캘린더에 표시됩니다. ',
                   style: TextStyle(fontSize: 14, height: 1.45),
                 ),
                 SizedBox(height: 18),
                 Center(
                     child: Image.asset(
-                      'assets/calendar_page.png',
-                      width: MediaQuery.of(context).size.width * 0.7,
-                    )),
+                  'assets/calendar_page.png',
+                  width: MediaQuery.of(context).size.width * 0.7,
+                )),
                 SizedBox(height: 18),
                 Divider(),
                 SizedBox(height: 12),
@@ -126,9 +127,9 @@ class _FeaturesGuidePageState extends State<FeaturesGuidePage> {
                 SizedBox(height: 18),
                 Center(
                     child: Image.asset(
-                      'assets/mealinfo_page.png',
-                      width: MediaQuery.of(context).size.width * 0.7,
-                    )),
+                  'assets/mealinfo_page.png',
+                  width: MediaQuery.of(context).size.width * 0.7,
+                )),
                 Divider(height: 24),
                 SizedBox(
                   height: 45,

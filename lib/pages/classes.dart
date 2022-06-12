@@ -146,7 +146,7 @@ class _ClassesPageState extends State<ClassesPage> {
                                 ),
                                 Expanded(child: Container()),
                                 Text(
-                                  '${o['teacher']['name']} 담임',
+                                  '${o['teacher']['name']}T 담임',
                                   style: Theme.of(context).textTheme.caption,
                                 ),
                               ],
@@ -206,7 +206,7 @@ class _ClassesPageState extends State<ClassesPage> {
                                 ),
                                 Expanded(child: Container()),
                                 Text(
-                                  '${o['teacher']['name']} 담임',
+                                  '${o['teacher']['name']}T 담임',
                                   style: Theme.of(context).textTheme.caption,
                                 ),
                               ],

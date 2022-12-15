@@ -33,6 +33,8 @@ class _MyClassPageState extends State<MyClassPage> {
 
   late Timer _timer;
 
+  int _currentIndex = 0;
+
   Future<Map<dynamic, dynamic>> fetchStudentsMe() async {
     var rawData = remoteConfig.getAll()['BACKEND_HOST'];
     var cfgs = jsonDecode(rawData!.asString());
@@ -166,27 +168,8 @@ class _MyClassPageState extends State<MyClassPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: PreferredSize(
-        child: Container(
-          child: ClipRRect(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-              child: AppBar(
-                title: Text('내 학반'),
-                centerTitle: true,
-                backgroundColor: Colors.transparent,
-              ),
-            ),
-          ),
-        ),
-        preferredSize: Size(
-          MediaQuery.of(context).size.width,
-          AppBar().preferredSize.height,
-        ),
-      ),
-      extendBodyBehindAppBar: true,
-      body: FutureBuilder(
+    final _pages = [
+      FutureBuilder(
         future: Future.wait([_me, _class, _timetable]),
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           if (!snapshot.hasData) {
@@ -540,6 +523,30 @@ class _MyClassPageState extends State<MyClassPage> {
           );
         },
       ),
+      Container(),
+    ];
+
+    return Scaffold(
+      appBar: PreferredSize(
+        child: Container(
+          child: ClipRRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+              child: AppBar(
+                title: Text('내 학반'),
+                centerTitle: true,
+                backgroundColor: Colors.transparent,
+              ),
+            ),
+          ),
+        ),
+        preferredSize: Size(
+          MediaQuery.of(context).size.width,
+          AppBar().preferredSize.height,
+        ),
+      ),
+      extendBodyBehindAppBar: true,
+      body: _pages[_currentIndex],
       drawer: MainDrawer(parentContext: context),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.format_list_bulleted),
@@ -569,6 +576,25 @@ class _MyClassPageState extends State<MyClassPage> {
               },
             ),
           );
+        },
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.school),
+            label: '학반',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people),
+            label: '학생',
+          ),
+        ],
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
         },
       ),
     );

@@ -114,7 +114,10 @@ class _LoginPageState extends State<LoginPage> {
 
       if (signInData.user == null) return;
 
-      if (signInData.user!.email!.split('@').last != 'hosan.hs.kr') {
+      final email = signInData.user!.email!;
+
+      if (email.split('@').last != 'hosan.hs.kr' &&
+          email != 'hosannotice@gmail.com') {
         showDialog(
             context: context,
             builder: (BuildContext context) {
@@ -628,7 +631,8 @@ class _LoginPageState extends State<LoginPage> {
                                 },
                               ),
                               TextButton(
-                                child: Text('이메일 보내기: ${remoteConfig.getString('SUPPORT_EMAIL')}'),
+                                child: Text(
+                                    '이메일 보내기: ${remoteConfig.getString('SUPPORT_EMAIL')}'),
                                 onPressed: () {
                                   launchUrl(
                                     Uri.parse(
